@@ -209,9 +209,20 @@
     width:12.5%; height:12.5%;
     display:flex; align-items:center; justify-content:center;
     overflow: visible;
-    pointer-events:none;
+    pointer-events:auto;
+    cursor: grab;
+    touch-action: none;
     z-index:5;
     transition: left .34s cubic-bezier(.31,1.4,.56,1), top .34s cubic-bezier(.31,1.4,.56,1);
+  }
+  .knight-token.dragging{
+    transition: none;
+    cursor: grabbing;
+    z-index: 20;
+  }
+  .knight-token.dragging .knight-img{
+    filter: drop-shadow(0 10px 14px rgba(0,0,0,.55));
+    transform: scale(1.08);
   }
   .knight-img{
     /* fits inside the square, with a little breathing room on the sides */
@@ -220,6 +231,9 @@
     object-fit: contain;
     display:block;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,.5));
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-select: none;
   }
   .knight-token.hop .knight-img{
     animation: hop .34s cubic-bezier(.31,1.4,.56,1);
@@ -228,6 +242,13 @@
     0%{ transform: translateY(0) scale(1); }
     45%{ transform: translateY(-22%) scale(1.06); }
     100%{ transform: translateY(0) scale(1); }
+  }
+  .sq.drag-over::after{
+    content:"";
+    position:absolute; inset: 6%;
+    border-radius: 6px;
+    box-shadow: 0 0 0 3px var(--gold-soft) inset;
+    background: rgba(216,169,76,.18);
   }
 
   /* file/rank labels around frame */
@@ -827,20 +848,100 @@
   }
 
   function onSquareClick(idx){
-    if(state.completed) return;
+    attemptMove(idx, true);
+  }
+
+  // shared by click and drag-drop. animateHop=false when the piece already
+  // glided there under the pointer, so it only needs to snap into place.
+  function attemptMove(idx, animateHop){
+    if(state.completed) return false;
     var legal = legalMovesFrom(state.knightIdx, state.puzzle.blocked);
-    if(legal.indexOf(idx) === -1) return;
+    if(legal.indexOf(idx) === -1){
+      positionKnight(state.knightIdx, false); // illegal drop: snap back
+      return false;
+    }
 
     state.knightIdx = idx;
     state.moves += 1;
-    positionKnight(idx, true);
+    positionKnight(idx, animateHop);
     statMoves.textContent = state.moves;
     renderBoard();
 
     if(idx === state.puzzle.target){
       finishLevel();
     }
+    return true;
   }
+
+  // ---- drag support ----
+  var boardWrap = document.getElementById('boardWrap');
+  var dragPointerId = null;
+  var dragHoverIdx = null;
+
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  function cellIndexFromPoint(clientX, clientY){
+    var rect = boardWrap.getBoundingClientRect();
+    if(clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null;
+    var relX = (clientX - rect.left) / rect.width;
+    var relY = (clientY - rect.top) / rect.height;
+    var col = clamp(Math.floor(relX * 8), 0, 7);
+    var rowFromTop = clamp(Math.floor(relY * 8), 0, 7);
+    return coordToIdx(col, 7 - rowFromTop);
+  }
+
+  function dragTokenTo(clientX, clientY){
+    var rect = boardWrap.getBoundingClientRect();
+    var relX = (clientX - rect.left) / rect.width * 100;
+    var relY = (clientY - rect.top) / rect.height * 100;
+    knightToken.style.left = clamp(relX - 6.25, 0, 87.5) + '%';
+    knightToken.style.top = clamp(relY - 6.25, 0, 87.5) + '%';
+  }
+
+  function setDragHover(idx){
+    if(idx === dragHoverIdx) return;
+    if(dragHoverIdx != null && cells[dragHoverIdx]) cells[dragHoverIdx].classList.remove('drag-over');
+    dragHoverIdx = idx;
+    if(dragHoverIdx != null && cells[dragHoverIdx]) cells[dragHoverIdx].classList.add('drag-over');
+  }
+
+  knightToken.addEventListener('pointerdown', function(e){
+    if(state.completed) return;
+    e.preventDefault();
+    dragPointerId = e.pointerId;
+    try{ knightToken.setPointerCapture(e.pointerId); }catch(err){}
+    knightToken.classList.add('dragging');
+    dragTokenTo(e.clientX, e.clientY);
+  });
+
+  knightToken.addEventListener('pointermove', function(e){
+    if(dragPointerId === null || e.pointerId !== dragPointerId) return;
+    dragTokenTo(e.clientX, e.clientY);
+    var idx = cellIndexFromPoint(e.clientX, e.clientY);
+    var legal = legalMovesFrom(state.knightIdx, state.puzzle.blocked);
+    setDragHover(idx != null && legal.indexOf(idx) !== -1 ? idx : null);
+  });
+
+  function endDrag(e){
+    if(dragPointerId === null || e.pointerId !== dragPointerId) return;
+    dragPointerId = null;
+    knightToken.classList.remove('dragging');
+    setDragHover(null);
+    var idx = cellIndexFromPoint(e.clientX, e.clientY);
+    if(idx != null){
+      attemptMove(idx, false);
+    } else {
+      positionKnight(state.knightIdx, false);
+    }
+  }
+  knightToken.addEventListener('pointerup', endDrag);
+  knightToken.addEventListener('pointercancel', function(e){
+    if(dragPointerId === null || e.pointerId !== dragPointerId) return;
+    dragPointerId = null;
+    knightToken.classList.remove('dragging');
+    setDragHover(null);
+    positionKnight(state.knightIdx, false);
+  });
 
   function finishLevel(){
     state.completed = true;
