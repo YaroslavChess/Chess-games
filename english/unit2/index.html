@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotlight Master: Unit 2 Academy</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --surface: #1e293b;
+      --surface-hover: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #7dd3fc;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 14px;
+    }
+
+    .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 16px; }
+
+    header {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 20px;
+    }
+    .brand h1 { font-size: 19px; font-weight: 700; }
+    .brand p { font-size: 13px; color: var(--text-muted); }
+
+    .stats { display: flex; gap: 12px; flex-wrap: wrap; }
+    .stat-pill {
+      background: rgba(0,0,0,0.25); border: 1px solid var(--border);
+      padding: 6px 12px; border-radius: 8px; font-size: 13px; display: flex; gap: 6px;
+    }
+    .stat-val { font-weight: 700; color: var(--accent); }
+
+    .controls-bar {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px;
+    }
+    .control-group { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    select {
+      background: #0f172a; color: var(--text); border: 1px solid var(--border);
+      padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    }
+    select:focus { border-color: var(--accent); outline: none; }
+    select:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .nav-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .tab-btn {
+      background: var(--surface); color: var(--text-muted); border: 1px solid var(--border);
+      padding: 12px 6px; border-radius: 8px; font-weight: 600; font-size: 13px;
+      cursor: pointer; text-align: center; transition: all 0.15s;
+    }
+    .tab-btn:hover { background: var(--surface-hover); color: var(--text); }
+    .tab-btn.active { background: #0369a1; border-color: var(--accent); color: #fff; }
+
+    .workspace {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 28px; min-height: 480px; display: flex; flex-direction: column; justify-content: space-between;
+    }
+
+    .prompt-box { text-align: center; margin-bottom: 24px; }
+    .prompt-label {
+      text-transform: uppercase; font-size: 11px; letter-spacing: 1.2px;
+      color: var(--text-muted); margin-bottom: 6px;
+    }
+    .prompt-content {
+      font-size: 26px; font-weight: 700; color: #fff;
+      display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+    }
+
+    .audio-btn {
+      background: none; border: none; color: var(--accent); cursor: pointer;
+      font-size: 20px; line-height: 1; display: inline-flex; align-items: center;
+    }
+    .audio-btn:hover { transform: scale(1.15); }
+
+    .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .opt-btn {
+      background: #0f172a; border: 1px solid var(--border); color: var(--text);
+      padding: 16px; border-radius: 8px; font-size: 15px; font-weight: 600;
+      cursor: pointer; text-align: left; transition: border 0.15s, background 0.15s;
+    }
+    .opt-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--surface-hover); }
+    .opt-btn:disabled { cursor: default; }
+    .opt-btn.correct { background: rgba(34, 197, 94, 0.2); border-color: var(--success); color: #86efac; }
+    .opt-btn.incorrect { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: #fca5a5; }
+
+    .typing-box { display: flex; gap: 10px; margin-bottom: 24px; justify-content: center; }
+    .typing-input {
+      background: #0f172a; border: 2px solid var(--border); color: #fff;
+      font-size: 18px; font-weight: 600; padding: 12px 18px; border-radius: 8px;
+      width: 100%; max-width: 440px;
+    }
+    .typing-input:focus { border-color: var(--accent); outline: none; }
+    .typing-input.correct { border-color: var(--success); color: #86efac; }
+    .typing-input.incorrect { border-color: var(--danger); color: #fca5a5; }
+
+    .comp-builder { display: flex; flex-direction: column; gap: 16px; max-width: 600px; margin: 0 auto 20px; }
+    .comp-step { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .comp-step-title { font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+    .comp-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+    .choice-pill {
+      background: var(--surface); border: 1px solid var(--border); color: #fff;
+      padding: 8px 14px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .choice-pill:hover:not(:disabled) { border-color: var(--accent); }
+    .choice-pill:disabled { cursor: default; }
+    .choice-pill.selected { background: var(--accent); color: #0b1120; border-color: var(--accent); }
+    .choice-pill.right { background: rgba(34, 197, 94, 0.25); border-color: var(--success); color: #86efac; }
+    .choice-pill.wrong { background: rgba(239, 68, 68, 0.25); border-color: var(--danger); color: #fca5a5; }
+
+    .feedback-banner {
+      min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      border-radius: 8px; padding: 10px 16px; font-size: 14px; font-weight: 600;
+      background: rgba(0,0,0,0.25); border: 1px solid var(--border);
+    }
+    .feedback-banner.success { background: rgba(34, 197, 94, 0.15); border-color: var(--success); color: #86efac; }
+    .feedback-banner.error { background: rgba(239, 68, 68, 0.15); border-color: var(--danger); color: #fca5a5; }
+
+    .action-btn {
+      background: var(--accent); color: #0b1120; border: none;
+      padding: 10px 20px; font-size: 14px; font-weight: 700; border-radius: 6px; cursor: pointer;
+    }
+    .action-btn:hover:not(:disabled) { background: var(--accent-hover); }
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .action-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+    .report-wrap { width: 100%; overflow-x: auto; margin: 16px 0; }
+    .report-table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+    .report-table th, .report-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .report-table th { background: #0f172a; color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
+
+    @media (max-width: 600px) {
+      .grid-options { grid-template-columns: 1fr; }
+      .nav-tabs { grid-template-columns: 1fr 1fr; }
+      .workspace { padding: 18px; }
+      .prompt-content { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="brand">
+      <h1>Unit 2: In the Spotlight</h1>
+      <p>Vocabulary &amp; Grammar Trainer</p>
+    </div>
+    <div class="stats">
+      <div class="stat-pill">Remaining: <span class="stat-val" id="queueCount">0</span></div>
+      <div class="stat-pill">Accuracy: <span class="stat-val" id="accuracyVal">100%</span></div>
+      <div class="stat-pill">Streak: <span class="stat-val" id="streakVal">0</span></div>
+    </div>
+  </header>
+
+  <div class="controls-bar">
+    <div class="control-group">
+      <label for="setFilter">Scope:</label>
+      <select id="setFilter" onchange="initSession()">
+        <option value="ALL">Complete Unit 2 (all vocabulary sets)</option>
+        <option value="pastimes">Sets 1-2: Pastimes &amp; Free Time</option>
+        <option value="body">Sets 3-6: Body Parts &amp; Body Language</option>
+        <option value="presentation">Sets 7-8: Presentation &amp; How You Speak</option>
+        <option value="film_theatre">Sets 11, 20-21: Film Set &amp; Theatre</option>
+        <option value="clothes">Sets 12-14: Clothes</option>
+        <option value="radio_dora">Sets 19, 22-23: Radio Play &amp; Dora White</option>
+        <option value="jobs">Sets 24-26: Jobs</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="dirSelect">Direction:</label>
+      <select id="dirSelect" onchange="initSession()">
+        <option value="DE_EN">DE ➔ EN</option>
+        <option value="EN_DE">EN ➔ DE</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="inputModeSelect">Input Method:</label>
+      <select id="inputModeSelect" onchange="initSession()">
+        <option value="choice">4 Options (Recognition)</option>
+        <option value="type">Keyboard Type-in (Active Recall)</option>
+      </select>
+    </div>
+  </div>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchMode('vocab')">1. Core Vocab</button>
+    <button class="tab-btn" onclick="switchMode('comparisons')">2. Comparison Traps</button>
+    <button class="tab-btn" onclick="switchMode('grammar')">3. Adverbs &amp; Mine/Yours</button>
+    <button class="tab-btn" onclick="switchMode('collocations')">4. Collocations</button>
+  </nav>
+
+  <main class="workspace" id="appWorkspace"></main>
+</div>
+
+<script>
+/* ==========================================================================
+   UNIT 2 VOCABULARY (Sets 1-8, 11-14, 19-26)
+   ========================================================================== */
+const FULL_DATABASE = [
+  // Set 1 - Pastimes
+  { en: "listen to podcasts", de: "Podcasts hören", cat: "pastimes" },
+  { en: "watch films", de: "Filme schauen", cat: "pastimes" },
+  { en: "go to the cinema", de: "ins Kino gehen", cat: "pastimes" },
+  { en: "go to the theatre", de: "ins Theater gehen", cat: "pastimes" },
+  { en: "chat online", de: "online chatten", cat: "pastimes" },
+  { en: "stream videos", de: "Videos streamen", cat: "pastimes" },
+  { en: "read books", de: "Bücher lesen", cat: "pastimes" },
+  { en: "do handicrafts", de: "basteln", cat: "pastimes" },
+
+  // Set 2 - Free time
+  { en: "pastime", de: "der Zeitvertreib", cat: "pastimes" },
+  { en: "free-time activity", de: "die Freizeitaktivität", cat: "pastimes" },
+  { en: "play games", de: "Spiele spielen", cat: "pastimes" },
+  { en: "meet friends", de: "Freunde treffen", cat: "pastimes" },
+  { en: "listen to music", de: "Musik hören", cat: "pastimes" },
+  { en: "youth club", de: "der Jugendclub", cat: "pastimes" },
+  { en: "make short films", de: "Kurzfilme drehen", cat: "pastimes" },
+
+  // Set 3 - Body parts 1
+  { en: "head", de: "der Kopf", cat: "body" },
+  { en: "eye", de: "das Auge", cat: "body" },
+  { en: "ear", de: "das Ohr", cat: "body" },
+  { en: "nose", de: "die Nase", cat: "body" },
+  { en: "mouth", de: "der Mund", cat: "body" },
+  { en: "neck", de: "der Hals", cat: "body" },
+  { en: "shoulder", de: "die Schulter", cat: "body" },
+  { en: "back", de: "der Rücken", cat: "body" },
+
+  // Set 4 - Body parts 2
+  { en: "arm", de: "der Arm", cat: "body" },
+  { en: "hand", de: "die Hand", cat: "body" },
+  { en: "finger", de: "der Finger", cat: "body" },
+  { en: "stomach", de: "der Bauch", cat: "body" },
+  { en: "leg", de: "das Bein", cat: "body" },
+  { en: "knee", de: "das Knie", cat: "body" },
+  { en: "foot (feet)", de: "der Fuß (die Füße)", cat: "body" },
+  { en: "toe", de: "der Zeh", cat: "body" },
+
+  // Set 5 - Body language 1
+  { en: "stand up straight", de: "sich gerade hinstellen", cat: "body" },
+  { en: "sit down", de: "sich hinsetzen", cat: "body" },
+  { en: "breathe", de: "atmen", cat: "body" },
+  { en: "smile", de: "lächeln", cat: "body" },
+  { en: "nod", de: "nicken", cat: "body" },
+  { en: "shake your head", de: "den Kopf schütteln", cat: "body" },
+  { en: "walk around", de: "herumlaufen", cat: "body" },
+  { en: "turn around", de: "sich umdrehen", cat: "body" },
+
+  // Set 6 - Body language 2
+  { en: "point", de: "zeigen", cat: "body" },
+  { en: "wave", de: "winken", cat: "body" },
+  { en: "clap", de: "klatschen", cat: "body" },
+  { en: "wink", de: "zwinkern", cat: "body" },
+  { en: "shrug", de: "mit den Schultern zucken", cat: "body" },
+  { en: "fold your arms", de: "die Arme verschränken", cat: "body" },
+  { en: "touch", de: "berühren", cat: "body" },
+  { en: "close your eyes", de: "die Augen schließen", cat: "body" },
+
+  // Set 7 - Giving a presentation
+  { en: "presentation", de: "die Präsentation", cat: "presentation" },
+  { en: "give a presentation", de: "eine Präsentation halten", cat: "presentation" },
+  { en: "tip", de: "der Tipp", cat: "presentation" },
+  { en: "make a mistake", de: "einen Fehler machen", cat: "presentation" },
+  { en: "embarrassed", de: "verlegen", cat: "presentation" },
+  { en: "have fun", de: "Spaß haben", cat: "presentation" },
+  { en: "feedback", de: "die Rückmeldung", cat: "presentation" },
+  { en: "keyword", de: "das Stichwort", cat: "presentation" },
+
+  // Set 8 - How do you speak?
+  { en: "loud", de: "laut", cat: "presentation" },
+  { en: "quiet", de: "leise", cat: "presentation" },
+  { en: "calm", de: "ruhig", cat: "presentation" },
+  { en: "clear", de: "deutlich", cat: "presentation" },
+  { en: "careful", de: "vorsichtig, sorgfältig", cat: "presentation" },
+  { en: "nervous", de: "nervös", cat: "presentation" },
+  { en: "comfortable", de: "bequem", cat: "presentation" },
+  { en: "amazing", de: "toll, erstaunlich", cat: "presentation" },
+
+  // Set 11 - A day on a film set
+  { en: "film set", de: "das Filmset", cat: "film_theatre" },
+  { en: "director", de: "der Regisseur, die Regisseurin", cat: "film_theatre" },
+  { en: "direct the film", de: "Regie führen", cat: "film_theatre" },
+  { en: "script", de: "das Drehbuch", cat: "film_theatre" },
+  { en: "check the script", de: "das Drehbuch prüfen", cat: "film_theatre" },
+  { en: "actor", de: "der Schauspieler, die Schauspielerin", cat: "film_theatre" },
+  { en: "act a role", de: "eine Rolle spielen", cat: "film_theatre" },
+  { en: "lighting", de: "die Beleuchtung", cat: "film_theatre" },
+
+  // Set 12 - Clothes 1
+  { en: "coat", de: "der Mantel", cat: "clothes" },
+  { en: "jacket", de: "die Jacke", cat: "clothes" },
+  { en: "trousers", de: "die Hose", cat: "clothes" },
+  { en: "jeans", de: "die Jeans", cat: "clothes" },
+  { en: "shirt", de: "das Hemd", cat: "clothes" },
+  { en: "T-shirt", de: "das T-Shirt", cat: "clothes" },
+  { en: "sweater", de: "der Pullover", cat: "clothes" },
+  { en: "scarf (scarves)", de: "der Schal", cat: "clothes" },
+
+  // Set 13 - Clothes 2
+  { en: "hat", de: "der Hut", cat: "clothes" },
+  { en: "dress", de: "das Kleid", cat: "clothes" },
+  { en: "skirt", de: "der Rock", cat: "clothes" },
+  { en: "shoes", de: "die Schuhe", cat: "clothes" },
+  { en: "boots", de: "die Stiefel", cat: "clothes" },
+  { en: "socks", de: "die Socken", cat: "clothes" },
+  { en: "gloves", de: "die Handschuhe", cat: "clothes" },
+  { en: "belt", de: "der Gürtel", cat: "clothes" },
+
+  // Set 14 - Talking about clothes
+  { en: "shorts", de: "die Shorts", cat: "clothes" },
+  { en: "uniform", de: "die Uniform", cat: "clothes" },
+  { en: "costume", de: "das Kostüm", cat: "clothes" },
+  { en: "size", de: "die Größe", cat: "clothes" },
+  { en: "colourful", de: "bunt", cat: "clothes" },
+  { en: "It suits you.", de: "Das steht dir.", cat: "clothes" },
+  { en: "go well with", de: "gut passen zu", cat: "clothes" },
+  { en: "compliment", de: "das Kompliment", cat: "clothes" },
+
+  // Set 19 - On the radio
+  { en: "radio play", de: "das Hörspiel", cat: "radio_dora" },
+  { en: "detective", de: "der Detektiv, die Detektivin", cat: "radio_dora" },
+  { en: "thief", de: "der Dieb, die Diebin", cat: "radio_dora" },
+  { en: "criminal", de: "der Verbrecher, die Verbrecherin", cat: "radio_dora" },
+  { en: "crime", de: "das Verbrechen", cat: "radio_dora" },
+  { en: "call the police", de: "die Polizei rufen", cat: "radio_dora" },
+  { en: "noise", de: "das Geräusch", cat: "radio_dora" },
+  { en: "jewellery", de: "der Schmuck", cat: "radio_dora" },
+
+  // Set 20 - Theatre 1
+  { en: "play", de: "das Theaterstück", cat: "film_theatre" },
+  { en: "scene", de: "die Szene", cat: "film_theatre" },
+  { en: "character", de: "die Figur", cat: "film_theatre" },
+  { en: "narrator", de: "der Erzähler, die Erzählerin", cat: "film_theatre" },
+  { en: "stage", de: "die Bühne", cat: "film_theatre" },
+  { en: "stage directions", de: "die Regieanweisungen", cat: "film_theatre" },
+  { en: "props", de: "die Requisiten", cat: "film_theatre" },
+  { en: "perform", de: "aufführen", cat: "film_theatre" },
+
+  // Set 21 - Theatre 2
+  { en: "performance", de: "die Aufführung", cat: "film_theatre" },
+  { en: "role", de: "die Rolle", cat: "film_theatre" },
+  { en: "exit the stage", de: "die Bühne verlassen", cat: "film_theatre" },
+  { en: "from off stage", de: "aus dem Off", cat: "film_theatre" },
+  { en: "The lights go down.", de: "Die Lichter gehen aus.", cat: "film_theatre" },
+  { en: "practise", de: "üben", cat: "film_theatre" },
+  { en: "read out loud", de: "laut vorlesen", cat: "film_theatre" },
+
+  // Set 22 - Dora White 1
+  { en: "village", de: "das Dorf", cat: "radio_dora" },
+  { en: "bus stop", de: "die Bushaltestelle", cat: "radio_dora" },
+  { en: "leaflet", de: "der Flyer", cat: "radio_dora" },
+  { en: "do the washing-up", de: "abwaschen", cat: "radio_dora" },
+  { en: "plate", de: "der Teller", cat: "radio_dora" },
+  { en: "pot", de: "der Topf", cat: "radio_dora" },
+  { en: "waiter", de: "der Kellner, die Kellnerin", cat: "radio_dora" },
+  { en: "chef", de: "der Koch, die Köchin", cat: "radio_dora" },
+
+  // Set 23 - Dora White 2
+  { en: "dirty", de: "schmutzig", cat: "radio_dora" },
+  { en: "useless", de: "nutzlos", cat: "radio_dora" },
+  { en: "awful", de: "schrecklich", cat: "radio_dora" },
+  { en: "safe", de: "sicher", cat: "radio_dora" },
+  { en: "famous", de: "berühmt", cat: "radio_dora" },
+  { en: "hard-working", de: "fleißig", cat: "radio_dora" },
+  { en: "determined", de: "entschlossen", cat: "radio_dora" },
+  { en: "where dreams come true", de: "wo Träume wahr werden", cat: "radio_dora" },
+
+  // Set 24 - Jobs 1
+  { en: "job", de: "der Beruf", cat: "jobs" },
+  { en: "Beefeater", de: "der Wächter im Tower von London", cat: "jobs" },
+  { en: "butler", de: "der Diener, die Dienerin", cat: "jobs" },
+  { en: "police officer", de: "der Polizist, die Polizistin", cat: "jobs" },
+  { en: "bus driver", de: "der Busfahrer, die Busfahrerin", cat: "jobs" },
+  { en: "caretaker", de: "der Hausmeister, die Hausmeisterin", cat: "jobs" },
+  { en: "shop assistant", de: "der Verkäufer, die Verkäuferin", cat: "jobs" },
+  { en: "customer", de: "der Kunde, die Kundin", cat: "jobs" },
+
+  // Set 25 - Jobs 2
+  { en: "to guard", de: "bewachen", cat: "jobs" },
+  { en: "to serve", de: "servieren", cat: "jobs" },
+  { en: "look after", de: "sich kümmern um", cat: "jobs" },
+  { en: "welcome visitors", de: "Besucher begrüßen", cat: "jobs" },
+  { en: "repair", de: "reparieren", cat: "jobs" },
+  { en: "passenger", de: "der Fahrgast", cat: "jobs" },
+  { en: "traffic", de: "der Verkehr", cat: "jobs" },
+  { en: "in the countryside", de: "auf dem Land", cat: "jobs" },
+
+  // Set 26 - Jobs 3
+  { en: "tidy", de: "aufgeräumt", cat: "jobs" },
+  { en: "gate", de: "das Tor", cat: "jobs" },
+  { en: "cash", de: "das Bargeld", cat: "jobs" },
+  { en: "everything", de: "alles", cat: "jobs" },
+  { en: "sight", de: "die Sehenswürdigkeit", cat: "jobs" },
+  { en: "shelf (shelves)", de: "das Regal (die Regale)", cat: "jobs" },
+  { en: "stop crime", de: "Verbrechen verhindern", cat: "jobs" },
+  { en: "work in pairs", de: "zu zweit arbeiten", cat: "jobs" }
+];
+
+/* ==========================================================================
+   GRAMMAR DATA (Sets 9-10, 15, 16-18)
+   ========================================================================== */
+const COMPARISON_TRAPS = [
+  { base: "tall", comp: "taller", compTraps: ["more tall", "tallier"], sup: "the tallest", supTraps: ["the most tall", "the talliest"] },
+  { base: "long", comp: "longer", compTraps: ["more long", "longger"], sup: "the longest", supTraps: ["the most long", "the longgest"] },
+  { base: "cold", comp: "colder", compTraps: ["more cold", "coldier"], sup: "the coldest", supTraps: ["the most cold", "the coldiest"] },
+  { base: "cool", comp: "cooler", compTraps: ["more cool", "cooller"], sup: "the coolest", supTraps: ["the most cool", "the coolst"] },
+  { base: "small", comp: "smaller", compTraps: ["more small", "smaler"], sup: "the smallest", supTraps: ["the most small", "the smalest"] },
+  { base: "big", comp: "bigger", compTraps: ["biger", "more big"], sup: "the biggest", supTraps: ["the bigest", "the most big"] },
+  { base: "hot", comp: "hotter", compTraps: ["hoter", "more hot"], sup: "the hottest", supTraps: ["the hotest", "the most hot"] },
+  { base: "large", comp: "larger", compTraps: ["more large", "largeer"], sup: "the largest", supTraps: ["the most large", "the largeest"] },
+
+  { base: "happy", comp: "happier", compTraps: ["happyer", "more happy"], sup: "the happiest", supTraps: ["the happyest", "the most happy"] },
+  { base: "funny", comp: "funnier", compTraps: ["funnyer", "more funny"], sup: "the funniest", supTraps: ["the funnyest", "the most funny"] },
+  { base: "crazy", comp: "crazier", compTraps: ["crazyer", "more crazy"], sup: "the craziest", supTraps: ["the crazyest", "the most crazy"] },
+  { base: "dirty", comp: "dirtier", compTraps: ["dirtyer", "more dirty"], sup: "the dirtiest", supTraps: ["the dirtyest", "the most dirty"] },
+  { base: "easy", comp: "easier", compTraps: ["easyer", "more easy"], sup: "the easiest", supTraps: ["the easyest", "the most easy"] },
+  { base: "cheeky", comp: "cheekier", compTraps: ["cheekyer", "more cheeky"], sup: "the cheekiest", supTraps: ["the cheekyest", "the most cheeky"] },
+
+  { base: "good", comp: "better", compTraps: ["gooder", "more good"], sup: "the best", supTraps: ["the goodest", "the most good"] },
+  { base: "bad", comp: "worse", compTraps: ["badder", "worser"], sup: "the worst", supTraps: ["the baddest", "the most bad"] },
+
+  { base: "beautiful", comp: "more beautiful", compTraps: ["beautifuller", "most beautiful"], sup: "the most beautiful", supTraps: ["the beautifullest", "the more beautiful"] },
+  { base: "interesting", comp: "more interesting", compTraps: ["interestinger", "most interesting"], sup: "the most interesting", supTraps: ["the interestingest", "the more interesting"] },
+  { base: "dangerous", comp: "more dangerous", compTraps: ["dangerouser", "more danger"], sup: "the most dangerous", supTraps: ["the dangerousest", "the most danger"] },
+  { base: "exciting", comp: "more exciting", compTraps: ["excitinger", "most exciting"], sup: "the most exciting", supTraps: ["the excitingest", "the more exciting"] },
+  { base: "expensive", comp: "more expensive", compTraps: ["expensiver", "most expensive"], sup: "the most expensive", supTraps: ["the expensivest", "the more expensive"] },
+  { base: "colourful", comp: "more colourful", compTraps: ["colourfuller", "more colour"], sup: "the most colourful", supTraps: ["the colourfullest", "the more colourful"] },
+  { base: "comfortable", comp: "more comfortable", compTraps: ["comfortabler", "more comfort"], sup: "the most comfortable", supTraps: ["the comfortablest", "the most comfort"] },
+  { base: "attractive", comp: "more attractive", compTraps: ["attractiver", "most attractive"], sup: "the most attractive", supTraps: ["the attractivest", "the more attractive"] }
+];
+
+const ADVERB_DATA = [
+  { adj: "slow", adv: "slowly", traps: ["slow", "slowley"] },
+  { adj: "clear", adv: "clearly", traps: ["clear", "clearely"] },
+  { adj: "loud", adv: "loudly", traps: ["loud", "loudely"] },
+  { adj: "calm", adv: "calmly", traps: ["calm", "calmely"] },
+  { adj: "careful", adv: "carefully", traps: ["carefuly", "careful"] },
+  { adj: "easy", adv: "easily", traps: ["easyly", "easely"] },
+  { adj: "terrible", adv: "terribly", traps: ["terriblely", "terribli"] },
+  { adj: "happy", adv: "happily", traps: ["happyly", "happely"] },
+  { adj: "good", adv: "well", traps: ["goodly", "good"] },
+  { adj: "fast", adv: "fast", traps: ["fastly", "faster"] },
+  { adj: "hard", adv: "hard", traps: ["hardly", "harder"] },
+  { adj: "sad", adv: "sadly", traps: ["sad", "sadely"] },
+  { adj: "nervous", adv: "nervously", traps: ["nervous", "nervousely"] },
+  { adj: "quiet", adv: "quietly", traps: ["quiet", "quietely"] },
+  { adj: "excited", adv: "excitedly", traps: ["excited", "excitely"] }
+];
+
+const PRONOUN_DATA = [
+  { phrase: "my bag", target: "mine", de: "meine Tasche ➔ meine", traps: ["my", "mines"] },
+  { phrase: "your bag", target: "yours", de: "deine Tasche ➔ deine", traps: ["your", "your's"] },
+  { phrase: "his bag", target: "his", de: "seine Tasche ➔ seine", traps: ["hises", "him"] },
+  { phrase: "her bag", target: "hers", de: "ihre Tasche ➔ ihre", traps: ["her", "her's"] },
+  { phrase: "our bag", target: "ours", de: "unsere Tasche ➔ unsere", traps: ["our", "our's"] },
+  { phrase: "their bag", target: "theirs", de: "ihre Tasche ➔ ihre (Plural)", traps: ["their", "their's"] }
+];
+
+/* ==========================================================================
+   SENTENCE COMPLETION (built from Unit 2 vocabulary)
+   ========================================================================== */
+const COLLOCATIONS_DATA = [
+  { stem: "Steven is the director. His job is to", target: "direct the film", traps: ["do the washing-up", "call the police", "welcome visitors"] },
+  { stem: "Before they act a scene, the actors", target: "check the script", traps: ["stop crime", "do the washing-up", "fold their arms"] },
+  { stem: "When the scene ends, the actors", target: "exit the stage", traps: ["repair the bus", "direct the film", "give a presentation"] },
+  { stem: "Police officers work hard to", target: "stop crime", traps: ["act a role", "stream videos", "do handicrafts"] },
+  { stem: "A thief has got your jewellery! Quick,", target: "call the police", traps: ["listen to podcasts", "check the script", "read out loud"] },
+  { stem: "At the Tower of London, the Beefeaters", target: "welcome visitors", traps: ["exit the stage", "do the washing-up", "make short films"] },
+  { stem: "After dinner in the restaurant, somebody has to", target: "do the washing-up", traps: ["direct the film", "stop crime", "act a role"] },
+  { stem: "The door is broken. The caretaker has to", target: "repair it", traps: ["serve it", "perform it", "direct it"] },
+  { stem: "A shop assistant helps the", target: "customers", traps: ["passengers", "narrators", "props"] },
+  { stem: "During a presentation, don't worry if you", target: "make a mistake", traps: ["guard the gate", "call the police", "exit the stage"] },
+  { stem: "To say 'no' without words, you", target: "shake your head", traps: ["fold your arms", "stand up straight", "smile"] },
+  { stem: "When you agree with someone, you", target: "nod", traps: ["wink", "shrug", "clap"] },
+  { stem: "When you don't know the answer, you", target: "shrug", traps: ["turn around", "nod", "point"] },
+  { stem: "Your friend's new jacket looks great. You say:", target: "It suits you.", traps: ["The lights go down.", "Where dreams come true.", "Call the police."] },
+  { stem: "Before the performance, the actors have to", target: "practise", traps: ["clap", "exit the stage", "stop crime"] }
+];
+
+/* ==========================================================================
+   ENGINE
+   ========================================================================== */
+let currentMode = 'vocab';
+let stats = { correct: 0, total: 0, streak: 0 };
+let activeQueue = [];
+let retryQueue = [];
+let currentItem = null;
+let currentAnswer = '';
+let missedLog = [];
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function unique(arr) { return [...new Set(arr)]; }
+
+function speakUK(text) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const clean = String(text).replace(/\(.*?\)/g, '').replace(/➔.*/, '').trim();
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang = 'en-GB';
+  u.rate = 0.88;
+  window.speechSynthesis.speak(u);
+}
+
+function speakBtn(text) {
+  return `<button class="audio-btn" data-say="${esc(text)}" onclick="speakUK(this.dataset.say)" aria-label="Listen">🔊</button>`;
+}
+
+function refreshStats() {
+  document.getElementById('queueCount').innerText = activeQueue.length + retryQueue.length;
+  document.getElementById('streakVal').innerText = stats.streak;
+  const acc = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 100;
+  document.getElementById('accuracyVal').innerText = acc + '%';
+}
+
+function record(isCorrect) {
+  stats.total++;
+  if (isCorrect) { stats.correct++; stats.streak++; } else { stats.streak = 0; }
+  refreshStats();
+}
+
+function showResult(bannerId, ok, html) {
+  const banner = document.getElementById(bannerId);
+  banner.className = 'feedback-banner ' + (ok ? 'success' : 'error');
+  banner.innerHTML = `<span>${html}</span> <button class="action-btn" id="nextBtn" onclick="runNextCard()">Next ➔</button>`;
+  document.getElementById('nextBtn').focus();
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  const order = ['vocab', 'comparisons', 'grammar', 'collocations'];
+  document.querySelectorAll('.nav-tabs .tab-btn').forEach((b, idx) => {
+    b.classList.toggle('active', order[idx] === mode);
+  });
+  const vocabOnly = mode !== 'vocab';
+  ['setFilter', 'dirSelect', 'inputModeSelect'].forEach(id => {
+    document.getElementById(id).disabled = vocabOnly;
+  });
+  initSession();
+}
+
+function initSession(practiceOnlyMissed) {
+  practiceOnlyMissed = practiceOnlyMissed === true;
+  stats = { correct: 0, total: 0, streak: 0 };
+
+  if (practiceOnlyMissed) {
+    activeQueue = shuffle(missedLog.map(m => m.rawItem));
+  } else {
+    const scope = document.getElementById('setFilter').value;
+    if (currentMode === 'vocab') {
+      const pool = scope === 'ALL' ? FULL_DATABASE : FULL_DATABASE.filter(i => i.cat === scope);
+      activeQueue = shuffle(pool);
+    } else if (currentMode === 'comparisons') {
+      activeQueue = shuffle(COMPARISON_TRAPS);
+    } else if (currentMode === 'grammar') {
+      activeQueue = shuffle([...ADVERB_DATA, ...PRONOUN_DATA]);
+    } else {
+      activeQueue = shuffle(COLLOCATIONS_DATA);
+    }
+  }
+  retryQueue = [];
+  missedLog = [];
+  refreshStats();
+  runNextCard();
+}
+
+function runNextCard() {
+  if (activeQueue.length === 0) {
+    if (retryQueue.length > 0) {
+      activeQueue = shuffle(retryQueue);
+      retryQueue = [];
+    } else {
+      renderCompletionScreen();
+      return;
+    }
+  }
+  currentItem = activeQueue.shift();
+  refreshStats();
+
+  if (currentMode === 'vocab') renderVocabCard();
+  else if (currentMode === 'comparisons') renderComparisonCard();
+  else if (currentMode === 'grammar') renderGrammarCard();
+  else renderCollocationCard();
+}
+
+function logMistake(key, answer, raw) {
+  const existing = missedLog.find(m => m.key === key);
+  if (existing) existing.attempts++;
+  else missedLog.push({ key, answer, rawItem: raw, attempts: 1 });
+}
+
+/* ==========================================================================
+   MODE 1: CORE VOCABULARY
+   ========================================================================== */
+function normalize(s) {
+  return String(s).toLowerCase()
+    .replace(/\(.*?\)/g, '')
+    .replace(/[.!?]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function stripLead(s) {
+  return s.replace(/^to /, '').replace(/^(der|die|das) /, '');
+}
+
+// Accepts: either variant of "A, B", with or without the bracketed part,
+// with or without "to" before verbs and der/die/das before nouns, final punctuation optional.
+function isTypedCorrect(input, answer) {
+  const accepted = new Set();
+  const parts = [answer, ...answer.split(',')];
+  parts.forEach(p => {
+    const n = normalize(p);
+    if (!n) return;
+    accepted.add(n);
+    accepted.add(stripLead(n));
+  });
+  const u = normalize(input);
+  if (!u) return false;
+  return accepted.has(u) || accepted.has(stripLead(u));
+}
+
+function renderVocabCard() {
+  const dir = document.getElementById('dirSelect').value;
+  const inputMode = document.getElementById('inputModeSelect').value;
+  const promptText = dir === 'DE_EN' ? currentItem.de : currentItem.en;
+  currentAnswer = dir === 'DE_EN' ? currentItem.en : currentItem.de;
+  const ws = document.getElementById('appWorkspace');
+
+  let interactionHTML = '';
+  if (inputMode === 'type') {
+    interactionHTML = `
+      <div class="typing-box">
+        <input type="text" class="typing-input" id="typeInput" placeholder="Type answer..." autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="action-btn" id="submitBtn" onclick="checkVocabTyped()">Submit</button>
+      </div>`;
+  } else {
+    const sameCat = FULL_DATABASE.filter(x => x.en !== currentItem.en && x.cat === currentItem.cat);
+    const otherCat = FULL_DATABASE.filter(x => x.en !== currentItem.en && x.cat !== currentItem.cat);
+    const distractors = sameCat.length >= 3 ? shuffle(sameCat).slice(0, 3) : shuffle([...sameCat, ...otherCat]).slice(0, 3);
+    const options = shuffle(unique([currentItem, ...distractors].map(x => dir === 'DE_EN' ? x.en : x.de)));
+    interactionHTML = `
+      <div class="grid-options" id="vocabGrid">
+        ${options.map(opt => `<button class="opt-btn" data-val="${esc(opt)}" onclick="checkVocabChoice(this)">${esc(opt)}</button>`).join('')}
+      </div>`;
+  }
+
+  ws.innerHTML = `
+    <div>
+      <div class="prompt-box">
+        <div class="prompt-label">Translate (${dir === 'DE_EN' ? 'DE ➔ EN' : 'EN ➔ DE'})</div>
+        <div class="prompt-content">
+          ${esc(promptText)}
+          ${dir === 'EN_DE' ? speakBtn(currentItem.en) : ''}
+        </div>
+      </div>
+      ${interactionHTML}
+    </div>
+    <div class="feedback-banner" id="fbBanner">
+      <span>${inputMode === 'type' ? 'Type the translation and press Enter' : 'Choose the correct match'}</span>
+    </div>`;
+
+  if (inputMode === 'type') {
+    const inp = document.getElementById('typeInput');
+    inp.focus();
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!inp.disabled) checkVocabTyped();
+      }
+    });
+  }
+}
+
+function checkVocabChoice(btn) {
+  const isCorrect = btn.dataset.val === currentAnswer;
+  const grid = document.getElementById('vocabGrid');
+  grid.querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = true;
+    if (!isCorrect && b.dataset.val === currentAnswer) b.classList.add('correct');
+  });
+  btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+  handleVocabOutcome(isCorrect, '');
+}
+
+function checkVocabTyped() {
+  const inp = document.getElementById('typeInput');
+  if (!inp.value.trim()) { inp.focus(); return; }
+  const isCorrect = isTypedCorrect(inp.value, currentAnswer);
+  inp.disabled = true;
+  document.getElementById('submitBtn').disabled = true;
+  inp.classList.add(isCorrect ? 'correct' : 'incorrect');
+  handleVocabOutcome(isCorrect, inp.value.trim());
+}
+
+function handleVocabOutcome(isCorrect, typed) {
+  speakUK(currentItem.en);
+  if (isCorrect) {
+    const note = typed && normalize(typed) !== normalize(currentAnswer) ? ` Full form: <strong>${esc(currentAnswer)}</strong>` : '';
+    record(true);
+    showResult('fbBanner', true, 'Correct!' + note);
+  } else {
+    logMistake(currentItem.en, currentItem.de, currentItem);
+    retryQueue.push(currentItem);
+    record(false);
+    showResult('fbBanner', false, `Correct: <strong>${esc(currentAnswer)}</strong>`);
+  }
+}
+
+/* ==========================================================================
+   MODE 2: COMPARISON TRAPS
+   ========================================================================== */
+let compAnswerState = { comp: null, sup: null };
+
+function renderComparisonCard() {
+  compAnswerState = { comp: null, sup: null };
+  const compOptions = shuffle([currentItem.comp, ...currentItem.compTraps]);
+  const supOptions = shuffle([currentItem.sup, ...currentItem.supTraps]);
+  const pill = (type, opt) => `<button class="choice-pill" data-val="${esc(opt)}" onclick="selectCompForm('${type}', this)">${esc(opt)}</button>`;
+
+  document.getElementById('appWorkspace').innerHTML = `
+    <div>
+      <div class="prompt-box">
+        <div class="prompt-label">Adjective Comparison</div>
+        <div class="prompt-content">${esc(currentItem.base)} ${speakBtn(currentItem.base)}</div>
+      </div>
+      <div class="comp-builder">
+        <div class="comp-step">
+          <div class="comp-step-title">1. Comparative</div>
+          <div class="comp-choices" id="compChoices">${compOptions.map(o => pill('comp', o)).join('')}</div>
+        </div>
+        <div class="comp-step">
+          <div class="comp-step-title">2. Superlative</div>
+          <div class="comp-choices" id="supChoices">${supOptions.map(o => pill('sup', o)).join('')}</div>
+        </div>
+      </div>
+    </div>
+    <div class="feedback-banner" id="compBanner">
+      <span>Select both forms, then click Check</span>
+      <button class="action-btn" id="verifyCompBtn" onclick="verifyComparisons()" disabled>Check</button>
+    </div>`;
+}
+
+function selectCompForm(type, btn) {
+  compAnswerState[type] = btn.dataset.val;
+  const container = document.getElementById(type === 'comp' ? 'compChoices' : 'supChoices');
+  container.querySelectorAll('.choice-pill').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  if (compAnswerState.comp && compAnswerState.sup) {
+    const v = document.getElementById('verifyCompBtn');
+    v.disabled = false;
+    v.focus();
+  }
+}
+
+function markPills(containerId, correct, chosen) {
+  document.getElementById(containerId).querySelectorAll('.choice-pill').forEach(b => {
+    b.disabled = true;
+    b.classList.remove('selected');
+    if (b.dataset.val === correct) b.classList.add('right');
+    else if (b.dataset.val === chosen) b.classList.add('wrong');
+  });
+}
+
+function verifyComparisons() {
+  const okComp = compAnswerState.comp === currentItem.comp;
+  const okSup = compAnswerState.sup === currentItem.sup;
+  markPills('compChoices', currentItem.comp, compAnswerState.comp);
+  markPills('supChoices', currentItem.sup, compAnswerState.sup);
+  speakUK(`${currentItem.base}, ${currentItem.comp}, ${currentItem.sup}`);
+
+  if (okComp && okSup) {
+    record(true);
+    showResult('compBanner', true, 'Both correct!');
+  } else {
+    logMistake(currentItem.base, `${currentItem.comp} | ${currentItem.sup}`, currentItem);
+    retryQueue.push(currentItem);
+    record(false);
+    showResult('compBanner', false, `Correct: <strong>${esc(currentItem.comp)}</strong> / <strong>${esc(currentItem.sup)}</strong>`);
+  }
+}
+
+/* ==========================================================================
+   MODE 3: ADVERBS & MINE/YOURS
+   ========================================================================== */
+function renderGrammarCard() {
+  const isAdverb = !!currentItem.adj;
+  const label = isAdverb ? 'Adjective ➔ Adverb' : 'Possessive Pronoun';
+  const title = isAdverb ? currentItem.adj : currentItem.phrase;
+  const sub = isAdverb ? 'How does an action happen?' : currentItem.de;
+  currentAnswer = isAdverb ? currentItem.adv : currentItem.target;
+  const options = shuffle(unique([currentAnswer, ...currentItem.traps]));
+
+  document.getElementById('appWorkspace').innerHTML = `
+    <div>
+      <div class="prompt-box">
+        <div class="prompt-label">${label}</div>
+        <div class="prompt-content">${esc(title)} ${speakBtn(title)}</div>
+        <p style="color: var(--text-muted); font-size: 14px; margin-top: 6px;">${esc(sub)}</p>
+      </div>
+      <div class="grid-options" id="gramGrid">
+        ${options.map(opt => `<button class="opt-btn" data-val="${esc(opt)}" onclick="checkGrammarChoice(this)">${esc(opt)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="feedback-banner" id="gramBanner"><span>Choose the correct form</span></div>`;
+}
+
+function checkGrammarChoice(btn) {
+  const isCorrect = btn.dataset.val === currentAnswer;
+  document.getElementById('gramGrid').querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = true;
+    if (!isCorrect && b.dataset.val === currentAnswer) b.classList.add('correct');
+  });
+  btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+  speakUK(currentAnswer);
+
+  if (isCorrect) {
+    record(true);
+    showResult('gramBanner', true, 'Correct!');
+  } else {
+    logMistake(currentItem.adj || currentItem.phrase, currentAnswer, currentItem);
+    retryQueue.push(currentItem);
+    record(false);
+    showResult('gramBanner', false, `Correct: <strong>${esc(currentAnswer)}</strong>`);
+  }
+}
+
+/* ==========================================================================
+   MODE 4: SENTENCE COMPLETION
+   ========================================================================== */
+function renderCollocationCard() {
+  currentAnswer = currentItem.target;
+  const options = shuffle([currentItem.target, ...currentItem.traps]);
+
+  document.getElementById('appWorkspace').innerHTML = `
+    <div>
+      <div class="prompt-box">
+        <div class="prompt-label">Complete the Sentence</div>
+        <div class="prompt-content">${esc(currentItem.stem)} ...</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; max-width: 600px; margin: 0 auto 20px;" id="collocGrid">
+        ${options.map(opt => `<button class="opt-btn" data-val="${esc(opt)}" onclick="checkCollocChoice(this)">... ${esc(opt)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="feedback-banner" id="collocBanner"><span>Choose the best ending</span></div>`;
+}
+
+function checkCollocChoice(btn) {
+  const isCorrect = btn.dataset.val === currentAnswer;
+  document.getElementById('collocGrid').querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = true;
+    if (!isCorrect && b.dataset.val === currentAnswer) b.classList.add('correct');
+  });
+  btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+  speakUK(currentItem.stem + ' ' + currentAnswer);
+
+  if (isCorrect) {
+    record(true);
+    showResult('collocBanner', true, 'Correct!');
+  } else {
+    logMistake(currentItem.stem, currentAnswer, currentItem);
+    retryQueue.push(currentItem);
+    record(false);
+    showResult('collocBanner', false, `Answer: <strong>${esc(currentAnswer)}</strong>`);
+  }
+}
+
+/* ==========================================================================
+   COMPLETION SCREEN
+   ========================================================================== */
+function renderCompletionScreen() {
+  const ws = document.getElementById('appWorkspace');
+  let reportHTML = '';
+  if (missedLog.length === 0) {
+    reportHTML = `<p style="color: var(--success); font-weight: 600; margin: 16px 0;">No mistakes in this session!</p>`;
+  } else {
+    reportHTML = `
+      <div style="margin: 18px 0; text-align: left;">
+        <h3 style="font-size: 15px; margin-bottom: 8px; color: var(--warning);">Words to review:</h3>
+        <div class="report-wrap">
+          <table class="report-table">
+            <thead><tr><th>Prompt</th><th>Answer</th><th>Mistakes</th></tr></thead>
+            <tbody>
+              ${missedLog.map(m => `
+                <tr>
+                  <td style="font-weight: 600;">${esc(m.key)}</td>
+                  <td style="color: var(--accent);">${esc(m.answer)}</td>
+                  <td style="color: var(--danger); font-weight: 700;">${m.attempts}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  ws.innerHTML = `
+    <div style="text-align: center; margin: auto; max-width: 640px; width: 100%;">
+      <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">Session Finished</h2>
+      <p style="color: var(--text-muted); font-size: 14px;">Accuracy: <strong>${document.getElementById('accuracyVal').innerText}</strong></p>
+      ${reportHTML}
+      <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+        <button class="action-btn" id="restartBtn" onclick="initSession(false)">Restart Full Session</button>
+        ${missedLog.length > 0 ? `<button class="action-btn" style="background: var(--warning);" onclick="initSession(true)">Practise Only ${missedLog.length} Missed Items</button>` : ''}
+      </div>
+    </div>`;
+  document.getElementById('restartBtn').focus();
+}
+
+initSession();
+</script>
+</body>
+</html>
