@@ -212,6 +212,17 @@
 </div>
 
 <script>
+/* Google Apps Script Web app URL (see ../SETUP.md). Empty = results are not sent. */
+const SHEET_URL = '';
+
+/* Student name comes from the link: index.html?s=Name */
+const STUDENT = (function () {
+  try {
+    const n = (new URLSearchParams(location.search).get('s') || '').trim().slice(0, 60);
+    return n || 'student';
+  } catch (e) { return 'student'; }
+})();
+
 /* ==========================================================================
    UNIT 2 VOCABULARY (Sets 1-8, 11-14, 19-26)
    ========================================================================== */
@@ -573,6 +584,7 @@ function switchMode(mode) {
 
 function initSession(practiceOnlyMissed) {
   practiceOnlyMissed = practiceOnlyMissed === true;
+  trackSessionStart(practiceOnlyMissed);
   stats = { correct: 0, total: 0, streak: 0 };
 
   if (practiceOnlyMissed) {
@@ -620,6 +632,95 @@ function logMistake(key, answer, raw) {
   if (existing) existing.attempts++;
   else missedLog.push({ key, answer, rawItem: raw, attempts: 1 });
 }
+
+/* ==========================================================================
+   RESULT TRACKING (silent; never affects the trainer if sending fails)
+   ========================================================================== */
+const TAB_NAMES = {
+  vocab: '1. Core Vocab',
+  comparisons: '2. Comparison Traps',
+  grammar: '3. Adverbs & Mine/Yours',
+  collocations: '4. Collocations'
+};
+let session = null;
+
+function selectedText(id) {
+  const el = document.getElementById(id);
+  return el && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : '';
+}
+
+function sendResult(data, useBeacon) {
+  try {
+    if (!SHEET_URL) return;
+    const body = JSON.stringify(data);
+    if (useBeacon && navigator.sendBeacon) {
+      navigator.sendBeacon(SHEET_URL, new Blob([body], { type: 'text/plain;charset=UTF-8' }));
+      return;
+    }
+    fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: body,
+      keepalive: true
+    }).catch(function () {});
+  } catch (e) { /* tracking must never break the trainer */ }
+}
+
+function trackSessionStart(practiceOnlyMissed) {
+  try {
+    trackSessionEnd('interrupted', false);
+    const vocab = currentMode === 'vocab';
+    session = {
+      start: Date.now(),
+      tab: TAB_NAMES[currentMode] || currentMode,
+      scope: vocab ? selectedText('setFilter') + (practiceOnlyMissed ? ' [missed only]' : '') : '-',
+      direction: vocab ? selectedText('dirSelect') : '-',
+      input: vocab ? selectedText('inputModeSelect') : '-',
+      sent: false
+    };
+  } catch (e) { session = null; }
+}
+
+function trackAnswer(question, given, correct, ok) {
+  try {
+    if (!session) return;
+    sendResult({
+      kind: 'answer',
+      ts: new Date().toISOString(),
+      student: STUDENT,
+      tab: session.tab,
+      settings: [session.scope, session.direction, session.input].join(' | '),
+      question: String(question),
+      given: String(given),
+      correct: String(correct),
+      ok: !!ok
+    }, false);
+  } catch (e) {}
+}
+
+function trackSessionEnd(status, useBeacon) {
+  try {
+    if (!session || session.sent || stats.total === 0) return;
+    session.sent = true;
+    sendResult({
+      kind: 'session',
+      ts: new Date(session.start).toISOString(),
+      student: STUDENT,
+      tab: session.tab,
+      scope: session.scope,
+      direction: session.direction,
+      input: session.input,
+      duration: Math.round((Date.now() - session.start) / 1000),
+      cards: stats.total,
+      accuracy: Math.round((stats.correct / stats.total) * 100),
+      mistakes: missedLog.map(m => ({ q: m.key, a: m.answer, n: m.attempts })),
+      status: status
+    }, useBeacon);
+  } catch (e) {}
+}
+
+window.addEventListener('pagehide', function () { trackSessionEnd('interrupted', true); });
 
 /* ==========================================================================
    MODE 1: CORE VOCABULARY
@@ -713,7 +814,7 @@ function checkVocabChoice(btn) {
     if (!isCorrect && b.dataset.val === currentAnswer) b.classList.add('correct');
   });
   btn.classList.add(isCorrect ? 'correct' : 'incorrect');
-  handleVocabOutcome(isCorrect, '');
+  handleVocabOutcome(isCorrect, '', btn.dataset.val);
 }
 
 function checkVocabTyped() {
@@ -723,11 +824,12 @@ function checkVocabTyped() {
   inp.disabled = true;
   document.getElementById('submitBtn').disabled = true;
   inp.classList.add(isCorrect ? 'correct' : 'incorrect');
-  handleVocabOutcome(isCorrect, inp.value.trim());
+  handleVocabOutcome(isCorrect, inp.value.trim(), inp.value.trim());
 }
 
-function handleVocabOutcome(isCorrect, typed) {
+function handleVocabOutcome(isCorrect, typed, given) {
   speakUK(currentItem.en);
+  trackAnswer(document.getElementById('dirSelect').value === 'DE_EN' ? currentItem.de : currentItem.en, given, currentAnswer, isCorrect);
   if (isCorrect) {
     const note = typed && normalize(typed) !== normalize(currentAnswer) ? ` Full form: <strong>${esc(currentAnswer)}</strong>` : '';
     record(true);
@@ -801,6 +903,7 @@ function verifyComparisons() {
   markPills('compChoices', currentItem.comp, compAnswerState.comp);
   markPills('supChoices', currentItem.sup, compAnswerState.sup);
   speakUK(`${currentItem.base}, ${currentItem.comp}, ${currentItem.sup}`);
+  trackAnswer(currentItem.base, `${compAnswerState.comp} / ${compAnswerState.sup}`, `${currentItem.comp} / ${currentItem.sup}`, okComp && okSup);
 
   if (okComp && okSup) {
     record(true);
@@ -846,6 +949,7 @@ function checkGrammarChoice(btn) {
   });
   btn.classList.add(isCorrect ? 'correct' : 'incorrect');
   speakUK(currentAnswer);
+  trackAnswer(currentItem.adj || currentItem.phrase, btn.dataset.val, currentAnswer, isCorrect);
 
   if (isCorrect) {
     record(true);
@@ -886,6 +990,7 @@ function checkCollocChoice(btn) {
   });
   btn.classList.add(isCorrect ? 'correct' : 'incorrect');
   speakUK(currentItem.stem + ' ' + currentAnswer);
+  trackAnswer(currentItem.stem, btn.dataset.val, currentAnswer, isCorrect);
 
   if (isCorrect) {
     record(true);
@@ -902,6 +1007,7 @@ function checkCollocChoice(btn) {
    COMPLETION SCREEN
    ========================================================================== */
 function renderCompletionScreen() {
+  trackSessionEnd('completed', false);
   const ws = document.getElementById('appWorkspace');
   let reportHTML = '';
   if (missedLog.length === 0) {
