@@ -3,31 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1a2c54">
+<meta name="theme-color" content="#120f0b">
 <meta name="description" content="Перші шахи для дітей 4–7 років: маленька дошка 5×5, сім рівнів від пішаків до справжньої партії.">
 <title>Міні-шахи</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231a2c54'/%3E%3Ccircle cx='32' cy='22' r='9' fill='%23fff'/%3E%3Cpath d='M24 34h16l4 14H20z' fill='%23fff'/%3E%3Crect x='16' y='46' width='32' height='8' rx='3' fill='%23d6401a'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23120f0b'/%3E%3Ccircle cx='32' cy='22' r='9' fill='%23f0cf8f'/%3E%3Cpath d='M24 34h16l4 14H20z' fill='%23f0cf8f'/%3E%3Crect x='16' y='46' width='32' height='8' rx='3' fill='%23d8a94c'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --navy: #1a2c54;
-  --navy-dark: #0f1b36;
-  --accent: #d6401a;
-  --accent-dark: #b23312;
-  --blue-light: #e8f2fc;
-  --blue-mid: #cfe5f8;
-  --sq-light: #f4f9ff;
-  --sq-dark: #8fbbe8;
-  --gold: #ffc21a;
-  --text: #1a2c54;
-  --muted: #4f628a;
+:root{
+  --bg: #120f0b;
+  --bg-glow: #1c1712;
+  --panel: #1c1712;
+  --panel-2: #241d15;
+  --hairline: #3a3025;
+  --board-light: #ead9ba;
+  --board-dark: #86644a;
+  --board-dark-hi: #977252;
+  --frame: #0c0a08;
+  --text: #f1e9d8;
+  --text-dim: #b7a98e;
+  --text-faint: #7d7361;
+  --gold: #d8a94c;
+  --gold-soft: #f0cf8f;
+  --green: #2ecc71;
+  --green-soft: #a8e0bb;
+  --blocked-a: #443c30;
+  --blocked-b: #37312a;
+  --danger: #c96a4d;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-deep: 0 24px 60px -24px rgba(0,0,0,.75);
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; background: var(--bg); }
 body {
   margin: 0;
-  background: var(--blue-light);
+  background: radial-gradient(120% 90% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   line-height: 1.4;
   min-height: 100vh;
   overflow-x: hidden;
@@ -40,48 +55,55 @@ svg { display: block; }
 
 /* ---------- Верхня панель ---------- */
 .topbar {
-  background: var(--navy);
-  color: #fff;
+  background: var(--panel);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
   padding-top: max(8px, env(safe-area-inset-top));
 }
-.topbar h1 { flex: 1; margin: 0; font-size: 20px; letter-spacing: 0.02em; }
+.topbar h1 {
+  flex: 1; margin: 0;
+  font-family: 'Fraunces', Georgia, serif; font-weight: 600;
+  font-size: 22px; color: var(--gold-soft);
+}
 .icon-btn {
   width: 48px; height: 48px;
-  border: 0; border-radius: 14px;
-  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+  background: var(--panel-2);
+  color: var(--text);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   flex: none;
 }
 .icon-btn svg { width: 28px; height: 28px; }
-.icon-btn:hover, .icon-btn:focus-visible { background: rgba(255, 255, 255, 0.24); }
-.icon-btn.on-light { background: #fff; border: 2px solid var(--blue-mid); }
-:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.icon-btn:hover, .icon-btn:focus-visible { border-color: var(--gold); }
+.icon-btn.gold { color: var(--gold); }
+:focus-visible { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
 
 .wrap { max-width: 520px; margin: 0 auto; padding: 16px 16px 40px; }
-h2 { font-size: 24px; margin: 4px 0 12px; line-height: 1.2; }
+h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 26px; margin: 4px 0 12px; line-height: 1.2; color: var(--gold-soft); }
 p { margin: 0 0 12px; }
-.lead { color: var(--muted); font-size: 16px; }
+.lead { color: var(--text-dim); font-size: 16px; }
 
 .btn {
   display: flex; align-items: center; justify-content: center; gap: 10px;
   width: 100%;
   min-height: 60px;
   padding: 12px 18px;
-  border: 0; border-radius: 18px;
+  border: 1px solid var(--hairline); border-radius: var(--radius-lg);
+  font-family: 'Manrope', sans-serif;
   font-size: 20px; font-weight: 800;
   cursor: pointer;
   text-decoration: none;
 }
 .btn svg { width: 30px; height: 30px; flex: none; }
-.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 0 var(--accent-dark); }
-.btn-primary:hover, .btn-primary:focus-visible { background: var(--accent-dark); }
-.btn-secondary { background: #fff; color: var(--navy); border: 3px solid var(--navy); }
-.btn-secondary:hover, .btn-secondary:focus-visible { background: var(--blue-mid); }
+.btn-primary { background: linear-gradient(160deg, var(--gold), #a9782c); color: #241a08; border-color: transparent; }
+.btn-primary:hover, .btn-primary:focus-visible { background: var(--gold); }
+.btn-secondary { background: var(--panel-2); color: var(--text); }
+.btn-secondary:hover, .btn-secondary:focus-visible { border-color: var(--gold); }
 .btn + .btn { margin-top: 12px; }
 .btn:active { transform: translateY(2px); }
 
@@ -89,9 +111,8 @@ p { margin: 0 0 12px; }
 .levels { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 8px 0 20px; }
 .tile {
   position: relative;
-  border: 0; border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 4px 0 var(--blue-mid);
+  border: 1px solid var(--hairline); border-radius: var(--radius-lg);
+  background: var(--panel);
   padding: 10px 8px 8px;
   cursor: pointer;
   display: flex; flex-direction: column; align-items: center;
@@ -101,8 +122,8 @@ p { margin: 0 0 12px; }
 .tile .num {
   position: absolute; left: 10px; top: 8px;
   width: 34px; height: 34px; border-radius: 50%;
-  background: var(--navy); color: #fff;
-  font-weight: 800; font-size: 18px;
+  background: var(--panel-2); border: 1px solid var(--hairline); color: var(--gold-soft);
+  font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px;
   display: flex; align-items: center; justify-content: center;
 }
 .tile .pic { width: 84px; height: 84px; display: flex; justify-content: center; }
@@ -111,82 +132,83 @@ p { margin: 0 0 12px; }
 .tile .name { font-weight: 800; font-size: 17px; }
 .tile .stars { display: flex; gap: 2px; margin-top: 2px; }
 .tile .stars svg { width: 24px; height: 24px; }
-.tile.locked { background: #dfe8f3; box-shadow: none; }
+.tile.locked { background: repeating-linear-gradient(135deg, var(--blocked-a) 0 7px, var(--blocked-b) 7px 14px); color: var(--text-dim); }
 .tile.locked .pic, .tile.locked .name, .tile.locked .stars { opacity: 0.35; }
-.tile .lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.tile .lock { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; }
 .tile .lock svg { width: 54px; height: 54px; }
-.tile.next { box-shadow: 0 0 0 4px var(--gold), 0 4px 0 var(--blue-mid); animation: pulse 1.6s ease-in-out infinite; }
+.tile.next { border-color: var(--gold-soft); box-shadow: 0 0 0 3px rgba(216,169,76,.35); animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { transform: scale(1.03); } }
 .shake { animation: shake 0.4s; }
 @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
 
 /* ---------- Зірочки ---------- */
-.star-on { fill: var(--gold); stroke: #b7860b; }
-.star-off { fill: #e2e8f0; stroke: #b9c4d4; }
+.star-on { fill: var(--gold); stroke: #a9782c; }
+.star-off { fill: var(--panel-2); stroke: var(--hairline); }
 
 /* ---------- Підказка рівня ---------- */
-.card { background: #fff; border-radius: 22px; padding: 16px; box-shadow: 0 4px 0 var(--blue-mid); margin-bottom: 16px; }
+.card { background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
 .hint-board { width: min(100%, 250px); margin: 0 auto 12px; }
 .hint-text { display: flex; gap: 10px; align-items: center; font-size: 20px; font-weight: 700; margin: 0; }
 .hint-text span { flex: 1; }
-.goal { display: flex; gap: 8px; align-items: center; margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: var(--blue-light); font-weight: 700; }
+.goal { display: flex; gap: 8px; align-items: center; margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-md); background: var(--panel-2); color: var(--gold-soft); font-weight: 700; }
 .goal svg { width: 28px; height: 28px; flex: none; }
 
 .toggle { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 .toggle button {
-  border: 3px solid var(--blue-mid); background: #fff; border-radius: 16px;
+  border: 1px solid var(--hairline); background: var(--panel-2); border-radius: var(--radius-md);
   padding: 12px 14px; text-align: left; font-weight: 700; font-size: 17px; cursor: pointer;
   display: flex; gap: 10px; align-items: center;
 }
-.toggle button .radio { width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--navy); flex: none; }
-.toggle button[aria-checked="true"] { border-color: var(--accent); background: #fff4f0; }
-.toggle button[aria-checked="true"] .radio { background: var(--accent); box-shadow: inset 0 0 0 4px #fff; border-color: var(--accent); }
+.toggle button .radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--text-dim); flex: none; }
+.toggle button[aria-checked="true"] { border-color: var(--gold); }
+.toggle button[aria-checked="true"] .radio { background: var(--gold); box-shadow: inset 0 0 0 4px var(--panel-2); border-color: var(--gold); }
 
 .opponents { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .opp {
-  border: 0; border-radius: 22px; background: #fff; cursor: pointer;
-  padding: 12px 8px; box-shadow: 0 4px 0 var(--blue-mid);
+  border: 1px solid var(--hairline); border-radius: var(--radius-lg); background: var(--panel); cursor: pointer;
+  padding: 12px 8px;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   font-size: 19px; font-weight: 800;
 }
 .opp svg { width: 96px; height: 96px; }
-.opp small { font-weight: 600; font-size: 14px; color: var(--muted); }
-.opp:hover, .opp:focus-visible { box-shadow: 0 0 0 4px var(--accent), 0 4px 0 var(--blue-mid); }
+.opp small { font-weight: 600; font-size: 14px; color: var(--text-dim); }
+.opp:hover, .opp:focus-visible { border-color: var(--gold); }
 
 /* ---------- Дошка ---------- */
 .board {
   position: relative;
   width: 100%;
-  padding-top: 100%;
-  border-radius: 14px;
+  height: 0;
+  padding-bottom: 100%;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  box-shadow: 0 0 0 6px var(--navy), 0 10px 24px rgba(26, 44, 84, 0.25);
+  box-shadow: 0 0 0 6px var(--frame), 0 10px 30px -12px rgba(0,0,0,.7);
 }
 .board .sq {
   position: absolute; width: 20%; height: 20%;
   border: 0; padding: 0; margin: 0;
-  background: var(--sq-light);
+  background: var(--board-light);
   cursor: pointer;
 }
-.board .sq.dark { background: var(--sq-dark); }
-.board .sq.last { box-shadow: inset 0 0 0 4px rgba(255, 194, 26, 0.95); }
-.board .sq.sel { background-image: linear-gradient(rgba(255, 194, 26, 0.75), rgba(255, 194, 26, 0.75)); }
-.board .sq.check { background-image: radial-gradient(circle, rgba(214, 64, 26, 0.95) 0, rgba(214, 64, 26, 0.55) 45%, rgba(214, 64, 26, 0) 72%); }
-.board .sq .dot { position: absolute; inset: 0; display: none; z-index: 3; pointer-events: none; }
+.board .sq.dark { background: var(--board-dark); }
+.board .sq.last { box-shadow: inset 0 0 0 4px var(--gold); }
+.board .sq.sel { background-image: linear-gradient(rgba(216,169,76,.7), rgba(216,169,76,.7)); }
+.board .sq.check { background-image: radial-gradient(circle, rgba(201,106,77,.95) 0, rgba(201,106,77,.55) 45%, rgba(201,106,77,0) 72%); }
+.board .sq .dot { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: none; z-index: 3; pointer-events: none; }
 .board .sq .dot::after {
   content: ""; position: absolute; left: 50%; top: 50%;
   width: 34%; height: 34%; margin: -17% 0 0 -17%;
-  border-radius: 50%; background: var(--accent); opacity: 0.85;
-  box-shadow: 0 0 0 3px #fff;
+  border-radius: 50%; background: var(--green); opacity: 0.9;
+  box-shadow: 0 0 0 3px var(--frame);
 }
 .board .sq.mv .dot, .board .sq.cap .dot { display: block; }
 .board .sq.cap .dot::after {
   width: 86%; height: 86%; margin: -43% 0 0 -43%;
-  background: transparent; border: 6px solid var(--accent); box-shadow: none; opacity: 0.9;
+  background: transparent; border: 6px solid var(--green); box-shadow: none; opacity: 0.9;
 }
-.board .sq.foe .dot::after { background: var(--navy); opacity: 0.4; box-shadow: none; }
-.board .sq.foe.cap .dot::after { background: transparent; border-color: var(--navy); opacity: 0.45; }
-.board .pieces { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.board .sq.foe .dot::after { background: var(--frame); opacity: 0.35; box-shadow: none; }
+.board .sq.foe.cap .dot::after { background: transparent; border-color: var(--frame); opacity: 0.4; }
+.board .pieces { position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; z-index: 2; }
 .board .pc-wrap {
   position: absolute; left: 0; top: 0; width: 20%; height: 20%;
   transition: transform 0.3s ease-in-out;
@@ -194,7 +216,7 @@ p { margin: 0 0 12px; }
 }
 .board .pieces.no-anim .pc-wrap { transition: none; }
 .pc-wrap .pc-in { width: 100%; height: 100%; padding: 5%; transition: transform 0.2s; }
-.pc-wrap .pc-in svg { width: 100%; height: 100%; filter: drop-shadow(0 3px 0 rgba(15, 27, 54, 0.25)); }
+.pc-wrap .pc-in svg { width: 100%; height: 100%; filter: drop-shadow(0 3px 0 rgba(0,0,0,.3)); }
 .pc-wrap.sel .pc-in { transform: scale(1.1); }
 .pc-wrap.appear .pc-in { animation: appear 0.3s ease-out; }
 .pc-wrap.captured { transition: opacity 0.3s, transform 0.3s; opacity: 0; }
@@ -207,8 +229,8 @@ p { margin: 0 0 12px; }
 @keyframes jump { 50% { transform: scale(1.35) translateY(-10%); } }
 @keyframes glow {
   0% { transform: scale(1); filter: none; }
-  35% { transform: scale(1.45) translateY(-12%); filter: drop-shadow(0 0 10px #ffc21a) drop-shadow(0 0 18px #fff3b0); }
-  70% { transform: scale(1.3) rotate(-8deg); filter: drop-shadow(0 0 14px #ffc21a); }
+  35% { transform: scale(1.45) translateY(-12%); filter: drop-shadow(0 0 10px #d8a94c) drop-shadow(0 0 18px #f0cf8f); }
+  70% { transform: scale(1.3) rotate(-8deg); filter: drop-shadow(0 0 14px #d8a94c); }
   100% { transform: scale(1); filter: none; }
 }
 @keyframes morph { 0% { transform: scale(1) rotateY(0); } 50% { transform: scale(1.3) rotateY(90deg); } 100% { transform: scale(1) rotateY(0); } }
@@ -217,36 +239,36 @@ p { margin: 0 0 12px; }
 .pc .o { stroke-width: 7; stroke-linejoin: round; }
 .pc .d { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
 .pc .e { stroke: none; }
-.pc-w .o { fill: #1a2c54; stroke: #1a2c54; }
+.pc-w .o { fill: var(--frame); stroke: var(--frame); }
 .pc-w .f { fill: url(#grad-w); }
-.pc-w .d { stroke: #1a2c54; }
-.pc-w .e { fill: #1a2c54; }
-.pc-b .o { fill: #0b1430; stroke: #0b1430; }
+.pc-w .d { stroke: var(--frame); }
+.pc-w .e { fill: var(--frame); }
+.pc-b .o { fill: var(--frame); stroke: var(--frame); }
 .pc-b .f { fill: url(#grad-b); }
-.pc-b .d { stroke: #cfe5f8; }
-.pc-b .e { fill: #cfe5f8; }
+.pc-b .d { stroke: var(--gold-soft); }
+.pc-b .e { fill: var(--gold-soft); }
 
 /* ---------- Екран гри ---------- */
 .status {
   display: flex; align-items: center; gap: 10px;
-  background: #fff; border-radius: 18px; padding: 6px 12px 6px 6px; margin-bottom: 10px;
+  background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--radius-lg);
+  padding: 6px 12px 6px 6px; margin-bottom: 10px;
   min-height: 60px; font-size: 18px; font-weight: 800;
-  box-shadow: 0 3px 0 var(--blue-mid);
 }
 .status .ava { width: 48px; height: 48px; flex: none; }
 .status .ava svg { width: 48px; height: 48px; }
 .status .txt { flex: 1; }
-.status.my-turn { box-shadow: 0 0 0 3px var(--accent), 0 3px 0 var(--blue-mid); }
+.status.my-turn { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,169,76,.18); color: var(--gold-soft); }
 .status .thinking { display: inline-flex; gap: 4px; margin-left: 6px; }
-.status .thinking i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); animation: blink 1s infinite; }
+.status .thinking i { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); animation: blink 1s infinite; }
 .status .thinking i:nth-child(2) { animation-delay: 0.2s; }
 .status .thinking i:nth-child(3) { animation-delay: 0.4s; }
 @keyframes blink { 50% { opacity: 0.2; } }
-.goal-line { font-size: 14px; color: var(--muted); font-weight: 700; margin: 0 0 8px; text-align: center; }
+.goal-line { font-size: 14px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; text-align: center; }
 .tray {
   display: flex; align-items: center; gap: 2px; flex-wrap: wrap;
   min-height: 40px; padding: 4px 8px; margin: 8px 0;
-  font-size: 14px; font-weight: 700; color: var(--muted);
+  font-size: 14px; font-weight: 700; color: var(--text-dim);
 }
 .tray .lbl { margin-right: 6px; }
 .tray svg { width: 32px; height: 32px; }
@@ -254,31 +276,47 @@ p { margin: 0 0 12px; }
 .tray .esc svg { opacity: 0.55; }
 .board-box { padding: 6px; }
 .room {
-  background: var(--navy); color: #fff; border-radius: 16px; padding: 10px 14px; margin-bottom: 10px;
+  background: var(--panel-2); border: 1px solid var(--hairline); border-radius: var(--radius-md);
+  padding: 10px 14px; margin-bottom: 10px;
   display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700;
 }
-.room b { font-size: 28px; letter-spacing: 0.15em; }
-.room .net { font-size: 14px; font-weight: 600; opacity: 0.9; text-align: right; }
+.room b { font-family: 'JetBrains Mono', monospace; font-size: 22px; letter-spacing: 0.1em; color: var(--gold-soft); }
+.room .net { font-size: 14px; font-weight: 600; color: var(--text-dim); text-align: right; }
+.link-box { background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius-md); padding: 12px; margin-bottom: 10px; }
+.link-box p { margin: 0 0 8px; font-weight: 700; }
+.link-row { display: flex; gap: 8px; }
+.link-row input {
+  flex: 1; min-width: 0; min-height: 48px;
+  border: 1px solid var(--hairline); border-radius: var(--radius-sm);
+  background: var(--frame); color: var(--text); padding: 0 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: 14px;
+  -webkit-user-select: text; user-select: text;
+}
+.link-row .btn { width: auto; min-height: 48px; font-size: 16px; padding: 8px 14px; flex: none; }
+.link-done { color: var(--green-soft); font-size: 14px; font-weight: 700; margin: 8px 0 0; }
+.link-done:empty { display: none; }
 .game-actions { display: flex; gap: 12px; margin-top: 16px; }
 .game-actions .btn { margin: 0; }
 
 /* ---------- Накладки ---------- */
 .overlay {
-  position: fixed; inset: 0; z-index: 20;
-  background: rgba(15, 27, 54, 0.6);
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 20;
+  background: rgba(10,8,5,.72);
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
 }
 .dialog {
-  background: #fff; border-radius: 26px; padding: 22px 18px 18px;
+  background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius-lg);
+  padding: 22px 18px 18px;
   width: 100%; max-width: 400px; text-align: center;
+  box-shadow: 0 30px 70px -20px rgba(0,0,0,.8);
   animation: pop 0.35s ease-out;
   max-height: 100%; overflow-y: auto;
 }
 @keyframes pop { from { transform: scale(0.6); opacity: 0; } }
 .dialog h2 { font-size: 30px; margin: 6px 0; }
 .dialog .big svg { width: 110px; height: 110px; margin: 0 auto; }
-.dialog .reason { color: var(--muted); font-size: 17px; font-weight: 600; }
+.dialog .reason { color: var(--text-dim); font-size: 17px; font-weight: 600; }
 .result-stars { display: flex; justify-content: center; gap: 8px; margin: 8px 0 16px; }
 .result-stars svg { width: 58px; height: 58px; }
 .result-stars .star-on { animation: starpop 0.5s ease-out both; }
@@ -288,27 +326,28 @@ p { margin: 0 0 12px; }
 .result-stars path { transform-origin: 12px 12px; }
 
 .pin-dots { display: flex; justify-content: center; gap: 14px; margin: 12px 0 16px; }
-.pin-dots i { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--navy); }
-.pin-dots i.on { background: var(--navy); }
+.pin-dots i { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--gold-soft); }
+.pin-dots i.on { background: var(--gold-soft); }
 .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto; }
 .keypad button {
-  min-height: 62px; border: 0; border-radius: 16px; background: #fff;
-  font-size: 28px; font-weight: 800; cursor: pointer; box-shadow: 0 3px 0 var(--blue-mid);
+  min-height: 62px; border: 1px solid var(--hairline); border-radius: var(--radius-md); background: var(--panel-2);
+  font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; cursor: pointer;
 }
 .keypad button:active { transform: translateY(2px); }
 .keypad svg { width: 30px; height: 30px; margin: 0 auto; }
-.code-input { font-size: 40px; font-weight: 800; letter-spacing: 0.3em; text-align: center; min-height: 56px; margin: 4px 0 12px; }
-.msg { padding: 12px 14px; border-radius: 14px; background: #fff4f0; border: 2px solid var(--accent); font-weight: 600; margin: 12px 0; }
+.code-input { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 700; letter-spacing: 0.2em; text-align: center; min-height: 56px; margin: 4px 0 12px; color: var(--gold-soft); }
+.msg { padding: 12px 14px; border-radius: var(--radius-md); background: var(--panel-2); border: 1px solid var(--danger); font-weight: 600; margin: 12px 0; }
 
 .teacher-levels { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 12px; }
 .teacher-levels button {
-  border: 3px solid var(--blue-mid); background: #fff; border-radius: 12px; min-height: 48px;
-  font-weight: 800; font-size: 18px; cursor: pointer; padding: 0;
+  border: 1px solid var(--hairline); background: var(--panel-2); border-radius: var(--radius-sm); min-height: 48px;
+  font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; cursor: pointer; padding: 0;
 }
-.teacher-levels button[aria-checked="true"] { border-color: var(--accent); background: var(--accent); color: #fff; }
+.teacher-levels button[aria-checked="true"] { border-color: transparent; background: linear-gradient(160deg, var(--gold), #a9782c); color: #241a08; }
 .section-title { font-size: 18px; font-weight: 800; margin: 20px 0 8px; }
+.sub-title { font-size: 15px; font-weight: 700; color: var(--text-dim); margin: 4px 0 8px; }
 
-#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
+#confetti { position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
 
 @media (prefers-reduced-motion: reduce) {
   .tile.next { animation: none; }
@@ -322,12 +361,12 @@ p { margin: 0 0 12px; }
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
     <linearGradient id="grad-w" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#ffe08a"/>
+      <stop offset="0" stop-color="#f1e9d8"/>
+      <stop offset="1" stop-color="#f0cf8f"/>
     </linearGradient>
     <linearGradient id="grad-b" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5b7fc9"/>
-      <stop offset="1" stop-color="#1a2c54"/>
+      <stop offset="0" stop-color="#3a3025"/>
+      <stop offset="1" stop-color="#120f0b"/>
     </linearGradient>
   </defs>
 </svg>
@@ -372,6 +411,14 @@ p { margin: 0 0 12px; }
       <span>Кімната <b id="room-code"></b></span>
       <span class="net" id="net-status"></span>
     </div>
+    <div class="link-box hidden" id="link-box">
+      <p>Надішліть учню це посилання:</p>
+      <div class="link-row">
+        <input type="text" id="link-input" readonly aria-label="Посилання для учня">
+        <button type="button" class="btn btn-primary" id="btn-copy">Скопіювати</button>
+      </div>
+      <p class="link-done" id="link-done" aria-live="polite"></p>
+    </div>
     <div class="status" id="status"><span class="ava" id="status-ava"></span><span class="txt" id="status-txt"></span></div>
     <p class="goal-line" id="goal-line"></p>
     <div class="tray" id="tray-top"></div>
@@ -397,13 +444,18 @@ p { margin: 0 0 12px; }
     <button type="button" class="btn btn-secondary" id="btn-unlock-all"></button>
     <button type="button" class="btn btn-secondary" id="btn-reset">Скинути зірочки</button>
     <div class="section-title">Онлайн-урок</div>
-    <p class="lead">Оберіть рівень і створіть кімнату. Учень грає білими й ходить першим, ви — чорними.</p>
+    <p class="lead">Оберіть рівень і колір учня, натисніть «Грати онлайн» і надішліть учню посилання.</p>
     <div class="teacher-levels" id="teacher-levels" role="radiogroup" aria-label="Рівень"></div>
     <div class="toggle hidden" id="teacher-rules" role="radiogroup" aria-label="Правила">
       <button type="button" role="radio" data-real="0"><span class="radio"></span>Для малят: перемога, коли з’їв короля</button>
       <button type="button" role="radio" data-real="1"><span class="radio"></span>Справжні правила: мат</button>
     </div>
-    <button type="button" class="btn btn-primary" id="btn-create-room">Створити кімнату</button>
+    <div class="sub-title">Учень грає:</div>
+    <div class="toggle" id="teacher-side" role="radiogroup" aria-label="Колір учня">
+      <button type="button" role="radio" data-side="w"><span class="radio"></span>Білими (ходить першим)</button>
+      <button type="button" role="radio" data-side="b"><span class="radio"></span>Чорними</button>
+    </div>
+    <button type="button" class="btn btn-primary" id="btn-create-room">Грати онлайн</button>
     <div class="msg hidden" id="teacher-msg"></div>
   </section>
 
@@ -795,12 +847,13 @@ var MiniChess = (function () {
 
   /* ================== НАЛАШТУВАННЯ (див. mini-chess/README.md) ================== */
 
-  // Ключ Ably для онлайн-гри з вчителем (лише Publish/Subscribe на каналах mini-chess:*).
-  // Заглушка "<КЛЮЧ_ABLY>" вимикає онлайн.
-  var ABLY_KEY = "HKRVtg.MscH2Q:AW1i-UndGu03DiHJOQ4M4j47m6R_exbbyt2P9GcF95U";
+  // Ключ Ably для онлайн-гри з вчителем. Заглушка '<КЛЮЧ_ABLY>' вимикає онлайн.
+  var ABLY_KEY = 'HKRVtg.MscH2Q:AW1i-UndGu03DiHJOQ4M4j47m6R_exbbyt2P9GcF95U';
   var ABLY_SRC = 'https://cdn.jsdelivr.net/npm/ably@2.29.0/build/ably.min.js';
   var ABLY_SRI = 'sha384-xVSjbV2fXZTi9caskIhs88kPVeOVfWhVLoNKldOsEkSonNL5mjlfhVIR8pwF012V';
   var ROOM_PREFIX = 'mini-chess:';
+  var ROOM_DIGITS = 6;                 // id кімнати: 6 цифр, посилання ?room=123456
+  var ROOM_KEY = 'mini-chess-room-v1'; // localStorage: остання онлайн-кімната на цьому пристрої
 
   var TEACHER_PIN = '1234';
   var BOT_DELAY = 600;           // мс від ходу дитини до ходу бота
@@ -897,23 +950,23 @@ var MiniChess = (function () {
   }
 
   var ICONS = {
-    home: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>',
-    soundOn: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>',
-    soundOff: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/><path d="M16 9l6 6M22 9l-6 6"/></svg>',
-    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="#fff"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
-    unlock: '<svg viewBox="0 0 24 24" fill="none" stroke="#ffc21a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="#ffc21a"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>',
-    lockBig: '<svg viewBox="0 0 24 24" fill="none" stroke="#1a2c54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="#1a2c54"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><circle cx="12" cy="16" r="1.5" fill="#fff" stroke="none"/></svg>',
-    speak: '<svg viewBox="0 0 24 24" fill="none" stroke="#1a2c54" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#1a2c54"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>',
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>',
+    soundOn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>',
+    soundOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    unlock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>',
+    lockBig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><circle cx="12" cy="16" r="1.5" fill="#1c1712" stroke="none"/></svg>',
+    speak: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>',
     retry: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v5h5"/></svg>',
     next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
     homeDark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>',
-    del: '<svg viewBox="0 0 24 24" fill="none" stroke="#1a2c54" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11v14H9l-6-7z"/><path d="M12 9l5 6M17 9l-5 6"/></svg>',
+    del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11v14H9l-6-7z"/><path d="M12 9l5 6M17 9l-5 6"/></svg>',
     people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M2.5 20c.5-4 3-6 5.5-6s5 2 5.5 6M14 14.5c3 0 5.5 1.5 6 5.5"/></svg>',
-    target: '<svg viewBox="0 0 24 24" fill="none" stroke="#d6401a" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="#d6401a"/></svg>',
-    trophy: '<svg viewBox="0 0 64 64"><path d="M18 8h28v14a14 14 0 0 1-28 0z" fill="#ffc21a" stroke="#b7860b" stroke-width="3"/><path d="M18 13H9c0 9 4 14 10 15M46 13h9c0 9-4 14-10 15" fill="none" stroke="#b7860b" stroke-width="3" stroke-linecap="round"/><rect x="28" y="35" width="8" height="10" fill="#ffc21a" stroke="#b7860b" stroke-width="3"/><rect x="18" y="45" width="28" height="10" rx="3" fill="#d6401a" stroke="#b23312" stroke-width="3"/></svg>',
-    hug: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="#ffc21a" stroke="#b7860b" stroke-width="3"/><circle cx="23" cy="27" r="3.5" fill="#1a2c54"/><circle cx="41" cy="27" r="3.5" fill="#1a2c54"/><path d="M21 39c6 6 16 6 22 0" fill="none" stroke="#1a2c54" stroke-width="3.5" stroke-linecap="round"/><circle cx="17" cy="36" r="4" fill="#ff9a7a"/><circle cx="47" cy="36" r="4" fill="#ff9a7a"/></svg>',
-    draw: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="#cfe5f8" stroke="#1a2c54" stroke-width="3"/><circle cx="23" cy="27" r="3.5" fill="#1a2c54"/><circle cx="41" cy="27" r="3.5" fill="#1a2c54"/><path d="M22 41h20" stroke="#1a2c54" stroke-width="3.5" stroke-linecap="round"/></svg>',
-    run: '<svg viewBox="0 0 24 24" fill="none" stroke="#4f628a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h12M12 7l5 5-5 5M20 5v14"/></svg>'
+    target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>',
+    trophy: '<svg viewBox="0 0 64 64"><path d="M18 8h28v14a14 14 0 0 1-28 0z" fill="#d8a94c" stroke="#a9782c" stroke-width="3"/><path d="M18 13H9c0 9 4 14 10 15M46 13h9c0 9-4 14-10 15" fill="none" stroke="#a9782c" stroke-width="3" stroke-linecap="round"/><rect x="28" y="35" width="8" height="10" fill="#d8a94c" stroke="#a9782c" stroke-width="3"/><rect x="18" y="45" width="28" height="10" rx="3" fill="#c96a4d" stroke="#a9782c" stroke-width="3"/></svg>',
+    hug: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="#d8a94c" stroke="#a9782c" stroke-width="3"/><circle cx="23" cy="27" r="3.5" fill="#0c0a08"/><circle cx="41" cy="27" r="3.5" fill="#0c0a08"/><path d="M21 39c6 6 16 6 22 0" fill="none" stroke="#0c0a08" stroke-width="3.5" stroke-linecap="round"/><circle cx="17" cy="36" r="4" fill="#c96a4d"/><circle cx="47" cy="36" r="4" fill="#c96a4d"/></svg>',
+    draw: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="#ead9ba" stroke="#0c0a08" stroke-width="3"/><circle cx="23" cy="27" r="3.5" fill="#0c0a08"/><circle cx="41" cy="27" r="3.5" fill="#0c0a08"/><path d="M22 41h20" stroke="#0c0a08" stroke-width="3.5" stroke-linecap="round"/></svg>',
+    run: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h12M12 7l5 5-5 5M20 5v14"/></svg>'
   };
 
   function starSvg(on) {
@@ -925,18 +978,18 @@ var MiniChess = (function () {
     bear: '<svg viewBox="0 0 64 64"><circle cx="14" cy="16" r="9" fill="#8a5a33"/><circle cx="50" cy="16" r="9" fill="#8a5a33"/>' +
       '<circle cx="14" cy="16" r="4.5" fill="#e0b48a"/><circle cx="50" cy="16" r="4.5" fill="#e0b48a"/>' +
       '<circle cx="32" cy="35" r="24" fill="#a86b3c"/><ellipse cx="32" cy="43" rx="11" ry="9" fill="#e0b48a"/>' +
-      '<circle cx="23" cy="31" r="3.5" fill="#1a2c54"/><circle cx="41" cy="31" r="3.5" fill="#1a2c54"/>' +
-      '<ellipse cx="32" cy="39" rx="4.5" ry="3.2" fill="#1a2c54"/><path d="M28 46q4 3 8 0" fill="none" stroke="#1a2c54" stroke-width="2" stroke-linecap="round"/></svg>',
+      '<circle cx="23" cy="31" r="3.5" fill="#0c0a08"/><circle cx="41" cy="31" r="3.5" fill="#0c0a08"/>' +
+      '<ellipse cx="32" cy="39" rx="4.5" ry="3.2" fill="#0c0a08"/><path d="M28 46q4 3 8 0" fill="none" stroke="#0c0a08" stroke-width="2" stroke-linecap="round"/></svg>',
     fox: '<svg viewBox="0 0 64 64"><path d="M8 6l16 14-12 10z" fill="#e8751a"/><path d="M56 6L40 20l12 10z" fill="#e8751a"/>' +
-      '<path d="M12 10l9 9-7 6z" fill="#1a2c54"/><path d="M52 10l-9 9 7 6z" fill="#1a2c54"/>' +
+      '<path d="M12 10l9 9-7 6z" fill="#0c0a08"/><path d="M52 10l-9 9 7 6z" fill="#0c0a08"/>' +
       '<path d="M32 58L8 32c0-10 10-16 24-16s24 6 24 16z" fill="#f28c28"/>' +
       '<path d="M32 58L14 38c6 0 12 2 18 8 6-6 12-8 18-8z" fill="#fff"/>' +
-      '<circle cx="23" cy="31" r="3.5" fill="#1a2c54"/><circle cx="41" cy="31" r="3.5" fill="#1a2c54"/>' +
-      '<ellipse cx="32" cy="53" rx="4" ry="3" fill="#1a2c54"/></svg>',
-    teacher: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#cfe5f8"/><circle cx="32" cy="25" r="11" fill="#1a2c54"/>' +
-      '<path d="M12 56c2-12 10-18 20-18s18 6 20 18" fill="#1a2c54"/><rect x="26" y="40" width="12" height="4" rx="2" fill="#d6401a"/></svg>',
-    student: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#ffe08a"/><circle cx="32" cy="27" r="10" fill="#d6401a"/>' +
-      '<path d="M15 56c2-10 9-15 17-15s15 5 17 15" fill="#d6401a"/></svg>'
+      '<circle cx="23" cy="31" r="3.5" fill="#0c0a08"/><circle cx="41" cy="31" r="3.5" fill="#0c0a08"/>' +
+      '<ellipse cx="32" cy="53" rx="4" ry="3" fill="#0c0a08"/></svg>',
+    teacher: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#3a3025"/><circle cx="32" cy="25" r="11" fill="#f0cf8f"/>' +
+      '<path d="M12 56c2-12 10-18 20-18s18 6 20 18" fill="#f0cf8f"/><rect x="26" y="40" width="12" height="4" rx="2" fill="#c96a4d"/></svg>',
+    student: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#f0cf8f"/><circle cx="32" cy="27" r="10" fill="#c96a4d"/>' +
+      '<path d="M15 56c2-10 9-15 17-15s15 5 17 15" fill="#c96a4d"/></svg>'
   };
 
   /* ================== ДОПОМІЖНЕ ================== */
@@ -1091,7 +1144,7 @@ var MiniChess = (function () {
     cv.classList.remove('hidden');
     cv.width = window.innerWidth;
     cv.height = window.innerHeight;
-    var colors = ['#d6401a', '#1a2c54', '#ffc21a', '#3fa9f5', '#34c759', '#ff7ab8'];
+    var colors = ['#d8a94c', '#f0cf8f', '#2ecc71', '#a8e0bb', '#c96a4d', '#f1e9d8'];
     for (var i = 0; i < count; i++) {
       confetti.parts.push({
         x: cv.width / 2 + (Math.random() - 0.5) * cv.width * 0.3,
@@ -1288,6 +1341,7 @@ var MiniChess = (function () {
     $('top-title').textContent = 'Міні-шахи';
     stopGame();
     netClose();
+    forgetRoom();
     hideOverlay('result');
     renderMap();
     show('map');
@@ -1387,6 +1441,7 @@ var MiniChess = (function () {
 
   var G = {
     mode: 'bot',          // bot | online
+    role: 'bot',          // bot | teacher | student
     level: 1,
     real: false,
     opponent: 'bear',     // bear | fox | teacher (з погляду учня) або student (з погляду вчителя)
@@ -1417,6 +1472,7 @@ var MiniChess = (function () {
     clearGameTimers();
     hideOverlay('result');
     G.mode = opts.mode;
+    G.role = opts.role || 'bot';
     G.level = level;
     G.real = !!opts.real;
     G.opponent = opts.opponent;
@@ -1440,7 +1496,8 @@ var MiniChess = (function () {
     $('goal-line').textContent = (G.real && info.goalReal) ? info.goalReal : info.goal;
     $('top-title').textContent = 'Рівень ' + level;
     $('room').classList.toggle('hidden', G.mode !== 'online');
-    $('btn-restart').classList.toggle('hidden', G.mode === 'online' && G.me === 'w');
+    $('btn-restart').classList.toggle('hidden', G.role === 'student');
+    $('link-box').classList.toggle('hidden', G.role !== 'teacher');
     show('game');
     refresh();
     if (G.state.over) gameLater(showResult, 300);
@@ -1482,7 +1539,10 @@ var MiniChess = (function () {
     var last = ns.last;
     G.sel = -1;
     G.busy = true;
-    if (G.mode === 'online' && !fromNet) send('move', { from: m.from, to: m.to, ply: ns.plies - 1, game: G.gameNo });
+    if (G.mode === 'online') {
+      saveRoom();
+      if (!fromNet) sendState();
+    }
 
     Sound.play(last.capture ? 'capture' : 'move');
     view.sync(ns.board, {
@@ -1630,8 +1690,10 @@ var MiniChess = (function () {
     } else {
       reason = draw ? (r.d || '') : (win ? r.w : r.l) || '';
     }
+    // Зірочки — лише за перемогу білими (рівні складено для білих), не у вчителя.
+    var earnsStars = win && G.me === 'w' && G.role !== 'teacher';
     var stars = 0;
-    if (G.me === 'w' && win) {
+    if (earnsStars) {
       stars = MC.stars(s, G.opponent);
       if (stars > progress.stars[G.level - 1]) {
         progress.stars[G.level - 1] = stars;
@@ -1639,16 +1701,16 @@ var MiniChess = (function () {
       }
     }
     var title = draw ? 'Нічия' : win ? 'Перемога!' : 'Спробуй ще раз!';
-    if (G.me === 'b') title = draw ? 'Нічия' : win ? 'Ви виграли' : 'Учень виграв!';
+    if (G.role === 'teacher') title = draw ? 'Нічия' : win ? 'Ви виграли' : 'Учень виграв!';
     $('result-title').textContent = title;
     $('result-reason').textContent = reason;
-    $('result-icon').innerHTML = draw ? ICONS.draw : (win || G.me === 'b') ? ICONS.trophy : ICONS.hug;
+    $('result-icon').innerHTML = draw ? ICONS.draw : (win || G.role === 'teacher') ? ICONS.trophy : ICONS.hug;
     var starBox = $('result-stars');
     starBox.innerHTML = '';
-    if (G.me === 'w' && win) {
+    if (earnsStars) {
       for (var i = 1; i <= 3; i++) starBox.innerHTML += starSvg(stars >= i);
     }
-    starBox.classList.toggle('hidden', !(G.me === 'w' && win));
+    starBox.classList.toggle('hidden', !earnsStars);
 
     var acts = $('result-actions');
     acts.innerHTML = '';
@@ -1660,18 +1722,18 @@ var MiniChess = (function () {
       acts.appendChild(actionBtn(win ? 'btn-secondary' : 'btn-primary', ICONS.retry, 'Ще раз', function () {
         startGame(G.level, { mode: 'bot', real: G.real, opponent: G.opponent });
       }));
-    } else if (G.me === 'b') {
-      acts.appendChild(actionBtn('btn-primary', ICONS.retry, 'Нова гра', teacherNewGame));
+    } else if (G.role === 'teacher') {
+      acts.appendChild(actionBtn('btn-primary', ICONS.retry, 'Ще раз', teacherNewGame));
     } else {
       acts.appendChild(el('p', 'reason', 'Вчитель може почати нову гру.'));
     }
     acts.appendChild(actionBtn('btn-secondary', ICONS.homeDark, 'Додому', goHome));
     $('result').classList.remove('hidden');
 
-    if (win && G.me === 'w') {
+    if (win && G.role !== 'teacher') {
       Sound.play('win');
       launchConfetti(160);
-    } else if (!win && !draw && G.me === 'w') {
+    } else if (!win && !draw && G.role !== 'teacher') {
       Sound.play('lose');
     }
   }
@@ -1729,10 +1791,12 @@ var MiniChess = (function () {
     }
   }
 
-  var teacherPick = { level: 1, real: false };
+  var teacherPick = { level: 1, real: false, side: 'w' };
   function openTeacher() {
+    $('top-title').textContent = 'Міні-шахи';
     stopGame();
     netClose();
+    forgetRoom();
     renderTeacher();
     show('teacher');
   }
@@ -1751,19 +1815,25 @@ var MiniChess = (function () {
     }
     $('teacher-rules').classList.toggle('hidden', teacherPick.level !== LEVEL_COUNT);
     setRadio($('teacher-rules'), teacherPick.real ? '1' : '0');
+    var sb = $('teacher-side').getElementsByTagName('button');
+    for (var i = 0; i < sb.length; i++) sb[i].setAttribute('aria-checked', sb[i].getAttribute('data-side') === teacherPick.side ? 'true' : 'false');
     $('teacher-msg').classList.add('hidden');
   }
   function makeTeacherLevel(lv) { return function () { teacherPick.level = lv; renderTeacher(); }; }
 
   /* ================== ОНЛАЙН (Ably) ================== */
-  // Протокол каналу mini-chess:<код>:
-  //   hello {}                         — учень зайшов (або просить повторити стан);
-  //   setup {level, real, moves, game} — вчитель надсилає рівень і всі ходи поточної гри;
-  //   move  {from, to, ply, game}      — хід; ply — номер півходу до цього ходу;
-  //   bye   {}                         — хтось вийшов.
-  // Учень завжди грає білими, вчитель — чорними. Ходи перевіряються на обох сторонах.
+  // Вчитель натискає «Грати онлайн» і надсилає учню посилання ?room=<6 цифр>. Учень відкриває
+  // його й одразу грає (код можна ввести й вручну: «Грати з вчителем»). Колір учня обирає вчитель.
+  // Протокол каналу mini-chess:<id кімнати>:
+  //   hello {}  — хтось зайшов (або повернувся після оновлення) і просить стан;
+  //   state {level, real, side, game, moves} — повний стан партії: рівень, правила, колір учня,
+  //         номер партії в кімнаті й усі ходи [[звідки, куди], ...]. Надсилається після кожного
+  //         ходу, після «Ще раз» і у відповідь на hello. Новіший стан — з більшим game, а при
+  //         рівному game — з більшою кількістю ходів. Ходи перевіряються на обох сторонах.
+  //   bye   {}  — хтось вийшов.
+  // Після оновлення сторінки стан береться з localStorage, з історії каналу Ably й від суперника.
 
-  var Net = { client: null, ch: null, role: '', code: '', helloTimer: null };
+  var Net = { client: null, ch: null, role: '', code: '', helloTimer: null, wasConnected: false };
 
   function ablyConfigured() {
     return typeof ABLY_KEY === 'string' && ABLY_KEY.length > 10 && ABLY_KEY.indexOf('<') < 0;
@@ -1795,15 +1865,42 @@ var MiniChess = (function () {
         });
         Net.role = role;
         Net.code = code;
-        Net.client.connection.on(function (ch) { setNetStatus(ch.current); });
-        Net.ch = Net.client.channels.get(ROOM_PREFIX + code);
-        Net.ch.subscribe(function (msg) { onNet(msg.name, msg.data || {}); });
+        Net.wasConnected = false;
+        Net.client.connection.on(onConnection);
+        var ch = Net.client.channels.get(ROOM_PREFIX + code);
+        Net.ch = ch;
+        var sub = ch.subscribe(function (msg) { if (Net.ch === ch) onNet(msg.name, msg.data || {}); });
+        // Коли канал під’єднано, беремо останній стан з історії (якщо вона ще зберігається).
+        if (sub && typeof sub.then === 'function') sub.then(function () { loadHistory(ch); }, function () { setNetStatus('failed'); });
       } catch (e) {
         onFail('Не вдалося під’єднатися. Перевірте ключ Ably.');
         return;
       }
       onReady();
     });
+  }
+
+  function onConnection(change) {
+    setNetStatus(change.current);
+    if (change.current !== 'connected') return;
+    // Після обриву зв’язку ще раз звіряємо партію.
+    if (Net.wasConnected) send('hello', {});
+    Net.wasConnected = true;
+  }
+
+  function loadHistory(ch) {
+    try {
+      var p = ch.history({ untilAttach: true, limit: 50 });
+      if (!p || typeof p.then !== 'function') return;
+      p.then(function (page) {
+        var items = (page && page.items) || [];
+        if (Net.ch !== ch) return;
+        // items — від найновішого до найстарішого.
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].name === 'state') { applyState(items[i].data || {}); return; }
+        }
+      }, function () { /* історії немає — чекаємо стан від суперника */ });
+    } catch (e) { /* історія не обов’язкова */ }
   }
 
   function send(name, data) {
@@ -1821,7 +1918,7 @@ var MiniChess = (function () {
       var c = Net.client;
       later(function () { try { c.close(); } catch (e) { /* вже закрито */ } }, 300);
     }
-    Net = { client: null, ch: null, role: '', code: '', helloTimer: null };
+    Net = { client: null, ch: null, role: '', code: '', helloTimer: null, wasConnected: false };
   }
 
   var NET_TEXT = {
@@ -1832,11 +1929,12 @@ var MiniChess = (function () {
   var peerText = '';
   function setNetStatus(state) {
     if (current === 'join' && (state === 'failed' || state === 'suspended')) {
-      // Учень ще вводить код: повертаємо можливість спробувати знову.
+      // Учень ще чекає на гру: повертаємо можливість спробувати знову.
       netClose();
       joinCode = '';
       renderJoin();
       $('join-msg').textContent = 'Не вдалося під’єднатися. Перевірте інтернет і введіть код ще раз.';
+      $('join-msg').classList.remove('hidden');
       return;
     }
     var t = NET_TEXT[state] || '';
@@ -1848,32 +1946,115 @@ var MiniChess = (function () {
     $('net-status').textContent = text;
   }
 
+  /* ---------- Кімната: посилання й збереження ---------- */
+
+  function newRoomId() {
+    var id = '', buf = null, i;
+    if (window.crypto && window.crypto.getRandomValues) {
+      buf = new Uint32Array(ROOM_DIGITS);
+      window.crypto.getRandomValues(buf);
+    }
+    for (i = 0; i < ROOM_DIGITS; i++) id += String(buf ? buf[i] % 10 : Math.floor(Math.random() * 10));
+    return id;
+  }
+
+  function roomFromUrl() {
+    var m = /[?&]room=(\d+)/.exec(window.location.search);
+    return (m && m[1].length === ROOM_DIGITS) ? m[1] : '';
+  }
+
+  function pageUrl() {
+    return window.location.href.split('#')[0].split('?')[0];
+  }
+
+  // Адреса сторінки з ?room=..., щоб після оновлення гравець повернувся в ту саму кімнату.
+  function setUrlRoom(code) {
+    try { window.history.replaceState(null, '', code ? '?room=' + code : pageUrl()); } catch (e) { /* не страшно */ }
+  }
+
+  function enterRoom(code) {
+    $('room-code').textContent = code;
+    $('link-input').value = pageUrl() + '?room=' + code;
+    $('link-done').textContent = '';
+    setUrlRoom(code);
+  }
+
+  function snapshot() {
+    return {
+      level: G.level, real: G.real, side: G.role === 'teacher' ? MC.other(G.me) : G.me,
+      game: G.gameNo, moves: G.moves
+    };
+  }
+
+  function sendState() {
+    if (G.state && G.mode === 'online') send('state', snapshot());
+  }
+
+  // localStorage: id кімнати, роль цього пристрою й стан партії.
+  function saveRoom() {
+    if (!Net.code || !G.state || G.mode !== 'online') return;
+    try {
+      window.localStorage.setItem(ROOM_KEY, JSON.stringify({ room: Net.code, role: Net.role, state: snapshot() }));
+    } catch (e) { /* сховище недоступне — стан прийде з Ably */ }
+  }
+  function loadRoom(code) {
+    try {
+      var d = JSON.parse(window.localStorage.getItem(ROOM_KEY) || 'null');
+      return (d && d.room === code) ? d : null;
+    } catch (e) { return null; }
+  }
+  function forgetRoom() {
+    try { window.localStorage.removeItem(ROOM_KEY); } catch (e) { /* ігноруємо */ }
+    if (roomFromUrl()) setUrlRoom('');
+  }
+
+  function copyLink() {
+    var input = $('link-input');
+    function done() { $('link-done').textContent = 'Скопійовано! Вставте посилання в чат учню.'; }
+    function bySelect() {
+      input.focus();
+      input.select();
+      try {
+        if (document.execCommand('copy')) { done(); return; }
+      } catch (e) { /* немає доступу до буфера */ }
+      $('link-done').textContent = 'Виділіть посилання й скопіюйте його вручну.';
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value).then(done, bySelect);
+        return;
+      }
+    } catch (e) { /* спробуємо інакше */ }
+    bySelect();
+  }
+
   /* ---------- Вчитель ---------- */
 
   function createRoom() {
-    var code = String(1000 + Math.floor(Math.random() * 9000));
+    var code = newRoomId();
     $('teacher-msg').classList.add('hidden');
     netConnect(code, 'teacher', function () {
       G.gameNo = 1;
-      $('room-code').textContent = code;
       peerText = '';
-      startGame(teacherPick.level, { mode: 'online', real: teacherPick.level === LEVEL_COUNT && teacherPick.real, opponent: 'student', me: 'b' });
+      startGame(teacherPick.level, {
+        mode: 'online', role: 'teacher', opponent: 'student', me: MC.other(teacherPick.side),
+        real: teacherPick.level === LEVEL_COUNT && teacherPick.real
+      });
+      enterRoom(code);
       setPeer('Чекаємо учня…');
-      sendSetup();
+      saveRoom();
+      sendState();
     }, function (msg) {
       $('teacher-msg').textContent = msg;
       $('teacher-msg').classList.remove('hidden');
     });
   }
 
-  function sendSetup() {
-    send('setup', { level: G.level, real: G.real, moves: G.moves, game: G.gameNo });
-  }
-
   function teacherNewGame() {
     G.gameNo++;
-    startGame(G.level, { mode: 'online', real: G.real, opponent: 'student', me: 'b' });
-    sendSetup();
+    startGame(G.level, { mode: 'online', role: 'teacher', real: G.real, opponent: 'student', me: G.me });
+    saveRoom();
+    sendState();
   }
 
   /* ---------- Учень ---------- */
@@ -1887,26 +2068,14 @@ var MiniChess = (function () {
   }
   function renderJoin() {
     var t = '';
-    for (var i = 0; i < 4; i++) t += i < joinCode.length ? joinCode.charAt(i) : '·';
+    for (var i = 0; i < ROOM_DIGITS; i++) t += i < joinCode.length ? joinCode.charAt(i) : '·';
     $('join-code').textContent = t;
   }
   function joinDigit(k) {
-    if (joinCode.length >= 4 || Net.client) return;
+    if (joinCode.length >= ROOM_DIGITS || Net.client) return;
     joinCode += k;
     renderJoin();
-    if (joinCode.length === 4) {
-      $('join-msg').textContent = 'Під’єднуємось… Чекаємо вчителя.';
-      $('join-msg').classList.remove('hidden');
-      netConnect(joinCode, 'student', function () {
-        send('hello', {});
-        // Якщо вчитель ще не відкрив кімнату, повторюємо привітання, доки не прийде setup.
-        Net.helloTimer = window.setInterval(function () { send('hello', {}); }, 3000);
-      }, function (msg) {
-        $('join-msg').textContent = msg;
-        joinCode = '';
-        renderJoin();
-      });
-    }
+    if (joinCode.length === ROOM_DIGITS) joinRoom(joinCode, null);
   }
   function joinDel() {
     if (Net.client) return;
@@ -1914,37 +2083,104 @@ var MiniChess = (function () {
     renderJoin();
   }
 
+  // Увійти в кімнату: за посиланням, за кодом або після оновлення сторінки.
+  // rec — збережений на цьому пристрої запис кімнати (або null).
+  function joinRoom(code, rec) {
+    var role = (rec && rec.role === 'teacher') ? 'teacher' : 'student';
+    if (role === 'student') {
+      $('join-msg').textContent = 'Під’єднуємось… Чекаємо вчителя.';
+      $('join-msg').classList.remove('hidden');
+    }
+    netConnect(code, role, function () {
+      enterRoom(code);
+      if (rec && rec.state) applyState(rec.state);
+      send('hello', {});
+      if (role === 'student') {
+        // Якщо вчитель ще не відкрив кімнату, повторюємо привітання, доки не прийде стан.
+        Net.helloTimer = window.setInterval(function () { send('hello', {}); }, 3000);
+      }
+    }, function (msg) {
+      if (current !== 'join') openJoin();
+      $('join-msg').textContent = msg;
+      $('join-msg').classList.remove('hidden');
+      joinCode = '';
+      renderJoin();
+    });
+  }
+
+  function resumeFromUrl() {
+    var code = roomFromUrl();
+    if (!code) return;
+    var rec = loadRoom(code);
+    if (!(rec && rec.role === 'teacher')) {
+      openJoin();
+      joinCode = code;
+      renderJoin();
+    }
+    joinRoom(code, rec);
+  }
+
   /* ---------- Повідомлення ---------- */
 
   function onNet(name, d) {
-    if (Net.role === 'teacher') {
-      if (name === 'hello') {
-        setPeer('Учень у грі');
-        sendSetup();
-      } else if (name === 'move') {
-        netMove(d);
-      } else if (name === 'bye') {
-        setPeer('Учень вийшов');
-      }
+    var peer = Net.role === 'teacher' ? 'Учень' : 'Вчитель';
+    if (name === 'hello') {
+      setPeer(Net.role === 'teacher' ? 'Учень у грі' : 'Вчитель на зв’язку');
+      sendState();
+    } else if (name === 'state') {
+      if (Net.helloTimer) { window.clearInterval(Net.helloTimer); Net.helloTimer = null; }
+      setPeer(Net.role === 'teacher' ? 'Учень у грі' : 'Вчитель на зв’язку');
+      applyState(d);
+    } else if (name === 'bye') {
+      setPeer(peer + ' вийшов');
+    }
+  }
+
+  function validState(d) {
+    var lv = d && d.level;
+    return typeof lv === 'number' && lv >= 1 && lv <= LEVEL_COUNT && Math.floor(lv) === lv &&
+      (d.side === 'w' || d.side === 'b') && typeof d.game === 'number' && isMoveList(d.moves);
+  }
+
+  function isNewer(d) {
+    if (!G.state || G.mode !== 'online') return true;
+    if (d.game !== G.gameNo) return d.game > G.gameNo;
+    return d.moves.length > G.moves.length;
+  }
+
+  function samePrefix(list, prefix) {
+    for (var i = 0; i < prefix.length; i++) {
+      if (list[i][0] !== prefix[i][0] || list[i][1] !== prefix[i][1]) return false;
+    }
+    return true;
+  }
+
+  // Прийняти стан з мережі, історії чи сховища, якщо він новіший за поточний.
+  function applyState(d) {
+    if (!validState(d) || !isNewer(d)) return;
+    var online = G.state && G.mode === 'online';
+    if (online && G.busy) {
+      // Ще анімується попередній хід — приймемо стан трохи пізніше.
+      gameLater(function () { applyState(d); }, 200);
       return;
     }
-    // Учень
-    if (name === 'setup') {
-      if (Net.helloTimer) { window.clearInterval(Net.helloTimer); Net.helloTimer = null; }
-      var lv = parseInt(d.level, 10);
-      if (!(lv >= 1 && lv <= LEVEL_COUNT) || !isMoveList(d.moves)) return;
-      var same = G.state && G.mode === 'online' && G.gameNo === d.game && G.moves.length === d.moves.length;
-      if (same) return;
-      G.gameNo = d.game;
-      $('room-code').textContent = Net.code;
-      peerText = 'Вчитель на зв’язку';
-      startGame(lv, { mode: 'online', real: !!d.real, opponent: 'teacher', me: 'w', moves: d.moves });
-      setPeer(peerText);
-    } else if (name === 'move') {
-      netMove(d);
-    } else if (name === 'bye') {
-      setPeer('Вчитель вийшов');
+    if (online && d.game === G.gameNo && d.level === G.level && d.moves.length === G.moves.length + 1 &&
+        samePrefix(d.moves, G.moves)) {
+      // Суперник зробив один хід — показуємо його з анімацією.
+      var last = d.moves[d.moves.length - 1];
+      var m = MC.findMove(G.state, last[0], last[1]);
+      if (m) { playMove(m, true); return; }
     }
+    G.gameNo = d.game;
+    var teacher = Net.role === 'teacher';
+    var keepPeer = peerText;
+    startGame(d.level, {
+      mode: 'online', role: Net.role, real: !!d.real, moves: d.moves,
+      opponent: teacher ? 'student' : 'teacher', me: teacher ? MC.other(d.side) : d.side
+    });
+    if (Net.code) $('room-code').textContent = Net.code;
+    setPeer(keepPeer || (teacher ? 'Чекаємо учня…' : 'Вчитель на зв’язку'));
+    saveRoom();
   }
 
   function isMoveList(list) {
@@ -1956,24 +2192,6 @@ var MiniChess = (function () {
   }
   function isSq(x) { return typeof x === 'number' && x >= 0 && x < 25 && Math.floor(x) === x; }
 
-  function netMove(d) {
-    if (!G.state || G.mode !== 'online' || d.game !== G.gameNo) return;
-    if (G.busy && d.ply === G.state.plies) {
-      // Ще анімується попередній хід — приймемо цей трохи пізніше.
-      gameLater(function () { netMove(d); }, 200);
-      return;
-    }
-    if (d.ply !== G.state.plies || G.state.turn === G.me) {
-      // Розсинхронізація: учень просить стан, вчитель надсилає його.
-      if (d.ply >= G.state.plies) {
-        if (Net.role === 'teacher') sendSetup(); else send('hello', {});
-      }
-      return;
-    }
-    var m = isSq(d.from) && isSq(d.to) ? MC.findMove(G.state, d.from, d.to) : null;
-    if (m) playMove(m, true);
-  }
-
   /* ================== ПОДІЇ ================== */
 
   function renderTopButtons() {
@@ -1981,6 +2199,7 @@ var MiniChess = (function () {
     $('btn-sound').setAttribute('aria-label', progress.mute ? 'Увімкнути звук' : 'Вимкнути звук');
     $('btn-sound').setAttribute('aria-pressed', progress.mute ? 'true' : 'false');
     $('btn-lock').innerHTML = progress.all ? ICONS.unlock : ICONS.lock;
+    $('btn-lock').classList.toggle('gold', progress.all);
   }
 
   function init() {
@@ -2025,6 +2244,13 @@ var MiniChess = (function () {
         renderTeacher();
       });
     }
+    var sb = $('teacher-side').getElementsByTagName('button');
+    for (i = 0; i < sb.length; i++) {
+      sb[i].addEventListener('click', function () {
+        teacherPick.side = this.getAttribute('data-side');
+        renderTeacher();
+      });
+    }
 
     $('btn-bear').addEventListener('click', function () {
       Sound.unlock();
@@ -2035,7 +2261,7 @@ var MiniChess = (function () {
       startGame(intro.level, { mode: 'bot', real: intro.real, opponent: 'fox' });
     });
     $('btn-restart').addEventListener('click', function () {
-      if (G.mode === 'online') { if (G.me === 'b') teacherNewGame(); return; }
+      if (G.mode === 'online') { if (G.role === 'teacher') teacherNewGame(); return; }
       startGame(G.level, { mode: 'bot', real: G.real, opponent: G.opponent });
     });
 
@@ -2060,8 +2286,11 @@ var MiniChess = (function () {
       renderMap();
     });
     $('btn-create-room').addEventListener('click', createRoom);
+    $('btn-copy').addEventListener('click', copyLink);
 
+    // Сторінка закривається чи оновлюється: кімнату не забуваємо, щоб повернутися в партію.
     window.addEventListener('pagehide', netClose);
+    resumeFromUrl();
   }
 
   init();

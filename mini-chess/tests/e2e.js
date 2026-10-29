@@ -1,7 +1,8 @@
 // Прогін у браузері: node mini-chess/tests/e2e.js
 // Потрібен Playwright з Chromium. Сторінка віддається з index.html через перехоплення запитів
-// (адреса http://mini-chess.test/), а Ably підмінено локальною заглушкою на BroadcastChannel,
-// тож тест не ходить в інтернет і не потребує ключа.
+// (адреса http://mini-chess.test/), а Ably підмінено локальною заглушкою: повідомлення між
+// вкладками (різні контексти браузера = різні пристрої) пересилає сам тест і зберігає їх як
+// історію каналу. Тест не ходить в інтернет і не потребує ключа. Шрифти Google підмінено порожнім CSS.
 'use strict';
 
 var fs = require('fs');
@@ -12,46 +13,86 @@ var playwright = require('playwright');
 var ORIGIN = 'http://mini-chess.test';
 // Справжній ключ у тестах не використовуємо: офлайн-сценарії — із заглушкою, онлайн — з тестовим.
 var SOURCE = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-var KEY_LINE = /var ABLY_KEY = "[^"]*";/;
+var KEY_LINE = /var ABLY_KEY = (['"])[^'"]*\1;/;
 assert.ok(KEY_LINE.test(SOURCE), 'рядок ABLY_KEY має бути в index.html');
-var HTML = SOURCE.replace(KEY_LINE, 'var ABLY_KEY = "<КЛЮЧ_ABLY>";');
-var HTML_ONLINE = SOURCE.replace(KEY_LINE, 'var ABLY_KEY = "test.key:for-e2e-only";');
+var HTML = SOURCE.replace(KEY_LINE, "var ABLY_KEY = '<КЛЮЧ_ABLY>';");
+var HTML_ONLINE = SOURCE.replace(KEY_LINE, "var ABLY_KEY = 'test.key:for-e2e-only';");
 
-// Заглушка Ably з тим самим API, що використовує сторінка.
+// «Сервер» заглушки Ably: канали з підписаними сторінками й історією повідомлень.
+var hub = { pages: [], history: {} };
+async function hubPublish(source, channel, name, data) {
+  var msg = { name: name, data: data };
+  (hub.history[channel] = hub.history[channel] || []).push(msg);
+  for (var i = 0; i < hub.pages.length; i++) {
+    var p = hub.pages[i];
+    if (p === source.page || p.isClosed()) continue;
+    p.evaluate(function (a) { if (window.__ablyDeliver) window.__ablyDeliver(a.c, a.m); }, { c: channel, m: msg }).catch(function () {});
+  }
+}
+
+// Заглушка Ably з тим самим API, що використовує сторінка (лише цим API сторінка й користується).
 function fakeAbly() {
+  var subs = {};
+  window.__ablyDeliver = function (channel, msg) {
+    var list = subs[channel] || [];
+    for (var i = 0; i < list.length; i++) list[i]({ name: msg.name, data: msg.data });
+  };
   window.Ably = {
     Realtime: function () {
+      var closed = false;
       this.connection = { on: function (fn) { setTimeout(function () { fn({ current: 'connected' }); }, 10); } };
       this.channels = {
         get: function (name) {
-          var bc = new BroadcastChannel(name), subs = [];
-          bc.onmessage = function (e) {
-            for (var i = 0; i < subs.length; i++) subs[i]({ name: e.data.name, data: e.data.data });
-          };
           return {
-            subscribe: function (fn) { subs.push(fn); return Promise.resolve(); },
-            publish: function (n, d) { bc.postMessage({ name: n, data: JSON.parse(JSON.stringify(d)) }); return Promise.resolve(); }
+            subscribe: function (fn) {
+              (subs[name] = subs[name] || []).push(function (m) { if (!closed) fn(m); });
+              return Promise.resolve();
+            },
+            publish: function (n, d) {
+              if (!closed) window.__ablyPublish(name, n, JSON.parse(JSON.stringify(d)));
+              return Promise.resolve();
+            },
+            history: function () {
+              return window.__ablyHistory(name).then(function (items) { return { items: items }; });
+            }
           };
         }
       };
-      this.close = function () {};
+      this.close = function () { closed = true; };
     }
   };
 }
 
+async function onlineContext(browser, device) {
+  var ctx = await browser.newContext(device);
+  await ctx.exposeBinding('__ablyPublish', function (source, c, n, d) { return hubPublish(source, c, n, d); });
+  await ctx.exposeBinding('__ablyHistory', function (source, c) {
+    return (hub.history[c] || []).slice().reverse();
+  });
+  await ctx.addInitScript(fakeAbly);
+  return ctx;
+}
+
 function log(msg) { process.stdout.write(msg + '\n'); }
 
-async function newPage(ctx, html, problems) {
+async function newPage(ctx, html, problems, query) {
   var page = await ctx.newPage();
+  hub.pages.push(page);
   page.on('console', function (m) { if (m.type() === 'error') problems.push('console: ' + m.text()); });
   page.on('pageerror', function (e) { problems.push('pageerror: ' + e.message); });
   page.on('request', function (r) {
-    if (r.url().indexOf(ORIGIN) !== 0 && r.url().indexOf('data:') !== 0) problems.push('зовнішній запит: ' + r.url());
+    var u = r.url();
+    if (u.indexOf(ORIGIN) !== 0 && u.indexOf('data:') !== 0 && u.indexOf('https://fonts.googleapis.com/') !== 0) {
+      problems.push('зовнішній запит: ' + u);
+    }
+  });
+  await page.route('https://fonts.googleapis.com/**', function (route) {
+    route.fulfill({ status: 200, contentType: 'text/css', body: '' });
   });
   await page.route(ORIGIN + '/**', function (route) {
     route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
   });
-  await page.goto(ORIGIN + '/');
+  await page.goto(ORIGIN + '/' + (query || ''));
   return page;
 }
 
@@ -104,6 +145,22 @@ async function playToEnd(page, level, real) {
     await page.waitForTimeout(50);
   }
   throw new Error('гра не закінчилась');
+}
+
+async function teacherLogin(page, pin) {
+  await page.click('#btn-lock');
+  for (var i = 0; i < 4; i++) await page.locator('#pin-pad button', { hasText: pin.charAt(i) }).first().click();
+  await page.waitForSelector('#scr-teacher:not(.hidden)');
+}
+
+async function waitPiece(page, sq, re) {
+  await page.waitForFunction(function (a) {
+    return new RegExp(a.re).test(document.querySelectorAll('#board .sq')[a.sq].getAttribute('aria-label'));
+  }, { sq: sq, re: re.source }, { timeout: 5000 });
+}
+
+async function waitStatus(page, text) {
+  await page.waitForFunction(function (t) { return document.getElementById('status-txt').textContent === t; }, text, { timeout: 5000 });
 }
 
 async function progress(page) {
@@ -209,43 +266,45 @@ async function main() {
   assert.equal(cookies.length, 0);
   await ctx.close();
 
-  log('9. Онлайн: вчитель створює кімнату (рівень 2), учень заходить за кодом');
-  var octx = await browser.newContext(device);
-  await octx.addInitScript(fakeAbly);
-  var teacher = await newPage(octx, HTML_ONLINE, problems);
-  var student = await newPage(octx, HTML_ONLINE, problems);
-  await teacher.click('#btn-lock');
-  for (i = 0; i < 4; i++) await teacher.locator('#pin-pad button', { hasText: pin.charAt(i) }).first().click();
-  await teacher.waitForSelector('#scr-teacher:not(.hidden)');
+  log('9. Онлайн: вчитель (рівень 2, учень білими) дає посилання, учень відкриває його й одразу грає');
+  var tctx = await onlineContext(browser, device);
+  var sctx = await onlineContext(browser, device);
+  var teacher = await newPage(tctx, HTML_ONLINE, problems);
+  await teacherLogin(teacher, pin);
   await teacher.locator('#teacher-levels button').nth(1).click();
+  assert.equal(await teacher.locator('#teacher-side [data-side="w"]').getAttribute('aria-checked'), 'true', 'за замовчуванням учень білими');
   await teacher.click('#btn-create-room');
   await teacher.waitForSelector('#scr-game:not(.hidden)');
   var code = await teacher.locator('#room-code').textContent();
-  assert.match(code, /^\d{4}$/);
+  assert.match(code, /^\d{6}$/);
+  var link = await teacher.locator('#link-input').inputValue();
+  assert.equal(link, ORIGIN + '/?room=' + code);
+  assert.ok(await teacher.locator('#btn-copy').isVisible(), 'кнопка «Скопіювати»');
+  assert.equal(teacher.url(), link, 'у вчителя в адресі теж ?room=');
+  await teacher.click('#btn-copy');
+  await teacher.waitForFunction(function () { return document.getElementById('link-done').textContent !== ''; });
   var a1 = await teacher.locator('#board .sq').nth(0).evaluate(function (n) { return n.style.left + ' ' + n.style.top; });
   assert.equal(a1, '80% 0%', 'у вчителя дошка перевернута (a1 справа вгорі)');
+  await noHScroll(teacher, 'онлайн вчитель');
 
-  await student.click('#btn-join');
-  for (i = 0; i < 4; i++) await student.locator('#join-pad button', { hasText: code.charAt(i) }).first().click();
+  var student = await newPage(sctx, HTML_ONLINE, problems, '?room=' + code);
   await student.waitForSelector('#scr-game:not(.hidden)');
   assert.match(await student.locator('#top-title').textContent(), /Рівень 2/);
   assert.equal(await student.locator('#status-txt').textContent(), 'Твій хід');
+  assert.ok(await student.locator('#link-box').isHidden(), 'учень не бачить посилання');
+  assert.ok(await student.locator('#btn-restart').isHidden(), 'учень не починає нову гру');
   await teacher.waitForFunction(function () { return /Учень у грі/.test(document.getElementById('net-status').textContent); });
 
   log('   учень ходить турою c1→c3, вчитель бачить хід');
   await tapSq(student, 2);
   await tapSq(student, 12);
-  await teacher.waitForFunction(function () {
-    return /білі: тура/.test(document.querySelectorAll('#board .sq')[12].getAttribute('aria-label'));
-  });
-  await teacher.waitForFunction(function () { return document.getElementById('status-txt').textContent === 'Твій хід'; });
+  await waitPiece(teacher, 12, /білі: тура/);
+  await waitStatus(teacher, 'Твій хід');
   log('   вчитель ходить пішаком a4→a3, учень бачить хід');
   await tapSq(teacher, 15);
   await tapSq(teacher, 10);
-  await student.waitForFunction(function () {
-    return /чорні: пішак/.test(document.querySelectorAll('#board .sq')[10].getAttribute('aria-label'));
-  });
-  await student.waitForFunction(function () { return document.getElementById('status-txt').textContent === 'Твій хід'; });
+  await waitPiece(student, 10, /чорні: пішак/);
+  await waitStatus(student, 'Твій хід');
 
   log('   учень не може ходити за вчителя');
   await tapSq(student, 18);
@@ -253,14 +312,71 @@ async function main() {
   await student.waitForTimeout(300);
   assert.match(await student.locator('#board .sq').nth(18).getAttribute('aria-label'), /чорні: пішак/);
 
-  log('   «Нова гра» у вчителя скидає партію в учня');
+  log('   учень оновлює сторінку — партія на місці');
+  await student.reload();
+  await student.waitForSelector('#scr-game:not(.hidden)');
+  await waitPiece(student, 12, /білі: тура/);
+  await waitPiece(student, 10, /чорні: пішак/);
+  await waitStatus(student, 'Твій хід');
+  await tapSq(student, 12);
+  await tapSq(student, 10);   // тура c3 б’є пішака a3
+  await waitPiece(teacher, 10, /білі: тура/);
+
+  log('   вчитель закриває вкладку й відкриває посилання знову — він знову вчитель');
+  await teacher.close();
+  teacher = await newPage(tctx, HTML_ONLINE, problems, '?room=' + code);
+  await teacher.waitForSelector('#scr-game:not(.hidden)');
+  await waitPiece(teacher, 10, /білі: тура/);
+  assert.ok(await teacher.locator('#link-box').isVisible(), 'у вчителя знову посилання');
+  a1 = await teacher.locator('#board .sq').nth(0).evaluate(function (n) { return n.style.left + ' ' + n.style.top; });
+  assert.equal(a1, '80% 0%', 'після оновлення в учителя дошка перевернута');
+  await waitStatus(teacher, 'Твій хід');
+
+  log('   «Почати знову» у вчителя скидає партію в учня');
   await teacher.click('#btn-restart');
-  await student.waitForFunction(function () {
-    return /білі: тура/.test(document.querySelectorAll('#board .sq')[2].getAttribute('aria-label'));
-  });
+  await waitPiece(student, 2, /білі: тура/);
   await noHScroll(student, 'онлайн учень');
-  await noHScroll(teacher, 'онлайн вчитель');
-  await octx.close();
+  await teacher.close();
+  await student.close();
+
+  log('10. Онлайн: учень чорними, рівень 1, вхід за кодом вручну');
+  teacher = await newPage(tctx, HTML_ONLINE, problems);
+  await teacherLogin(teacher, pin);
+  await teacher.locator('#teacher-levels button').nth(0).click();
+  await teacher.click('#teacher-side [data-side="b"]');
+  await teacher.click('#btn-create-room');
+  await teacher.waitForSelector('#scr-game:not(.hidden)');
+  code = await teacher.locator('#room-code').textContent();
+  a1 = await teacher.locator('#board .sq').nth(0).evaluate(function (n) { return n.style.left + ' ' + n.style.top; });
+  assert.equal(a1, '0% 80%', 'вчитель білими — дошка не перевернута');
+  await waitStatus(teacher, 'Твій хід');
+  student = await newPage(sctx, HTML_ONLINE, problems);
+  await student.click('#btn-join');
+  for (i = 0; i < code.length; i++) await student.locator('#join-pad button', { hasText: code.charAt(i) }).first().click();
+  await student.waitForSelector('#scr-game:not(.hidden)');
+  a1 = await student.locator('#board .sq').nth(0).evaluate(function (n) { return n.style.left + ' ' + n.style.top; });
+  assert.equal(a1, '80% 0%', 'учень чорними — дошка перевернута');
+  assert.match(await student.locator('#status-txt').textContent(), /Вчитель/);
+  assert.equal(student.url(), ORIGIN + '/?room=' + code, 'після входу за кодом адреса з ?room=');
+  await tapSq(teacher, 7);    // c2→c3
+  await tapSq(teacher, 12);
+  await waitPiece(student, 12, /білі: пішак/);
+  await waitStatus(student, 'Твій хід');
+
+  log('   обидва закрили вкладки; учень на новому пристрої відкриває посилання — стан з історії');
+  await teacher.close();
+  await student.close();
+  var s2ctx = await onlineContext(browser, device);
+  student = await newPage(s2ctx, HTML_ONLINE, problems, '?room=' + code);
+  await student.waitForSelector('#scr-game:not(.hidden)');
+  await waitPiece(student, 12, /білі: пішак/);
+  await waitStatus(student, 'Твій хід');
+  log('   «Додому» прибирає кімнату з адреси');
+  await student.click('#btn-home');
+  assert.equal(student.url(), ORIGIN + '/');
+  await tctx.close();
+  await sctx.close();
+  await s2ctx.close();
   await browser.close();
 
   if (problems.length) {

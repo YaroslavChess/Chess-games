@@ -3,29 +3,47 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#1a2c54">
+<meta name="theme-color" content="#120f0b">
 <meta name="description" content="Справжні шахи для дітей: українці проти свиней. Гра з ботом, удвох на одному пристрої або онлайн з учителем.">
 <title>Українці проти свиней — шахи</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231a2c54'/%3E%3Crect x='8' y='8' width='24' height='24' fill='%23ffd23f'/%3E%3Crect x='32' y='32' width='24' height='24' fill='%23ff9ec4'/%3E%3Crect x='32' y='8' width='24' height='24' fill='%232a64c8'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23120f0b'/%3E%3Crect x='8' y='8' width='24' height='24' fill='%23ead9ba'/%3E%3Crect x='32' y='32' width='24' height='24' fill='%23ead9ba'/%3E%3Crect x='32' y='8' width='24' height='24' fill='%2386644a'/%3E%3Crect x='8' y='32' width='24' height='24' fill='%2386644a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --navy: #1a2c54;
-  --navy-dark: #0f1b36;
-  --accent: #d6401a;
-  --accent-dark: #b23312;
-  --blue-light: #e8f2fc;
-  --blue-mid: #cfe5f8;
-  --text: #1a2c54;
-  --muted: #4f628a;
+:root{
+  --bg: #120f0b;
+  --bg-glow: #1c1712;
+  --panel: #1c1712;
+  --panel-2: #241d15;
+  --hairline: #3a3025;
+  --board-light: #ead9ba;
+  --board-dark: #86644a;
+  --board-dark-hi: #977252;
+  --frame: #0c0a08;
+  --text: #f1e9d8;
+  --text-dim: #b7a98e;
+  --text-faint: #7d7361;
+  --gold: #d8a94c;
+  --gold-soft: #f0cf8f;
+  --green: #2ecc71;
+  --green-soft: #a8e0bb;
+  --blocked-a: #443c30;
+  --blocked-b: #37312a;
+  --danger: #c96a4d;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-deep: 0 24px 60px -24px rgba(0,0,0,.75);
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; background: var(--bg); }
 html, body { overflow-x: hidden; }
 body {
   margin: 0;
-  background: var(--blue-light);
+  background: radial-gradient(120% 90% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   line-height: 1.45;
   min-height: 100vh;
 }
@@ -35,21 +53,22 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--navy);
-  color: #fff;
+  background: var(--panel);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text);
   padding: 6px 10px;
   min-height: 56px;
 }
-.topbar .title { flex: 1; text-align: center; font-weight: 800; font-size: 16px; line-height: 1.2; }
+.topbar .title { flex: 1; text-align: center; font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 18px; line-height: 1.2; color: var(--gold-soft); }
 .icon-btn {
   flex: 0 0 auto;
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-radius: 12px;
-  background: transparent;
-  color: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--panel-2);
+  color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -57,24 +76,26 @@ body {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
+.icon-btn:hover { border-color: var(--gold); }
 .icon-btn svg { width: 24px; height: 24px; }
 .icon-btn.invisible { visibility: hidden; }
 
 .wrap { max-width: 512px; margin: 0 auto; padding: 16px 16px 32px; }
-h1 { font-size: 28px; line-height: 1.15; margin: 4px 0 8px; text-align: center; }
-h2 { font-size: 22px; margin: 0 0 10px; }
+h1 { font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 30px; line-height: 1.15; margin: 4px 0 8px; text-align: center; color: var(--gold-soft); letter-spacing: -0.01em; }
+h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 22px; margin: 0 0 10px; color: var(--gold-soft); }
 p { margin: 0 0 12px; }
-.lead { font-size: 17px; color: var(--muted); text-align: center; }
-.small { font-size: 13px; color: var(--muted); text-align: center; margin-top: 20px; }
+.lead { font-size: 17px; color: var(--text-dim); text-align: center; }
+.small { font-size: 13px; color: var(--text-faint); text-align: center; margin-top: 20px; }
 
 .btn {
   display: block;
   width: 100%;
   min-height: 52px;
   padding: 12px 16px;
-  border: 0;
-  border-radius: 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
   font: inherit;
+  font-family: 'Manrope', sans-serif;
   font-size: 18px;
   font-weight: 700;
   text-align: center;
@@ -83,33 +104,33 @@ p { margin: 0 0 12px; }
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-primary:hover, .btn-primary:focus-visible { background: var(--accent-dark); }
-.btn-secondary { background: #fff; color: var(--navy); border: 2px solid var(--navy); }
-.btn-secondary:hover, .btn-secondary:focus-visible { background: var(--blue-mid); }
+.btn-primary { background: linear-gradient(160deg, var(--gold), #a9782c); color: #241a08; border-color: transparent; }
+.btn-primary:hover, .btn-primary:focus-visible { background: var(--gold); }
+.btn-secondary { background: var(--panel-2); color: var(--text); }
+.btn-secondary:hover, .btn-secondary:focus-visible { border-color: var(--gold); }
 .btn[disabled] { opacity: 0.45; cursor: default; }
 .btn + .btn { margin-top: 12px; }
-.btn:focus-visible, .cell:focus-visible, .icon-btn:focus-visible, .choice:focus-within, .promo-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn:focus-visible, .cell:focus-visible, .icon-btn:focus-visible, .choice:focus-within, .promo-btn:focus-visible { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
 
 .hero { display: flex; align-items: flex-end; justify-content: center; gap: 4px; margin: 4px 0 6px; }
 .hero .hero-piece { width: 110px; height: 110px; }
 .hero .hero-piece.pig { animation: wobble 2.4s ease-in-out infinite; }
 .hero .hero-piece.ua { animation: wobble 2.4s ease-in-out infinite reverse; }
-.hero .vs { font-size: 26px; font-weight: 900; color: var(--accent); padding-bottom: 36px; }
+.hero .vs { font-family: 'Fraunces', Georgia, serif; font-size: 26px; font-weight: 700; color: var(--gold); padding-bottom: 36px; }
 .hero svg, .mini svg, .card-pic svg, .promo-btn svg, .party-pic svg, .fx-piece svg, .fx-cloud svg { display: block; width: 100%; height: 100%; }
 @keyframes wobble { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) translateY(-4px); } }
 
 .modes .btn { display: flex; align-items: center; gap: 12px; text-align: left; min-height: 64px; }
-.modes .btn small { display: block; font-weight: 400; font-size: 14px; opacity: 0.85; }
+.modes .btn small { display: block; font-weight: 500; font-size: 14px; opacity: 0.85; }
 .modes .btn .mode-pic { flex: 0 0 44px; width: 44px; height: 44px; }
 
 .choices { display: flex; gap: 12px; margin: 12px 0 18px; }
 .choice {
   flex: 1;
   position: relative;
-  background: #fff;
-  border: 3px solid var(--blue-mid);
-  border-radius: 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
   padding: 10px 6px 12px;
   text-align: center;
   font-size: 17px;
@@ -119,19 +140,30 @@ p { margin: 0 0 12px; }
   -webkit-tap-highlight-color: transparent;
 }
 .choice input { position: absolute; opacity: 0; pointer-events: none; }
-.choice small { display: block; font-weight: 400; font-size: 13px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+.choice small { display: block; font-weight: 500; font-size: 13px; color: var(--text-dim); margin-top: 2px; line-height: 1.3; }
 .choice .card-pic { width: 64px; height: 64px; margin: 0 auto 4px; }
-.choice.on { border-color: var(--accent); background: #fff4ef; }
+.choice.on { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,169,76,.18); }
 
-.panel { background: #fff; border-radius: 18px; padding: 16px; margin-bottom: 16px; }
+.panel { background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
 .panel h2 { font-size: 19px; }
-.field { display: block; width: 100%; min-height: 52px; font: inherit; font-size: 26px; font-weight: 800; letter-spacing: 0.3em; text-align: center; border: 2px solid var(--navy); border-radius: 14px; padding: 8px; margin-bottom: 12px; color: var(--navy); background: #fff; }
-.notice { background: #fff4ef; border: 2px solid var(--accent); border-radius: 12px; padding: 12px; font-size: 15px; margin-bottom: 16px; }
-.msg { min-height: 22px; font-size: 15px; color: var(--accent-dark); text-align: center; margin: 4px 0 0; }
+.field { display: block; width: 100%; min-height: 52px; font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; letter-spacing: 0.2em; text-align: center; border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 8px; margin-bottom: 12px; color: var(--gold-soft); background: var(--frame); }
+.notice { background: var(--panel-2); border: 1px solid var(--danger); border-radius: var(--radius-md); padding: 12px; font-size: 15px; margin-bottom: 16px; }
+.msg { min-height: 22px; font-size: 15px; color: var(--danger); text-align: center; margin: 4px 0 0; }
 
-.code-big { font-size: 46px; font-weight: 900; letter-spacing: 0.18em; text-align: center; color: var(--navy); background: #fff; border-radius: 18px; padding: 12px 8px; margin: 8px 0 14px; }
-.waiting { text-align: center; color: var(--muted); }
-.spinner { width: 40px; height: 40px; margin: 12px auto; border: 5px solid var(--blue-mid); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.9s linear infinite; }
+.code-big { font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 700; letter-spacing: 0.14em; text-align: center; color: var(--gold-soft); background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 10px 8px; margin: 8px 0 14px; }
+.link-box { background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; }
+.link-row { display: flex; gap: 8px; }
+.link-row input {
+  flex: 1; min-width: 0; min-height: 52px;
+  border: 1px solid var(--hairline); border-radius: var(--radius-sm);
+  background: var(--frame); color: var(--text); padding: 0 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: 14px;
+}
+.link-row .btn { width: auto; flex: none; }
+.link-done { color: var(--green-soft); font-size: 14px; font-weight: 700; margin: 8px 0 0; }
+.link-done:empty { display: none; }
+.waiting { text-align: center; color: var(--text-dim); }
+.spinner { width: 40px; height: 40px; margin: 12px auto; border: 5px solid var(--hairline); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------- Гра ---------- */
@@ -141,12 +173,12 @@ p { margin: 0 0 12px; }
   gap: 8px;
   min-height: 40px;
   padding: 4px 8px;
-  border-radius: 12px;
-  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
   font-weight: 800;
   font-size: 15px;
 }
-.player.turn { background: #fff; border-color: var(--accent); }
+.player.turn { background: var(--panel); border-color: var(--gold); }
 .player .mini { flex: 0 0 30px; width: 30px; height: 30px; }
 .player .pname { flex: 0 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .taken { flex: 1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0; min-width: 0; }
@@ -157,9 +189,10 @@ p { margin: 0 0 12px; }
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   width: 100%;
-  border: 3px solid var(--navy);
-  border-radius: 8px;
+  border: 3px solid var(--frame);
+  border-radius: var(--radius-sm);
   overflow: hidden;
+  box-shadow: 0 10px 30px -12px rgba(0,0,0,.7);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -178,7 +211,7 @@ p { margin: 0 0 12px; }
 }
 .cell::before { content: ""; display: block; padding-top: 100%; }
 .cell.moving { z-index: 3; }
-.cell .coord { position: absolute; font-size: 10px; line-height: 1; font-weight: 700; opacity: 0.65; pointer-events: none; z-index: 2; }
+.cell .coord { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 9px; line-height: 1; font-weight: 700; opacity: 0.55; pointer-events: none; z-index: 2; }
 .cell .coord.file { right: 3px; bottom: 2px; }
 .cell .coord.rank { left: 3px; top: 2px; }
 .piece { position: absolute; left: 0; top: 0; right: 0; bottom: 0; padding: 3%; pointer-events: none; z-index: 1; }
@@ -187,12 +220,12 @@ p { margin: 0 0 12px; }
   content: "";
   position: absolute;
   left: 0; top: 0; right: 0; bottom: 0;
-  background: radial-gradient(circle, rgba(255, 30, 30, 0.95) 0%, rgba(255, 30, 30, 0.55) 42%, rgba(255, 30, 30, 0) 72%);
+  background: radial-gradient(circle, rgba(201,106,77,.95) 0%, rgba(201,106,77,.55) 42%, rgba(201,106,77,0) 72%);
   animation: glow 0.8s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 0;
 }
-.cell.check .piece svg { filter: drop-shadow(0 0 3px #ff1a1a) drop-shadow(0 0 6px #ff1a1a); }
+.cell.check .piece svg { filter: drop-shadow(0 0 3px #c96a4d) drop-shadow(0 0 6px #c96a4d); }
 @keyframes glow { from { opacity: 0.55; } to { opacity: 1; } }
 .cell .dot {
   position: absolute;
@@ -226,13 +259,13 @@ p { margin: 0 0 12px; }
   left: 50%;
   bottom: 96%;
   transform: translateX(-50%);
-  background: #fff;
-  color: var(--navy);
-  border: 2px solid var(--navy);
-  border-radius: 12px;
+  background: var(--text);
+  color: var(--frame);
+  border: 2px solid var(--frame);
+  border-radius: var(--radius-md);
   padding: 1px 8px;
   font-size: 15px;
-  font-weight: 900;
+  font-weight: 800;
   white-space: nowrap;
   animation: say 1.2s ease-out forwards;
 }
@@ -266,8 +299,8 @@ p { margin: 0 0 12px; }
 }
 
 .status { min-height: 48px; margin: 8px 0 4px; text-align: center; font-size: 18px; font-weight: 800; line-height: 1.3; }
-.status.alert { color: #c41a1a; }
-.net-line { text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 8px; }
+.status.alert { color: var(--danger); }
+.net-line { text-align: center; font-size: 14px; color: var(--text-dim); margin-bottom: 8px; }
 .row-btns { display: flex; gap: 12px; margin-top: 8px; }
 .row-btns .btn { flex: 1; margin: 0; }
 
@@ -275,31 +308,32 @@ p { margin: 0 0 12px; }
 .modal {
   position: fixed;
   left: 0; top: 0; right: 0; bottom: 0;
-  background: rgba(15, 27, 54, 0.55);
+  background: rgba(10,8,5,.72);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
   z-index: 20;
 }
-.modal-card { width: 100%; max-width: 420px; background: #fff; border-radius: 20px; padding: 18px 16px; text-align: center; box-shadow: 0 12px 36px rgba(15, 27, 54, 0.4); position: relative; }
+.modal-card { width: 100%; max-width: 420px; background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius-lg); padding: 18px 16px; text-align: center; box-shadow: 0 30px 70px -20px rgba(0,0,0,.8); position: relative; }
 .modal-card h2 { margin-bottom: 12px; }
 .promo-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .promo-btn {
   display: block;
   min-width: 0;
   padding: 6px 2px 8px;
-  background: var(--blue-light);
-  border: 2px solid var(--navy);
-  border-radius: 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
   font: inherit;
   font-size: 12px;
   font-weight: 700;
   line-height: 1.15;
-  color: var(--navy);
+  color: var(--text);
   cursor: pointer;
   touch-action: manipulation;
 }
+.promo-btn:hover { border-color: var(--gold); }
 .promo-btn .pic { display: block; width: 100%; max-width: 64px; aspect-ratio: 1 / 1; margin: 0 auto 4px; pointer-events: none; }
 .promo-btn span { pointer-events: none; }
 
@@ -307,8 +341,8 @@ p { margin: 0 0 12px; }
 .party-pic { width: 150px; height: 150px; margin: -6px auto 2px; animation: bounce 0.7s ease-in-out infinite alternate; }
 .party-pic.draw { display: flex; width: 220px; animation: none; }
 .party-pic.draw > div { flex: 1; }
-.party-title { font-size: 26px; font-weight: 900; line-height: 1.15; margin: 0 0 8px; color: var(--navy); }
-.party-text { font-size: 17px; color: var(--muted); }
+.party-title { font-family: 'Fraunces', Georgia, serif; font-size: 26px; font-weight: 600; line-height: 1.15; margin: 0 0 8px; color: var(--gold-soft); }
+.party-text { font-size: 17px; color: var(--text-dim); }
 @keyframes bounce { from { transform: translateY(0) scale(1); } to { transform: translateY(-14px) scale(1.06); } }
 .confetti { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; overflow: hidden; }
 .confetti i { position: absolute; top: -20px; width: 10px; height: 14px; border-radius: 3px; animation: fall linear infinite; }
@@ -326,7 +360,7 @@ p { margin: 0 0 12px; }
   .promo-btn { font-size: 15px; }
 }
 @media (min-width: 520px) {
-  h1 { font-size: 32px; }
+  h1 { font-size: 34px; }
 }
 </style>
 </head>
@@ -352,9 +386,9 @@ p { margin: 0 0 12px; }
     <div class="modes">
       <button type="button" class="btn btn-primary" id="btn-mode-bot"><span class="mode-pic" id="pic-mode-bot"></span><span>Грати зі свинею<small>Бот: новачок або хитра свиня</small></span></button>
       <button type="button" class="btn btn-secondary" id="btn-mode-local"><span class="mode-pic" id="pic-mode-local"></span><span>Удвох на одному пристрої<small>Передавайте планшет по черзі</small></span></button>
-      <button type="button" class="btn btn-secondary" id="btn-mode-online"><span class="mode-pic" id="pic-mode-online"></span><span>Онлайн з учителем<small>Кімната за кодом із 5 цифр</small></span></button>
+      <button type="button" class="btn btn-secondary" id="btn-mode-online"><span class="mode-pic" id="pic-mode-online"></span><span>Онлайн з учителем<small>Гра за посиланням</small></span></button>
     </div>
-    <p class="small">Гра нічого не збирає й не зберігає. В онлайн-режимі ходи передаються через сервіс Ably тільки між двома гравцями кімнати.</p>
+    <p class="small">Гра нічого не збирає. В онлайн-режимі ходи передаються через сервіс Ably тільки між двома гравцями кімнати, а на пристрої запам'ятовується лише поточна онлайн-партія.</p>
   </section>
 
   <section id="screen-bot" class="hidden">
@@ -380,8 +414,8 @@ p { margin: 0 0 12px; }
   <section id="screen-online" class="hidden">
     <div class="notice hidden" id="online-off">Онлайн-режим ще не налаштовано: власник сайту має вставити ключ Ably у змінну <code>ABLY_KEY</code> на початку скрипту.</div>
     <div class="panel">
-      <h2>Створити кімнату</h2>
-      <p>За кого гратиме той, хто створює кімнату?</p>
+      <h2>Грати онлайн</h2>
+      <p>За кого граєш ти? Суперник отримає посилання й гратиме іншою стороною.</p>
       <div class="choices" role="radiogroup" aria-label="Сторона">
         <label class="choice on" id="choice-side-w">
           <input type="radio" name="side" value="w" checked>
@@ -396,21 +430,31 @@ p { margin: 0 0 12px; }
           <small>чорні</small>
         </label>
       </div>
-      <button type="button" class="btn btn-primary" id="btn-create">Створити кімнату</button>
+      <button type="button" class="btn btn-primary" id="btn-create">Грати онлайн</button>
     </div>
     <div class="panel">
-      <h2>Увійти в кімнату</h2>
-      <p>Введи код, який тобі назвали.</p>
-      <input class="field" id="room-code" type="text" inputmode="numeric" maxlength="5" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Код кімнати" placeholder="00000">
+      <h2>Увійти за кодом</h2>
+      <p>Якщо посилання не відкривається, введи код кімнати з 6 цифр.</p>
+      <input class="field" id="room-code" type="text" inputmode="numeric" maxlength="6" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Код кімнати" placeholder="000000">
       <button type="button" class="btn btn-primary" id="btn-join">Увійти</button>
     </div>
     <p class="msg" id="online-msg" aria-live="polite"></p>
   </section>
 
   <section id="screen-wait" class="hidden">
-    <h2>Кімнату створено</h2>
-    <p>Назви цей код суперникові — він вводить його в «Увійти в кімнату»:</p>
-    <div class="code-big" id="wait-code">00000</div>
+    <h2 id="wait-title">Кімнату створено</h2>
+    <div id="wait-host">
+      <p>Надішли суперникові це посилання — він відкриє його й одразу гратиме:</p>
+      <div class="link-box">
+        <div class="link-row">
+          <input type="text" id="link-input" readonly aria-label="Посилання для суперника">
+          <button type="button" class="btn btn-primary" id="btn-copy">Скопіювати</button>
+        </div>
+        <p class="link-done" id="link-done" aria-live="polite"></p>
+      </div>
+      <p>Або назви код кімнати (вводять в «Увійти за кодом»):</p>
+    </div>
+    <div class="code-big" id="wait-code">000000</div>
     <div class="spinner" aria-hidden="true"></div>
     <p class="waiting" id="wait-msg" aria-live="polite">Підключаємося…</p>
     <button type="button" class="btn btn-secondary" id="btn-wait-cancel">Скасувати</button>
@@ -464,7 +508,7 @@ p { margin: 0 0 12px; }
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js" integrity="sha384-2D/YG6ZVRMpAIE2PL+zjrxBjvzCSytPKkNUB1Ut84ncxjOuTSrkoO66SGAKjsec3" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
 <script>
 (function () {
   'use strict';
@@ -481,19 +525,20 @@ p { margin: 0 0 12px; }
   var THEME = {
     title: 'Українці проти свиней',
 
+    // Кольори дошки — з CSS-змінних у :root (як у knight-quest).
     board: {
-      light: '#e8f2fc',
-      dark: '#8db7e0',
-      lastLight: '#ffe7a3',
-      lastDark: '#f2c45a',
-      selected: '#ffb38f',
-      dot: 'rgba(26, 44, 84, 0.5)',
-      ring: '#d6401a',
-      coords: '#1a2c54'
+      light: 'var(--board-light)',
+      dark: 'var(--board-dark)',
+      lastLight: 'var(--gold-soft)',
+      lastDark: 'var(--gold)',
+      selected: 'var(--green-soft)',
+      dot: 'rgba(12, 10, 8, 0.45)',
+      ring: 'var(--danger)',
+      coords: 'var(--frame)'
     },
 
     // Хмаринка, з якою відлітає з'їдена свиня (поле 100×60).
-    cloud: '<path d="M20 52 Q4 52 7 39 Q10 28 22 30 Q24 13 42 15 Q53 3 67 13 Q83 9 85 26 Q98 28 95 42 Q93 53 80 52 Z" fill="#ffffff" stroke="#9fb6d6" stroke-width="3" stroke-linejoin="round"/>',
+    cloud: '<path d="M20 52 Q4 52 7 39 Q10 28 22 30 Q24 13 42 15 Q53 3 67 13 Q83 9 85 26 Q98 28 95 42 Q93 53 80 52 Z" fill="#f1e9d8" stroke="#b7a98e" stroke-width="3" stroke-linejoin="round"/>',
 
     bots: {
       easy: 'Свиня-новачок',
@@ -759,14 +804,15 @@ p { margin: 0 0 12px; }
 
   /* ================== НАЛАШТУВАННЯ ================== */
 
-  // Ключ Ably для онлайн-режиму. ВСТАВТЕ СВІЙ (див. ukr-chess/README.md).
-  // Поки тут заглушка в кутових дужках, онлайн-режим вимкнено.
+  // Ключ Ably для онлайн-режиму (див. ukr-chess/README.md). Заглушка '<КЛЮЧ_ABLY>' вимикає онлайн.
   var ABLY_KEY = 'HKRVtg.MscH2Q:AW1i-UndGu03DiHJOQ4M4j47m6R_exbbyt2P9GcF95U';
 
   // Бібліотека Ably підвантажується лише коли обрано онлайн-режим.
-  var ABLY_SRC = 'https://cdn.jsdelivr.net/npm/ably@2.28.0/build/ably.min.js';
-  var ABLY_SRI = 'sha384-SQa/bifsOXACnC9lqGmIdevHOESao90qevm3OLDnCJg1NAuq7Yccvt6H4JT1VIfc';
+  var ABLY_SRC = 'https://cdn.jsdelivr.net/npm/ably@2.29.0/build/ably.min.js';
+  var ABLY_SRI = 'sha384-xVSjbV2fXZTi9caskIhs88kPVeOVfWhVLoNKldOsEkSonNL5mjlfhVIR8pwF012V';
   var ROOM_PREFIX = 'ukr-chess:';
+  var ROOM_DIGITS = 6;                  // id кімнати: 6 цифр, посилання ?room=123456
+  var ROOM_KEY = 'ukr-chess-room-v1';   // localStorage: остання онлайн-кімната на цьому пристрої
 
   var BOT_DELAY_MS = 350;   // пауза перед ходом бота, щоб хід було видно
   var BOT_SEARCH_MS = 550;  // скільки найбільше думає «Хитра свиня»
@@ -1401,8 +1447,9 @@ p { margin: 0 0 12px; }
     st.lastMove = { from: move.from, to: move.to };
     st.selected = null;
     st.legal = [];
-    if (source === 'me' && st.mode === 'online') {
-      netSend('move', { u: uciOf(move), n: game.history().length - 1, g: net.gameNo });
+    if (st.mode === 'online') {
+      if (source === 'me') { netSendState(); }
+      saveRoom();
     }
 
     renderBoard();
@@ -1476,10 +1523,13 @@ p { margin: 0 0 12px; }
     if (st.mode === 'bot') { side = 'w'; }
     else if (st.mode === 'online') { side = st.mySide; }
     else { side = game.turn(); }
-    if (st.mode === 'online') { netSend('resign', { side: side, g: net.gameNo }); }
     runId++;
     clearTimers();
     finishGame({ winner: other(side), reason: 'resign' }, 150);
+    if (st.mode === 'online') {
+      netSendState();
+      saveRoom();
+    }
   }
 
   /* ================== СВЯТО (кінець гри) ================== */
@@ -1661,7 +1711,19 @@ p { margin: 0 0 12px; }
     return best ? randomItem(best) : randomItem(moves);
   }
 
-  /* ================== ОНЛАЙН (Ably) ================== */
+  /* ================== ОНЛАЙН (Ably) ==================
+     Вчитель (господар кімнати) обирає сторону й натискає «Грати онлайн». Він отримує посилання
+     ?room=<6 цифр> і надсилає його учневі. Учень відкриває посилання й одразу грає іншою стороною
+     (код можна ввести й вручну: «Увійти за кодом»).
+     Повідомлення в каналі ukr-chess:<id кімнати>:
+       join  {}  — «я тут, надішліть стан» (після входу, оновлення сторінки чи обриву зв'язку);
+       state {hostSide, g, moves, over, joined} — повний стан: сторона господаря, номер партії
+             в кімнаті, усі ходи (e2e4, e7e8q…), здача (over) і чи вже заходив гість (joined).
+             Надсилається після кожного ходу, здачі, нової партії й у відповідь на join.
+             Новіший стан — з більшим g, а при рівному g — з більшою кількістю ходів;
+       bye   {}  — гравець закрив сторінку.
+     Після оновлення чи закриття сторінки стан береться з localStorage цього пристрою, з історії
+     каналу Ably й від суперника, якщо він на зв'язку. */
 
   function onlineConfigured() {
     return !!ABLY_KEY && ABLY_KEY.indexOf('<') === -1;
@@ -1682,7 +1744,10 @@ p { margin: 0 0 12px; }
     document.head.appendChild(s);
   }
 
-  function setOnlineMsg(text) { byId('online-msg').textContent = text; }
+  function setOnlineMsg(text) {
+    byId('online-msg').textContent = text;
+    if (text) { byId('wait-msg').textContent = text; }
+  }
 
   function setNetLine(text) {
     if (net) { net.lineText = text; }
@@ -1693,28 +1758,106 @@ p { margin: 0 0 12px; }
   }
 
   function newRoomCode() {
-    var n;
-    var buf;
+    var code = '';
+    var buf = null;
+    var i;
     if (window.crypto && window.crypto.getRandomValues) {
-      buf = new Uint32Array(1);
+      buf = new Uint32Array(ROOM_DIGITS);
       window.crypto.getRandomValues(buf);
-      n = buf[0] % 90000;
-    } else {
-      n = Math.floor(Math.random() * 90000);
     }
-    return String(10000 + n);
+    for (i = 0; i < ROOM_DIGITS; i++) {
+      code += String(buf ? buf[i] % 10 : Math.floor(Math.random() * 10));
+    }
+    return code;
   }
 
-  function netConnect(role, code, side, onReady) {
+  /* ---------- Посилання й збереження кімнати ---------- */
+
+  function roomFromUrl() {
+    var m = /[?&]room=(\d+)/.exec(window.location.search);
+    return (m && m[1].length === ROOM_DIGITS) ? m[1] : '';
+  }
+
+  function pageUrl() {
+    return window.location.href.split('#')[0].split('?')[0];
+  }
+
+  // Адреса сторінки з ?room=..., щоб після оновлення гравець повернувся в ту саму кімнату.
+  function setUrlRoom(code) {
+    try {
+      window.history.replaceState(null, '', code ? '?room=' + code : pageUrl());
+    } catch (e) { /* не страшно */ }
+  }
+
+  function enterRoom(code) {
+    byId('wait-code').textContent = code;
+    byId('link-input').value = pageUrl() + '?room=' + code;
+    byId('link-done').textContent = '';
+    setUrlRoom(code);
+  }
+
+  // localStorage: id кімнати, чи цей пристрій — господар, його сторона й стан гри.
+  function saveRoom() {
+    if (!net || !net.side) { return; }
+    try {
+      window.localStorage.setItem(ROOM_KEY, JSON.stringify({
+        room: net.code, host: net.host, side: net.side, state: currentState()
+      }));
+    } catch (e) { /* сховище недоступне — стан прийде з Ably */ }
+  }
+
+  function loadRoom(code) {
+    var d;
+    try {
+      d = JSON.parse(window.localStorage.getItem(ROOM_KEY) || 'null');
+      return (d && d.room === code) ? d : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function forgetRoom() {
+    try { window.localStorage.removeItem(ROOM_KEY); } catch (e) { /* ігноруємо */ }
+    if (roomFromUrl()) { setUrlRoom(''); }
+  }
+
+  function copyLink() {
+    var input = byId('link-input');
+    function done() { byId('link-done').textContent = 'Скопійовано! Встав посилання в чат.'; }
+    function bySelect() {
+      input.focus();
+      input.select();
+      try {
+        if (document.execCommand('copy')) { done(); return; }
+      } catch (e) { /* немає доступу до буфера */ }
+      byId('link-done').textContent = 'Виділи посилання й скопіюй його вручну.';
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value).then(done, bySelect);
+        return;
+      }
+    } catch (e) { /* спробуємо інакше */ }
+    bySelect();
+  }
+
+  /* ---------- З'єднання ---------- */
+
+  // host — true для того, хто створив кімнату; side — його сторона (для гостя стане відома зі стану).
+  function netConnect(host, code, side, onReady) {
+    if (!onlineConfigured()) {
+      setOnlineMsg('Онлайн-режим ще не налаштовано: потрібен ключ Ably (ABLY_KEY).');
+      return;
+    }
     setOnlineMsg('Підключаємося…');
     byId('btn-create').disabled = true;
     byId('btn-join').disabled = true;
     loadAbly(function (ok) {
-      var client;
+      var client, channel, sub;
       byId('btn-create').disabled = false;
       byId('btn-join').disabled = false;
       if (!ok) {
-        setOnlineMsg('Не вдалося завантажити модуль зв\'язку. Перевірте інтернет і спробуйте ще раз.');
+        setOnlineMsg('Не вдалося завантажити модуль зв\'язку. Перевірте інтернет і оновіть сторінку.');
         return;
       }
       try {
@@ -1726,10 +1869,11 @@ p { margin: 0 0 12px; }
       net = {
         client: client,
         channel: null,
-        role: role,
+        host: host,
         code: code,
         side: side,
         gameNo: 1,
+        joined: false,
         peerHere: false,
         wasConnected: false,
         joinTries: 0,
@@ -1737,11 +1881,42 @@ p { margin: 0 0 12px; }
         lineText: ''
       };
       client.connection.on(onConnectionChange);
-      net.channel = client.channels.get(ROOM_PREFIX + code);
-      guardPromise(net.channel.subscribe(onNetMessage));
+      channel = client.channels.get(ROOM_PREFIX + code);
+      net.channel = channel;
+      sub = channel.subscribe(function (msg) {
+        if (net && net.channel === channel) { onNetMessage(msg); }
+      });
+      // Коли канал під'єднано, беремо останній стан з історії (поки Ably її зберігає).
+      if (sub && typeof sub.then === 'function') {
+        sub.then(function () { loadHistory(channel); }, function () {
+          setNetLine('немає зв\'язку, пробуємо ще…');
+        });
+      }
       setOnlineMsg('');
       onReady();
     });
+  }
+
+  function loadHistory(channel) {
+    var p;
+    try {
+      p = channel.history({ untilAttach: true, limit: 50 });
+    } catch (e) {
+      return;
+    }
+    if (!p || typeof p.then !== 'function') { return; }
+    p.then(function (page) {
+      var items = (page && page.items) || [];
+      var i;
+      if (!net || net.channel !== channel) { return; }
+      // items — від найновішого до найстарішого.
+      for (i = 0; i < items.length; i++) {
+        if (items[i].name === 'state') {
+          adoptState(items[i].data || {}, false);
+          return;
+        }
+      }
+    }, function () { /* історії немає — чекаємо стан від суперника */ });
   }
 
   function guardPromise(p) {
@@ -1765,23 +1940,18 @@ p { margin: 0 0 12px; }
     var state = change && change.current;
     if (!net) { return; }
     if (state === 'connected') {
-      setNetLine(net.peerHere ? 'на зв\'язку' : (net.role === 'host' ? 'чекаємо суперника…' : 'шукаємо кімнату…'));
-      if (net.wasConnected) {
-        // Після обриву зв'язку звіряємо гру ще раз.
-        if (net.role === 'guest') { netSend('join', {}); }
-        else if (net.peerHere) { netSendState(); }
-      }
+      setNetLine(net.peerHere ? 'на зв\'язку' : (net.host ? 'чекаємо суперника…' : 'шукаємо кімнату…'));
+      // Після обриву зв'язку звіряємо гру ще раз.
+      if (net.wasConnected) { netSend('join', {}); }
       net.wasConnected = true;
     } else if (state === 'connecting' || state === 'disconnected' || state === 'suspended') {
       setNetLine('відновлюємо зв\'язок…');
     } else if (state === 'failed') {
       setNetLine('не вдалося підключитися (перевірте ключ Ably або інтернет)');
-      if (net.role === 'guest' && !net.peerHere) {
-        setOnlineMsg('Не вдалося підключитися. Перевірте інтернет або ключ Ably.');
-      }
     }
   }
 
+  // Закрити з'єднання. Кімнату (адресу й запис у сховищі) не забуваємо — для цього forgetRoom.
   function netLeave() {
     if (!net) { return; }
     if (net.joinTimer) { window.clearTimeout(net.joinTimer); }
@@ -1790,52 +1960,91 @@ p { margin: 0 0 12px; }
     net = null;
   }
 
+  /* ---------- Вчитель (господар) ---------- */
+
+  function showWait(host) {
+    byId('wait-title').textContent = host ? 'Кімнату створено' : 'Заходимо в кімнату';
+    byId('wait-host').className = host ? '' : 'hidden';
+    showScreen('wait');
+  }
+
   function createRoom() {
     var side = radioValue('side');
     if (!onlineConfigured()) { return; }
-    netConnect('host', newRoomCode(), side, function () {
-      byId('wait-code').textContent = net.code;
+    netConnect(true, newRoomCode(), side, function () {
+      enterRoom(net.code);
       setNetLine('чекаємо суперника…');
-      showScreen('wait');
+      showWait(true);
+      saveRoom();
+      netSendState();
     });
   }
+
+  function resumeHost(code, rec) {
+    netConnect(true, code, rec.side, function () {
+      enterRoom(code);
+      if (rec.state) { adoptState(rec.state, false); }
+      if (!st) {
+        setNetLine('чекаємо суперника…');
+        showWait(true);
+      }
+      netSend('join', {});
+    });
+  }
+
+  /* ---------- Учень (гість) ---------- */
 
   function joinRoom() {
     var code = byId('room-code').value.replace(/\D/g, '');
     if (!onlineConfigured()) { return; }
-    if (code.length !== 5) {
-      setOnlineMsg('Код кімнати — це 5 цифр.');
+    if (code.length !== ROOM_DIGITS) {
+      setOnlineMsg('Код кімнати — це ' + ROOM_DIGITS + ' цифр.');
       return;
     }
-    netConnect('guest', code, null, function () {
-      setOnlineMsg('Шукаємо кімнату ' + code + '…');
+    joinAsGuest(code, null);
+  }
+
+  // Увійти гостем: за посиланням, за кодом або після оновлення сторінки (rec — запис зі сховища).
+  function joinAsGuest(code, rec) {
+    byId('wait-code').textContent = code;
+    byId('wait-msg').textContent = 'Шукаємо кімнату…';
+    showWait(false);
+    netConnect(false, code, null, function () {
+      enterRoom(code);
+      if (rec && rec.state) { adoptState(rec.state, false); }
       tryJoin();
     });
   }
 
   function tryJoin() {
-    if (!net || net.role !== 'guest' || net.peerHere) { return; }
-    if (net.joinTries >= 5) {
-      setOnlineMsg('Кімнату ' + net.code + ' не знайдено. Перевір код і спробуй ще раз.');
-      netLeave();
-      return;
-    }
+    if (!net || net.host || net.peerHere) { return; }
     net.joinTries++;
+    if (net.joinTries > 5 && !st) {
+      setNetLine('кімнату ' + net.code + ' не знайдено. Перевір посилання або зачекай на суперника');
+    }
     netSend('join', {});
     net.joinTimer = window.setTimeout(tryJoin, 3000);
   }
 
-  function netSendState() {
-    netSend('state', {
-      hostSide: net.side,
+  /* ---------- Стан гри ---------- */
+
+  function currentState() {
+    return {
+      hostSide: net.host ? net.side : other(net.side),
       g: net.gameNo,
       moves: movesAsUci(),
-      over: (st && st.over && st.over.reason === 'resign') ? st.over : null
-    });
+      over: (st && st.mode === 'online' && st.over && st.over.reason === 'resign') ? st.over : null,
+      joined: net.host ? net.joined : true
+    };
+  }
+
+  function netSendState() {
+    if (!net || !net.side) { return; }
+    netSend('state', currentState());
   }
 
   function movesAsUci() {
-    var hist = (st && game) ? game.history({ verbose: true }) : [];
+    var hist = (st && st.mode === 'online' && game) ? game.history({ verbose: true }) : [];
     var list = [];
     var i;
     for (i = 0; i < hist.length; i++) { list.push(uciOf(hist[i])); }
@@ -1850,17 +2059,79 @@ p { margin: 0 0 12px; }
   function netNewGame() {
     if (!net) { return; }
     net.gameNo++;
-    netSend('new', { g: net.gameNo });
     startOnlineGame();
+    netSendState();
+    saveRoom();
   }
 
-  // Відтворює гру за списком ходів без анімацій (для гостя, що під'єднався).
+  function validState(d) {
+    var i;
+    if (!d || (d.hostSide !== 'w' && d.hostSide !== 'b') || typeof d.g !== 'number') { return false; }
+    if (!d.moves || typeof d.moves.length !== 'number' || d.moves.length > 1000) { return false; }
+    for (i = 0; i < d.moves.length; i++) {
+      if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(String(d.moves[i]))) { return false; }
+    }
+    if (d.over && !((d.over.winner === 'w' || d.over.winner === 'b') && d.over.reason === 'resign')) { return false; }
+    return true;
+  }
+
+  function onlineMoves() {
+    return (st && st.mode === 'online') ? game.history().length : -1;
+  }
+
+  function isNewer(d) {
+    var n = onlineMoves();
+    if (d.g !== net.gameNo) { return d.g > net.gameNo; }
+    if (d.moves.length !== n) { return d.moves.length > n; }
+    return !!d.over && !st.over;
+  }
+
+  function samePrefix(list) {
+    var hist = movesAsUci();
+    var i;
+    for (i = 0; i < hist.length; i++) {
+      if (hist[i] !== list[i]) { return false; }
+    }
+    return true;
+  }
+
+  // Прийняти стан (з мережі, історії чи сховища), якщо він новіший за поточний.
+  // animate — показати хід суперника з анімацією, якщо це рівно один новий хід.
+  function adoptState(d, animate) {
+    var n;
+    if (!net || !validState(d) || !isNewer(d)) { return; }
+    if (!net.host) {
+      net.side = other(d.hostSide);
+      if (net.joinTimer) { window.clearTimeout(net.joinTimer); net.joinTimer = null; }
+    }
+    if (d.joined) { net.joined = true; }
+    if (net.host && !net.joined && d.moves.length === 0) {
+      // Гість ще не заходив — лишаємося на екрані очікування.
+      net.gameNo = d.g;
+      return;
+    }
+    n = onlineMoves();
+    if (animate && n >= 0 && d.g === net.gameNo && !st.over && samePrefix(d.moves)) {
+      if (d.moves.length === n + 1 && makeMove(parseUci(d.moves[n]), 'net')) {
+        if (d.over && !st.over) { finishGame(d.over, 600); }
+        saveRoom();
+        return;
+      }
+      if (d.moves.length === n && d.over) {
+        runId++;
+        clearTimers();
+        finishGame(d.over, 150);
+        saveRoom();
+        return;
+      }
+    }
+    applyState(d);
+  }
+
+  // Відтворює гру за списком ходів без анімацій (після входу чи оновлення сторінки).
   function applyState(data) {
     var i, move;
-    net.side = other(data.hostSide);
     net.gameNo = data.g;
-    net.peerHere = true;
-    if (net.joinTimer) { window.clearTimeout(net.joinTimer); net.joinTimer = null; }
     startGame({ mode: 'online', mySide: net.side });
     for (i = 0; i < data.moves.length; i++) {
       move = game.move(parseUci(data.moves[i]));
@@ -1868,55 +2139,51 @@ p { margin: 0 0 12px; }
       st.lastMove = { from: move.from, to: move.to };
     }
     st.over = data.over || gameResult();
-    setNetLine('на зв\'язку');
+    setNetLine(net.peerHere ? 'на зв\'язку' : 'чекаємо суперника…');
     renderAll();
+    saveRoom();
   }
 
   function onNetMessage(msg) {
     var d = (msg && msg.data) || {};
     var name = msg && msg.name;
-    var move;
     if (!net) { return; }
 
-    if (name === 'join' && net.role === 'host') {
+    if (name === 'join') {
       net.peerHere = true;
-      if (!st || st.mode !== 'online') { startOnlineGame(); }
+      if (net.host && !net.joined) {
+        net.joined = true;
+        if (!st || st.mode !== 'online') { startOnlineGame(); }
+        saveRoom();
+      }
       setNetLine('на зв\'язку');
       netSendState();
-      renderAll();
+      if (st) { renderAll(); }
       return;
     }
-    if (name === 'state' && net.role === 'guest') {
-      if (typeof d.hostSide !== 'string' || !d.moves) { return; }
-      applyState(d);
+    if (name === 'state') {
+      net.peerHere = true;
+      adoptState(d, true);
+      setNetLine('на зв\'язку');
+      if (st) { renderAll(); }
       return;
     }
-    if (!st || st.mode !== 'online') { return; }
-
-    if (name === 'move') {
-      if (d.g !== net.gameNo || st.over) { return; }
-      if (d.n !== game.history().length || game.turn() === st.mySide) {
-        // Ходи розійшлися: гість просить у господаря повний стан.
-        if (net.role === 'guest') { netSend('join', {}); } else { netSendState(); }
-        return;
-      }
-      move = makeMove(parseUci(String(d.u || '')), 'net');
-      if (!move && net.role === 'guest') { netSend('join', {}); }
-    } else if (name === 'resign') {
-      if (d.g !== net.gameNo || st.over || d.side === st.mySide) { return; }
-      runId++;
-      clearTimers();
-      finishGame({ winner: st.mySide, reason: 'resign' }, 150);
-    } else if (name === 'new') {
-      if (typeof d.g !== 'number' || d.g <= net.gameNo) { return; }
-      net.gameNo = d.g;
-      startOnlineGame();
-    } else if (name === 'bye') {
+    if (name === 'bye') {
       net.peerHere = false;
-      setNetLine(net.role === 'host'
-        ? 'суперник вийшов. Якщо він увійде знову з цим кодом, гра продовжиться'
-        : 'суперник закрив кімнату');
-      renderAll();
+      setNetLine('суперник вийшов. Коли він знову відкриє посилання, гра продовжиться');
+      if (st) { renderAll(); }
+    }
+  }
+
+  function resumeFromUrl() {
+    var code = roomFromUrl();
+    var rec;
+    if (!code) { return; }
+    rec = loadRoom(code);
+    if (rec && rec.host && (rec.side === 'w' || rec.side === 'b')) {
+      resumeHost(code, rec);
+    } else {
+      joinAsGuest(code, rec);
     }
   }
 
@@ -1927,6 +2194,7 @@ p { margin: 0 0 12px; }
     clearTimers();
     closeModals();
     netLeave();
+    forgetRoom();
     st = null;
     setOnlineMsg('');
     showScreen('menu');
@@ -1986,7 +2254,7 @@ p { margin: 0 0 12px; }
       playSound('select');
     });
     byId('btn-back').addEventListener('click', function () {
-      if (byId('screen-wait').className !== 'hidden') { netLeave(); openOnline(); return; }
+      if (byId('screen-wait').className !== 'hidden') { netLeave(); forgetRoom(); openOnline(); return; }
       if (byId('screen-game').className !== 'hidden') { onBack(); return; }
       goMenu();
     });
@@ -2008,7 +2276,8 @@ p { margin: 0 0 12px; }
     byId('room-code').addEventListener('keydown', function (event) {
       if (event.key === 'Enter') { joinRoom(); }
     });
-    byId('btn-wait-cancel').addEventListener('click', function () { netLeave(); openOnline(); });
+    byId('btn-wait-cancel').addEventListener('click', function () { netLeave(); forgetRoom(); openOnline(); });
+    byId('btn-copy').addEventListener('click', copyLink);
 
     byId('board').addEventListener('click', onBoardClick);
     byId('promo-row').addEventListener('click', onPromoClick);
@@ -2038,7 +2307,9 @@ p { margin: 0 0 12px; }
       byId('confetti').innerHTML = '';
     });
 
+    // Сторінка закривається чи оновлюється: кімнату не забуваємо, щоб повернутися в гру.
     window.addEventListener('pagehide', netLeave);
+    resumeFromUrl();
   }
 
   init();
