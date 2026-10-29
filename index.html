@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Шахові ігри</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #120f0b;
+    --bg-glow: #1c1712;
+    --panel: #1c1712;
+    --panel-2: #241d15;
+    --hairline: #3a3025;
+    --text: #f1e9d8;
+    --text-dim: #b7a98e;
+    --text-faint: #7d7361;
+    --gold: #d8a94c;
+    --gold-soft: #f0cf8f;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-deep: 0 24px 60px -24px rgba(0,0,0,.75);
+  }
+
+  *{box-sizing:border-box;}
+  html{ min-height:100%; background: var(--bg); }
+  body{
+    margin:0;
+    background:
+      radial-gradient(120% 90% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 18px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  header.top h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size: clamp(1.7rem, 1.2rem + 2vw, 2.4rem);
+    letter-spacing: -0.01em;
+    margin:0;
+    color: var(--gold-soft);
+  }
+  header.top p{
+    margin: 6px 0 0;
+    color: var(--text-dim);
+    font-size: 1rem;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .card{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding: 18px;
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-deep);
+  }
+  .card[hidden]{ display:none; }
+  .card-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .card h2{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size: 1.3rem;
+    margin:0;
+    color: var(--gold-soft);
+  }
+  .age{
+    flex: 0 0 auto;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:.8rem;
+    color: var(--gold-soft);
+    background: var(--panel-2);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+  .card p{
+    margin:0;
+    color: var(--text-dim);
+    font-size: .95rem;
+    line-height: 1.4;
+    flex: 1 1 auto;
+  }
+
+  .btn{
+    display:block;
+    text-align:center;
+    text-decoration:none;
+    border:1px solid transparent;
+    background: linear-gradient(160deg, var(--gold), #a9782c);
+    color: #241a08;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    font-family:'Manrope', sans-serif;
+    font-weight:800;
+    font-size: 1.05rem;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .btn:hover{ transform: translateY(-1px); border-color: var(--gold-soft); }
+  .btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
+
+  .empty{
+    display:none;
+    padding: 24px;
+    text-align:center;
+    color: var(--text-dim);
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+  }
+  .empty.show{ display:block; }
+
+  @media (prefers-reduced-motion: reduce){
+    .btn{ transition:none; }
+    .btn:hover{ transform:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Шахові ігри</h1>
+    <p>Обери гру і грай.</p>
+  </header>
+
+  <main>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty">Ігри скоро з'являться. Зазирни пізніше!</div>
+  </main>
+</div>
+
+<script>
+// Список ігор. Щоб додати нову, допиши рядок: папка, назва, опис, вік.
+// Картка з'явиться сама, коли в репозиторії буде папка з index.html.
+var GAMES = [
+  { folder: 'knight-quest',   title: 'Хід Конем',            desc: 'Доведи коня до цілі',                              age: '6+' },
+  { folder: 'mini-chess',     title: 'Міні-шахи',            desc: 'Перші шахи для малят, рівень за рівнем',           age: '4-7' },
+  { folder: 'ukr-chess',      title: 'Козаки проти свиней',  desc: 'Справжні шахи з українськими героями',             age: '6+' },
+  { folder: 'hanging-pieces', title: 'Хто висить?',          desc: 'Знайди фігури, які можна з\'їсти задарма',         age: '7+' },
+  { folder: 'fork-finder',    title: 'Знайди вилку',         desc: 'Атакуй дві фігури одним ходом',                    age: '7+' },
+  { folder: 'pawn-square',    title: 'Квадрат пішака',       desc: 'Встигне король чи ні?',                            age: '8+' },
+  { folder: 'tower-defense',  title: 'Шахова оборона',       desc: 'Розстав фігури і не пропусти пішаків',             age: '7+' },
+  { folder: 'chess-memory',   title: 'Шахова пам\'ять',      desc: 'Запам\'ятай позицію і відтвори її',                age: '7+' },
+  { folder: 'chessformer',    title: 'Шахоформер',           desc: 'Платформер, де фігури ходять за правилами шахів',  age: '6+' },
+  { folder: 'chess-snake',    title: 'Кінь-змійка',          desc: 'Обійди конем якомога більше клітинок',             age: '7+' },
+  { folder: 'safe-squares',   title: 'Безпечні клітинки',    desc: 'Куди може піти король?',                           age: '6+' },
+  { folder: 'chess-math',     title: 'Шахова математика',    desc: 'Порахуй матеріал швидше за таймер',                age: '7+' },
+  { folder: 'eight-queens',   title: '8 ферзів',             desc: 'Розстав фігури так, щоб ніхто нікого не бив',      age: '9+' }
+];
+
+var grid = document.getElementById('grid');
+var emptyNote = document.getElementById('empty');
+var shownCount = 0;
+
+function makeCard(game) {
+  var card = document.createElement('article');
+  card.className = 'card';
+  card.hidden = true; // показуємо, коли впевнені, що гра є
+
+  var head = document.createElement('div');
+  head.className = 'card-head';
+  var h2 = document.createElement('h2');
+  h2.textContent = game.title;
+  var age = document.createElement('span');
+  age.className = 'age';
+  age.textContent = game.age;
+  head.appendChild(h2);
+  head.appendChild(age);
+
+  var p = document.createElement('p');
+  p.textContent = game.desc;
+
+  var link = document.createElement('a');
+  link.className = 'btn';
+  link.href = game.folder + '/';
+  link.textContent = 'Грати';
+
+  card.appendChild(head);
+  card.appendChild(p);
+  card.appendChild(link);
+  grid.appendChild(card);
+  return card;
+}
+
+function showCard(card) {
+  card.hidden = false;
+  shownCount = shownCount + 1;
+  emptyNote.className = 'empty';
+}
+
+function checkGame(game) {
+  var card = makeCard(game);
+  var url = game.folder + '/';
+  // Лише 404 (чи інша відповідь сервера з помилкою) ховає картку.
+  // Якщо запит не вдався зовсім (наприклад, відкрито файл з диска), картку лишаємо.
+  fetch(url, { method: 'HEAD', cache: 'no-cache' }).then(function (res) {
+    if (res.ok) { showCard(card); }
+  }, function () {
+    showCard(card);
+  }).then(function () {
+    finished = finished + 1;
+    if (finished === GAMES.length && shownCount === 0) {
+      emptyNote.className = 'empty show';
+    }
+  });
+}
+
+var finished = 0;
+var i;
+for (i = 0; i < GAMES.length; i = i + 1) {
+  checkGame(GAMES[i]);
+}
+</script>
+</body>
+</html>
