@@ -19,6 +19,8 @@
     --text-faint: #7d7361;
     --gold: #d8a94c;
     --gold-soft: #f0cf8f;
+    --gold-deep: #a9782c;
+    --on-gold: #241a08;
     --radius-lg: 18px;
     --radius-md: 12px;
     --radius-sm: 8px;
@@ -113,8 +115,8 @@
     text-align:center;
     text-decoration:none;
     border:1px solid transparent;
-    background: linear-gradient(160deg, var(--gold), #a9782c);
-    color: #241a08;
+    background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+    color: var(--on-gold);
     padding: 14px 16px;
     border-radius: var(--radius-md);
     font-family:'Manrope', sans-serif;
@@ -141,6 +143,7 @@
     .btn:hover{ transform:none; }
   }
 </style>
+<script src="./theme/theme.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -171,7 +174,9 @@ var GAMES = [
   { folder: 'chess-snake',    title: 'Кінь-змійка',          desc: 'Обійди конем якомога більше клітинок',             age: '7+' },
   { folder: 'safe-squares',   title: 'Безпечні клітинки',    desc: 'Куди може піти король?',                           age: '6+' },
   { folder: 'chess-math',     title: 'Шахова математика',    desc: 'Порахуй матеріал швидше за таймер',                age: '7+' },
-  { folder: 'eight-queens',   title: '8 ферзів',             desc: 'Розстав фігури так, щоб ніхто нікого не бив',      age: '9+' }
+  { folder: 'eight-queens',   title: '8 ферзів',             desc: 'Розстав фігури так, щоб ніхто нікого не бив',      age: '9+' },
+  { folder: 'lesson',         title: 'Урок',                 desc: 'Тема тижня від тренера',                           age: '6+' },
+  { folder: 'cct',            title: 'Шах, взяття, загроза', desc: 'Перевір усе перед ходом',                          age: '7+' }
 ];
 
 var grid = document.getElementById('grid');

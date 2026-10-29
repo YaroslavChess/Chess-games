@@ -1,0 +1,42 @@
+@charset "UTF-8";
+@import url('https://fonts.googleapis.com/css2?family=Philosopher:wght@700&display=swap');
+/* Тема: синьо-жовта (20.08 – 25.08 і 28.09 – 02.10). */
+html:root{
+  --theme-title: "Слава Україні!";
+  --decor-items: "💙 💛 🌻 🕊️ 🌾";
+  --decor-motion: bob;
+  --theme-font: 'Philosopher';
+  --theme-font-weight: 700;
+
+  --bg: #071a33;
+  --bg-glow: #0e3a75;
+  --panel: #0c2447;
+  --panel-2: #153562;
+  --panel-hi: #163c6c;
+  --panel-hi-2: #163a66;
+  --hairline: #32598f;
+  --frame: #040e1d;
+  --frame-hi: #0d2a52;
+  --overlay-rgb: 3, 10, 24;
+
+  --text: #f5f8ff;
+  --text-dim: #c3d4ee;
+  --text-faint: #a8c0e2;
+
+  --gold: #ffd500;
+  --gold-soft: #ffe680;
+  --gold-deep: #d4a900;
+  --on-gold: #1a1400;
+  --gold-rgb: 255, 213, 0;
+  --gold-dark-rgb: 150, 110, 0;
+
+  --board-light: #f9edb0;
+  --board-dark: #3f6ba8;
+  --board-dark-hi: #4f7bb8;
+  --blocked-a: #27497a;
+  --blocked-b: #1d3a66;
+  --arrow-safe: #0a1d3a;
+
+  --danger: #ec8f72;
+  --danger-rgb: 236, 143, 114;
+}
