@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Знайди вилку</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #120f0b;
+    --bg-glow: #1c1712;
+    --panel: #1c1712;
+    --panel-2: #241d15;
+    --hairline: #3a3025;
+    --board-light: #ead9ba;
+    --board-dark: #86644a;
+    --board-dark-hi: #977252;
+    --frame: #0c0a08;
+    --text: #f1e9d8;
+    --text-dim: #b7a98e;
+    --text-faint: #7d7361;
+    --gold: #d8a94c;
+    --gold-soft: #f0cf8f;
+    --green: #2ecc71;
+    --green-soft: #a8e0bb;
+    --blocked-a: #443c30;
+    --blocked-b: #37312a;
+    --danger: #c96a4d;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-deep: 0 24px 60px -24px rgba(0,0,0,.75);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:
+      radial-gradient(120% 90% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    min-height: 100%;
+    margin: 0;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 18px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  header.top{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .title-block h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size: clamp(1.7rem, 1.2rem + 2vw, 2.4rem);
+    letter-spacing: -0.01em;
+    margin:0;
+    color: var(--gold-soft);
+    text-wrap: balance;
+  }
+  .title-block p{ margin: 4px 0 0; color: var(--text-dim); font-size: .92rem; max-width: 46ch; }
+  .title-badge{ font-size: 2.1rem; line-height:1; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+  .title-row{ display:flex; align-items:center; gap:12px; }
+
+  /* вибір рівня */
+  .levels{ display:flex; gap:7px; flex-wrap:wrap; }
+  .lvl-btn{
+    flex: 1 1 0;
+    min-width: 56px;
+    height: 46px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size: .85rem;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    cursor:pointer;
+    padding: 0 8px;
+    transition: transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .lvl-btn .ico{ font-size: 1.15rem; font-family: 'DejaVu Sans','Segoe UI Symbol','Noto Sans Symbols 2',sans-serif; }
+  .lvl-btn:hover{ transform: translateY(-2px); border-color: var(--gold); color: var(--gold-soft); }
+  .lvl-btn:focus-visible{ outline: 2px solid var(--gold-soft); outline-offset:2px; }
+  .lvl-btn.done{ background: linear-gradient(160deg, #3a4f3c, #2a3a2c); color: var(--green-soft); border-color: #4a6a4e; }
+  .lvl-btn.current{ background: linear-gradient(160deg, var(--gold), #a9782c); color: #241a08; border-color: var(--gold-soft); box-shadow: 0 0 0 3px rgba(216,169,76,.18); }
+
+  main.stage{ display:flex; gap:26px; align-items:flex-start; flex-wrap:wrap; justify-content:center; }
+
+  .board-col{ display:flex; flex-direction:column; align-items:center; gap:12px; width: min(520px, 100%); }
+  .task-line{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size: 1.15rem;
+    color: var(--text);
+    text-align:center;
+  }
+  .side-chip{ width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--hairline); flex: 0 0 auto; }
+  .side-chip.w{ background: var(--text); }
+  .side-chip.b{ background: var(--frame); border-color: var(--text-faint); }
+
+  /* дошка */
+  .board-frame{
+    position:relative;
+    width: min(520px, 88vw);
+    padding: 22px 22px 30px 30px;
+    background: linear-gradient(160deg, #241b10, var(--frame) 70%);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-deep), inset 0 0 0 1px #000;
+  }
+  .board-wrap{
+    position:relative;
+    width:100%;
+    height:0;
+    padding-bottom:100%;
+    border-radius: var(--radius-sm);
+    overflow:hidden;
+    box-shadow: 0 0 0 1px #000, 0 10px 30px -12px rgba(0,0,0,.7);
+  }
+  .board{
+    display:grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    width:100%; height:100%;
+  }
+  .sq{
+    position:relative;
+    border:none; padding:0; margin:0;
+    font: inherit;
+    cursor: pointer;
+    display:block;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sq.light{ background: var(--board-light); }
+  .sq.dark{ background: var(--board-dark); }
+  .sq:focus-visible{ outline: 3px solid var(--gold-soft); outline-offset:-3px; z-index:3; }
+  .sq.sel{ box-shadow: inset 0 0 0 100px rgba(216,169,76,.5); }
+
+  /* крапки можливих ходів */
+  .sq.dot::after{
+    content:"";
+    position:absolute; left:50%; top:50%;
+    width:26%; height:26%;
+    transform: translate(-50%,-50%);
+    border-radius:50%;
+    background: rgba(216,169,76,.6);
+    box-shadow: 0 0 0 2px rgba(216,169,76,.25);
+  }
+  .sq.dot.cap::after{
+    width:86%; height:86%;
+    background: transparent;
+    box-shadow: inset 0 0 0 4px rgba(216,169,76,.7);
+  }
+  .sq.dot.light::after{ background-color: rgba(160,110,30,.5); }
+  .sq.dot.cap.light::after{ background-color: transparent; }
+
+  .sq.wrong::before{
+    content:""; position:absolute; top:0; right:0; bottom:0; left:0;
+    background: rgba(201,106,77,.55);
+    box-shadow: inset 0 0 0 3px var(--danger);
+  }
+  .sq.dest::before{
+    content:""; position:absolute; top:0; right:0; bottom:0; left:0;
+    box-shadow: inset 0 0 0 4px var(--green);
+    background: rgba(46,204,113,.22);
+  }
+  .sq.tgt::before{
+    content:""; position:absolute; top:5%; right:5%; bottom:5%; left:5%;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px var(--danger), 0 0 14px 2px rgba(201,106,77,.8);
+    background: rgba(201,106,77,.28);
+    opacity:0;
+    animation: ring-in .4s ease-out forwards;
+  }
+  @keyframes ring-in{
+    0%{ opacity:0; transform: scale(1.5); }
+    100%{ opacity:1; transform: scale(1); }
+  }
+
+  .sq .coord{
+    position:absolute;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 700; opacity:.35;
+    pointer-events:none;
+  }
+
+  /* фігури */
+  .pieces{
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    pointer-events:none;
+    z-index:2;
+  }
+  .piece{
+    position:absolute;
+    width:12.5%; height:12.5%;
+    display:flex; align-items:center; justify-content:center;
+    line-height:1;
+    font-family:'DejaVu Sans','Segoe UI Symbol','Noto Sans Symbols 2','Apple Symbols','Arial Unicode MS',sans-serif;
+    transition: left .35s cubic-bezier(.31,1.2,.56,1), top .35s cubic-bezier(.31,1.2,.56,1), opacity .3s ease, transform .3s ease;
+    user-select:none;
+  }
+  .piece.w{
+    color: var(--text);
+    -webkit-text-stroke: 1px var(--frame);
+    text-shadow: 0 2px 3px rgba(0,0,0,.45);
+  }
+  .piece.b{
+    color: var(--frame);
+    -webkit-text-stroke: 1px var(--text-faint);
+    text-shadow: 0 2px 3px rgba(0,0,0,.35);
+  }
+  .piece.gone{ opacity:0; transform: scale(.4); }
+
+  /* стрілки вилки */
+  .arrows{
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    z-index:4;
+  }
+  .arrow-line{
+    fill:none;
+    stroke: var(--gold);
+    stroke-width: .11;
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: draw .45s ease-out forwards;
+  }
+  @keyframes draw{ to{ stroke-dashoffset: 0; } }
+  .arrow-head{
+    fill: var(--gold);
+    opacity:0;
+    animation: head-in .15s ease-out forwards;
+  }
+  @keyframes head-in{ to{ opacity:1; } }
+
+  .fork-badge{
+    position:absolute; left:50%; top:46%;
+    transform: translate(-50%,-50%) scale(.4);
+    background: linear-gradient(160deg, var(--gold), #a9782c);
+    color:#241a08;
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:700;
+    font-size: clamp(1.3rem, 7vw, 2.1rem);
+    padding: 4px 22px;
+    border-radius: 999px;
+    box-shadow: 0 14px 40px -8px rgba(0,0,0,.8), 0 0 0 3px var(--gold-soft);
+    opacity:0;
+    pointer-events:none;
+    z-index:8;
+    white-space:nowrap;
+  }
+  .fork-badge.show{ animation: badge-pop 1.9s ease forwards; }
+  @keyframes badge-pop{
+    0%{ opacity:0; transform: translate(-50%,-50%) scale(.4); }
+    15%{ opacity:1; transform: translate(-50%,-50%) scale(1.12); }
+    28%{ transform: translate(-50%,-50%) scale(1); }
+    80%{ opacity:1; transform: translate(-50%,-50%) scale(1); }
+    100%{ opacity:0; transform: translate(-50%,-60%) scale(1); }
+  }
+
+  .ranks, .files{
+    position:absolute; display:flex;
+    color: var(--text-faint);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px; font-weight:700;
+  }
+  .files{ left:30px; right:22px; bottom:9px; justify-content:space-around; }
+  .ranks{ top:22px; bottom:30px; left:10px; flex-direction:column; justify-content:space-around; }
+
+  /* повідомлення */
+  .status{
+    min-height: 4.2em;
+    width: min(520px, 88vw);
+    text-align:center;
+    color: var(--text-dim);
+    font-size: 1rem;
+    line-height: 1.45;
+  }
+  .status b{ color: var(--text); }
+  .status.good{ color: var(--green-soft); }
+  .status.good b{ color: var(--green-soft); }
+  .status.bad{ color: var(--text); }
+  .status .lead{ font-family:'Fraunces', Georgia, serif; font-weight:700; font-size:1.25rem; display:block; margin-bottom:2px; }
+  .status.good .lead{ color: var(--green); }
+  .status.bad .lead{ color: var(--danger); }
+
+  .next-btn{ width: min(320px, 88vw); font-size: 1.05rem; padding: 14px 16px; }
+  .next-btn.off{ visibility:hidden; }
+
+  /* бічна панель */
+  .panel{ width: min(260px, 88vw); display:flex; flex-direction:column; gap:14px; }
+  .card{ background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 16px 18px; }
+  .card h2{ margin:0 0 12px; font-size:.72rem; text-transform: uppercase; letter-spacing:.09em; color: var(--text-faint); font-weight:700; }
+  .card p{ margin:0; color: var(--text-dim); font-size:.88rem; line-height:1.45; }
+  .stat-row{ display:flex; align-items:baseline; justify-content:space-between; padding: 7px 0; border-bottom: 1px solid var(--hairline); }
+  .stat-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .stat-row .label{ color: var(--text-dim); font-size:.85rem; }
+  .stat-row .value{ font-family:'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-weight:700; font-size: 1.02rem; color: var(--text); }
+  .stat-row .value.gold{ color: var(--gold-soft); }
+  .stat-row .value small{ color: var(--text-faint); font-weight:600; font-size:.72rem; margin-left:5px; }
+
+  .dots{ display:flex; gap:6px; margin-top: 12px; }
+  .dots i{ flex:1; height:8px; border-radius: 4px; background: var(--panel-2); border:1px solid var(--hairline); }
+  .dots i.ok{ background: var(--green); border-color: var(--green); }
+  .dots i.no{ background: var(--danger); border-color: var(--danger); }
+  .dots i.now{ border-color: var(--gold-soft); }
+
+  .btn{
+    appearance:none;
+    border:1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-family:'Manrope', sans-serif;
+    font-weight:700;
+    font-size: .86rem;
+    cursor:pointer;
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    width:100%;
+  }
+  .btn:hover{ border-color: var(--gold); transform: translateY(-1px); }
+  .btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
+  .btn.primary{ background: linear-gradient(160deg, var(--gold), #a9782c); color: #241a08; border-color: transparent; }
+  .btn.ghost{ background: transparent; }
+  .btn.small{ padding: 7px 10px; font-size:.78rem; }
+  .btn.danger-confirm{ border-color: var(--danger); color: var(--danger); }
+
+  .reset-zone{ display:flex; flex-direction:column; gap:8px; }
+  .reset-confirm{ display:none; gap:8px; font-size:.8rem; color: var(--text-dim); align-items:center; }
+  .reset-confirm.show{ display:flex; }
+
+  footer.hint{ text-align:center; color: var(--text-faint); font-size: .85rem; max-width: 62ch; margin: 4px auto 0; line-height:1.5; }
+
+  /* підсумок раунду */
+  .overlay{
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(10,8,5,.78);
+    opacity:0; pointer-events:none;
+    transition: opacity .28s ease;
+    z-index:10;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .complete-card{
+    background: var(--panel);
+    border: 1px solid var(--gold);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    text-align:center;
+    width: min(300px, 88%);
+    max-height: 96%;
+    overflow-y: auto;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,.8);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .complete-card h3{ font-family:'Fraunces', serif; font-size: 1.3rem; margin: 0; color: var(--gold-soft); }
+  .complete-card .sub{ color: var(--text-dim); font-size:.9rem; }
+  .big-stars{ font-size: 2rem; letter-spacing: .1em; color: var(--gold); line-height:1.1; }
+  .big-stars .off{ color: var(--hairline); }
+  .score-big{ font-family:'JetBrains Mono', monospace; font-weight:700; font-size: 1.4rem; color: var(--text); }
+  .record-badge{
+    display:inline-block; align-self:center;
+    font-size:.75rem; color:#241a08; background: var(--gold-soft);
+    padding:2px 10px; border-radius: 999px; font-weight:800;
+  }
+  .complete-card .btn{ padding: 10px 14px; font-size: .95rem; }
+  .complete-card .sub{ font-size:.82rem; }
+
+  @media (prefers-reduced-motion: reduce){
+    .piece{ transition:none; }
+    .arrow-line{ animation:none; stroke-dashoffset:0; }
+    .arrow-head{ animation:none; opacity:1; }
+    .sq.tgt::before{ animation:none; opacity:1; }
+    .fork-badge.show{ animation:none; opacity:1; transform: translate(-50%,-50%) scale(1); }
+    .overlay{ transition:none; }
+  }
+
+  @media (max-width: 560px){
+    .wrap{ padding: 20px 14px 40px; }
+    .board-frame{ padding: 16px 16px 24px 24px; }
+    .files{ left:24px; right:16px; }
+    .ranks{ top:16px; bottom:24px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="title-block">
+      <div class="title-row">
+        <span class="title-badge" aria-hidden="true">&#9822;&#65038;</span>
+        <h1>Знайди вилку</h1>
+      </div>
+      <p>Зроби хід, після якого твоя фігура б'є одразу двох. Одна спроба на задачу, десять задач у раунді.</p>
+    </div>
+  </header>
+
+  <nav class="levels" id="levels" aria-label="Вибір рівня"></nav>
+
+  <main class="stage">
+    <div class="board-col">
+      <div class="task-line"><span class="side-chip w" id="sideChip"></span><span id="taskText">Завантаження…</span></div>
+      <div class="board-frame">
+        <div class="board-wrap" id="boardWrap">
+          <div class="board" id="board" role="grid" aria-label="Шахова дошка 8 на 8"></div>
+          <div class="pieces" id="pieces" aria-hidden="true"></div>
+          <svg class="arrows" id="arrows" viewBox="0 0 8 8" aria-hidden="true"></svg>
+          <div class="fork-badge" id="forkBadge">Вилка!</div>
+
+          <div class="overlay" id="roundOverlay">
+            <div class="complete-card">
+              <h3 id="roundTitle">Раунд завершено</h3>
+              <div class="big-stars" id="roundStars"></div>
+              <div class="score-big" id="roundScore"></div>
+              <div class="sub" id="roundSub"></div>
+              <div id="roundRecord"></div>
+              <button class="btn primary" id="againBtn">Ще раз</button>
+              <button class="btn" id="upBtn">Наступний рівень →</button>
+            </div>
+          </div>
+        </div>
+        <div class="ranks" id="ranks"></div>
+        <div class="files" id="files"></div>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+      <button class="btn primary next-btn off" id="nextBtn">Далі →</button>
+    </div>
+
+    <div class="panel">
+      <div class="card">
+        <h2>Рівень <span id="lvlNum">1</span></h2>
+        <p id="lvlDesc"></p>
+      </div>
+      <div class="card">
+        <h2>Раунд</h2>
+        <div class="stat-row"><span class="label">Задача</span><span class="value" id="statIndex">1<small>/ 10</small></span></div>
+        <div class="stat-row"><span class="label">Правильно</span><span class="value gold" id="statCorrect">0</span></div>
+        <div class="dots" id="dots"></div>
+      </div>
+      <div class="card">
+        <h2>Рекорди</h2>
+        <div id="records"></div>
+        <div class="stat-row"><span class="label">Усього зірок</span><span class="value gold" id="totalStars">0</span></div>
+      </div>
+      <div class="reset-zone">
+        <button class="btn ghost small" id="resetBtn">Скинути рекорди</button>
+        <div class="reset-confirm" id="resetConfirm">
+          <span>Точно?</span>
+          <button class="btn small danger-confirm" id="resetYes">Так</button>
+          <button class="btn small" id="resetNo">Ні</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="hint">
+    Вилка — це хід, після якого одна твоя фігура атакує двох: короля (шах), дорожчу за себе фігуру або фігуру без захисту.
+    А сама вона стоїть на клітинці, яку суперник не б'є.
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+<script>
+/* ENGINE:START */
+// ---------- Рушій задач: генерація й перевірка вилок ----------
+// Усі координати — з боку білих (a1 внизу ліворуч). Для чорних позиція
+// будується дзеркально (see mirrorPos), а переворот дошки робить лише малювання.
+// Легальні ходи дає chess.js. Своя тільки проста геометрія ударів
+// (attacksFrom) — вона потрібна, щоб визначити «атакує», «захищена», «під боєм».
+//
+// ВИЛКА — легальний хід, після якого фігура, що стала на клітинку D:
+//   1) стоїть там, куди суперник не б'є (жодна його фігура не атакує D);
+//   2) атакує не менше двох ЦІЛЕЙ. Ціль — фігура суперника (не пішак), що є:
+//      королем (шах), або дорожчою за атакуючу, або незахищеною.
+//      Фігура, зв'язана з власним королем, вилку не робить: зв'язуюча фігура
+//      обов'язково б'є її клітинку, тож вона й так «під боєм».
+// Пішак, що висить без захисту, теж рахується як ціль при перевірці єдиності
+// розв'язку (щоб жоден інший хід не міг претендувати на вилку), але стрілки
+// й текст показують лише фігури.
+
+var FILES = 'abcdefgh';
+var VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
+var KNIGHT_STEPS = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]];
+var DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+var ORTHO = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+var ROUND_SIZE = 10;
+
+// Рівні. extraW / extraB — скільки зайвих білих / чорних фігур додати.
+var LEVELS = [
+  { id: 1, name: 'Кінь', icon: '♞', attackers: ['n'], extraW: [0, 1], extraB: [1, 3], decoy: false,
+    desc: 'Кінь стрибає в тил і атакує двох. Знайди клітинку.' },
+  { id: 2, name: 'Пішак', icon: '♟︎', attackers: ['p'], extraW: [0, 2], extraB: [1, 3], decoy: false,
+    desc: 'Пішак б\'є по діагоналі. Один крок вперед — і під ударом дві фігури.' },
+  { id: 3, name: 'Слон і тура', icon: '♝♜', attackers: ['b', 'r'], extraW: [1, 2], extraB: [2, 4], decoy: false,
+    desc: 'Слон і тура б\'ють по лініях. Стеж, щоб нічого не заважало.' },
+  { id: 4, name: 'Ферзь', icon: '♛', attackers: ['q'], extraW: [1, 3], extraB: [2, 4], decoy: false,
+    desc: 'Ферзь б\'є всюди, але його легко побити. Обери безпечну клітинку.' },
+  { id: 5, name: 'Мікс', icon: '✦', attackers: ['n', 'p', 'b', 'r', 'q'], extraW: [2, 4], extraB: [3, 6], decoy: true,
+    desc: 'Будь-яка фігура. Є «хибні вилки»: клітинка під боєм або ціль захищена.' }
+];
+
+function sqName(f, r) { return FILES.charAt(f) + (r + 1); }
+function sqFile(s) { return FILES.indexOf(s.charAt(0)); }
+function sqRank(s) { return parseInt(s.charAt(1), 10) - 1; }
+function inBoard(f, r) { return f >= 0 && f < 8 && r >= 0 && r < 8; }
+function opp(c) { return c === 'w' ? 'b' : 'w'; }
+function randInt(n) { return Math.floor(Math.random() * n); }
+function pick(arr) { return arr[randInt(arr.length)]; }
+function randRange(range) { return range[0] + randInt(range[1] - range[0] + 1); }
+function shuffle(arr) {
+  var a = arr.slice(), i, j, t;
+  for (i = a.length - 1; i > 0; i--) {
+    j = randInt(i + 1);
+    t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+// Позиція — об'єкт { 'e4': { type: 'n', color: 'w' }, ... }
+function clonePos(pos) {
+  var o = {}, s;
+  for (s in pos) { if (pos.hasOwnProperty(s)) { o[s] = pos[s]; } }
+  return o;
+}
+
+function toFen(pos, turn) {
+  var rows = [], r, f, n, p, row;
+  for (r = 7; r >= 0; r--) {
+    row = ''; n = 0;
+    for (f = 0; f < 8; f++) {
+      p = pos[sqName(f, r)];
+      if (!p) { n++; continue; }
+      if (n) { row += n; n = 0; }
+      row += (p.color === 'w') ? p.type.toUpperCase() : p.type;
+    }
+    if (n) { row += n; }
+    rows.push(row);
+  }
+  return rows.join('/') + ' ' + turn + ' - - 0 1';
+}
+
+function posFromChess(ch) {
+  var b = ch.board(), pos = {}, i, j;
+  for (i = 0; i < 8; i++) {
+    for (j = 0; j < 8; j++) {
+      if (b[i][j]) { pos[sqName(j, 7 - i)] = { type: b[i][j].type, color: b[i][j].color }; }
+    }
+  }
+  return pos;
+}
+
+// Дзеркало зверху вниз із заміною кольорів: правила шахів симетричні.
+function mirrorSq(s) { return s.charAt(0) + (9 - parseInt(s.charAt(1), 10)); }
+function mirrorPos(pos) {
+  var o = {}, s;
+  for (s in pos) {
+    if (pos.hasOwnProperty(s)) { o[mirrorSq(s)] = { type: pos[s].type, color: opp(pos[s].color) }; }
+  }
+  return o;
+}
+
+function findKing(pos, color) {
+  var s;
+  for (s in pos) {
+    if (pos.hasOwnProperty(s) && pos[s].type === 'k' && pos[s].color === color) { return s; }
+  }
+  return null;
+}
+
+// Які клітинки б'є фігура на клітинці from (з урахуванням перешкод).
+// Враховує і клітинки зі своїми фігурами — це «захист».
+function attacksFrom(pos, from) {
+  var p = pos[from], f = sqFile(from), r = sqRank(from), out = [], i, k, nf, nr, dirs, dr;
+  if (p.type === 'p') {
+    dr = (p.color === 'w') ? 1 : -1;
+    if (inBoard(f - 1, r + dr)) { out.push(sqName(f - 1, r + dr)); }
+    if (inBoard(f + 1, r + dr)) { out.push(sqName(f + 1, r + dr)); }
+  } else if (p.type === 'n') {
+    for (i = 0; i < 8; i++) {
+      nf = f + KNIGHT_STEPS[i][0]; nr = r + KNIGHT_STEPS[i][1];
+      if (inBoard(nf, nr)) { out.push(sqName(nf, nr)); }
+    }
+  } else if (p.type === 'k') {
+    dirs = DIAG.concat(ORTHO);
+    for (i = 0; i < 8; i++) {
+      nf = f + dirs[i][0]; nr = r + dirs[i][1];
+      if (inBoard(nf, nr)) { out.push(sqName(nf, nr)); }
+    }
+  } else {
+    dirs = (p.type === 'b') ? DIAG : (p.type === 'r') ? ORTHO : DIAG.concat(ORTHO);
+    for (i = 0; i < dirs.length; i++) {
+      nf = f + dirs[i][0]; nr = r + dirs[i][1];
+      while (inBoard(nf, nr)) {
+        out.push(sqName(nf, nr));
+        if (pos[sqName(nf, nr)]) { break; }
+        nf += dirs[i][0]; nr += dirs[i][1];
+      }
+    }
+  }
+  return out;
+}
+
+// Клітинки фігур кольору color, які б'ють клітинку sq.
+function attackersOf(pos, sq, color) {
+  var out = [], s, list;
+  for (s in pos) {
+    if (pos.hasOwnProperty(s) && pos[s].color === color && s !== sq) {
+      list = attacksFrom(pos, s);
+      if (list.indexOf(sq) >= 0) { out.push(s); }
+    }
+  }
+  return out;
+}
+
+// Позиція після ходу m (об'єкт ходу з chess.js). Рокіровок у задачах немає.
+function applyMoveToPos(pos, m) {
+  var p = clonePos(pos), piece = p[m.from];
+  delete p[m.from];
+  if (m.flags.indexOf('e') >= 0) { delete p[m.to.charAt(0) + m.from.charAt(1)]; }
+  p[m.to] = m.promotion ? { type: m.promotion, color: piece.color } : piece;
+  return p;
+}
+
+// Розбір усіх легальних ходів гравця color.
+// Для кожного ходу: чи безпечна клітинка, що атаковано, які цілі, чи це вилка.
+function analyzeMoves(pos, color) {
+  var enemy = opp(color);
+  var ch = new Chess(toFen(pos, color));
+  var moves = ch.moves({ verbose: true });
+  var out = [], i, j, m, after, piece, list, sq, o, attacked, targets, loosePawns, safe, rec, side;
+
+  for (i = 0; i < moves.length; i++) {
+    m = moves[i];
+    after = applyMoveToPos(pos, m);
+    piece = after[m.to];
+
+    // Клітинка D під боєм суперника? (+ взяття пішака «на проході» після ходу на два поля)
+    safe = attackersOf(after, m.to, enemy).length === 0;
+    if (safe && piece.type === 'p' && Math.abs(sqRank(m.to) - sqRank(m.from)) === 2) {
+      for (j = -1; j <= 1; j += 2) {
+        if (inBoard(sqFile(m.to) + j, 0)) {
+          side = after[sqName(sqFile(m.to) + j, sqRank(m.to))];
+          if (side && side.type === 'p' && side.color === enemy) { safe = false; }
+        }
+      }
+    }
+
+    // Що атакує ця фігура зараз (геометрично)
+    attacked = [];
+    list = attacksFrom(after, m.to);
+    for (j = 0; j < list.length; j++) {
+      o = after[list[j]];
+      if (o && o.color === enemy) { attacked.push({ sq: list[j], type: o.type }); }
+    }
+
+    targets = [];
+    loosePawns = 0;
+    for (j = 0; j < attacked.length; j++) {
+      sq = attacked[j].sq;
+      o = attacked[j].type;
+      if (o === 'k' || VALUE[o] > VALUE[piece.type] || attackersOf(after, sq, enemy).length === 0) {
+        if (o === 'p') { loosePawns++; } else { targets.push({ sq: sq, type: o }); }
+      }
+    }
+
+    rec = {
+      from: m.from, to: m.to, piece: piece.type, promotion: m.promotion || null,
+      safe: safe, attacked: attacked, targets: targets, loosePawns: loosePawns,
+      fork: safe && (targets.length + loosePawns) >= 2,
+      strict: safe && targets.length >= 2
+    };
+    out.push(rec);
+  }
+  return out;
+}
+
+function forksOf(recs) {
+  var out = [], i;
+  for (i = 0; i < recs.length; i++) { if (recs[i].fork) { out.push(recs[i]); } }
+  return out;
+}
+
+// Кількість «хибних вилок»: хід атакує двох, але вилкою не є.
+function countDecoys(recs) {
+  var n = 0, i;
+  for (i = 0; i < recs.length; i++) {
+    if (!recs[i].fork && recs[i].attacked.length >= 2) { n++; }
+  }
+  return n;
+}
+
+// --- Побудова кандидата (білі знизу) ---
+
+var TARGET_POOL = {
+  n: ['k', 'q', 'q', 'r', 'r', 'b', 'n'],
+  p: ['k', 'q', 'r', 'b', 'n'],
+  b: ['k', 'q', 'r', 'r', 'n', 'b'],
+  r: ['k', 'q', 'q', 'b', 'n', 'r'],
+  q: ['k', 'r', 'r', 'b', 'n', 'q']
+};
+var FILLER_POOL = ['p', 'p', 'p', 'p', 'n', 'b', 'r', 'q'];
+var PIECE_CAP = { k: 1, q: 1, r: 2, b: 2, n: 2, p: 8 };
+
+function rayRoom(f, r, d) {
+  var n = 0;
+  f += d[0]; r += d[1];
+  while (inBoard(f, r)) { n++; f += d[0]; r += d[1]; }
+  return n;
+}
+
+function sameDir(a, b) { return a[0] === b[0] && a[1] === b[1]; }
+
+function buildCandidate(level, att) {
+  var pos = {}, reserved = {}, counts = { w: {}, b: {} };
+  var f, r, i, j, dirs, S, D, targetSqs = [], steps, room, t;
+
+  function reserve(sq) { reserved[sq] = true; }
+  function put(sq, type, color) {
+    pos[sq] = { type: type, color: color };
+    counts[color][type] = (counts[color][type] || 0) + 1;
+  }
+  function freeSquares() {
+    var out = [], ff, rr, n;
+    for (ff = 0; ff < 8; ff++) {
+      for (rr = 0; rr < 8; rr++) {
+        n = sqName(ff, rr);
+        if (!pos[n] && !reserved[n]) { out.push(n); }
+      }
+    }
+    return out;
+  }
+  function reserveBetween(a, b) {
+    var fa = sqFile(a), ra = sqRank(a), fb = sqFile(b), rb = sqRank(b);
+    var df = fb > fa ? 1 : (fb < fa ? -1 : 0), dr = rb > ra ? 1 : (rb < ra ? -1 : 0);
+    fa += df; ra += dr;
+    while (fa !== fb || ra !== rb) { reserve(sqName(fa, ra)); fa += df; ra += dr; }
+  }
+
+  // 1) Клітинка вилки D, звідки стартує фігура S, і дві клітинки-цілі
+  if (att === 'n') {
+    f = randInt(8); r = randInt(8);
+    steps = [];
+    for (i = 0; i < 8; i++) {
+      if (inBoard(f + KNIGHT_STEPS[i][0], r + KNIGHT_STEPS[i][1])) { steps.push(sqName(f + KNIGHT_STEPS[i][0], r + KNIGHT_STEPS[i][1])); }
+    }
+    if (steps.length < 3) { return null; }
+    steps = shuffle(steps);
+    D = sqName(f, r); S = steps[0]; targetSqs = [steps[1], steps[2]];
+  } else if (att === 'p') {
+    f = 1 + randInt(6); r = 2 + randInt(4); // D на лініях 3..6
+    D = sqName(f, r);
+    if (r === 3 && Math.random() < 0.35) { S = sqName(f, 1); reserve(sqName(f, 2)); } else { S = sqName(f, r - 1); }
+    targetSqs = [sqName(f - 1, r + 1), sqName(f + 1, r + 1)];
+  } else {
+    dirs = (att === 'b') ? DIAG : (att === 'r') ? ORTHO : DIAG.concat(ORTHO);
+    f = randInt(8); r = randInt(8);
+    D = sqName(f, r);
+    var withRoom = [];
+    for (i = 0; i < dirs.length; i++) { if (rayRoom(f, r, dirs[i]) >= 1) { withRoom.push(dirs[i]); } }
+    if (!withRoom.length) { return null; }
+    // Фігура приходить з лінії sDir. Цілі — на інших лініях, не на тій самій прямій
+    // (інакше стартова клітинка вже атакувала б ціль).
+    var sDir = pick(withRoom), tDirs = [];
+    for (i = 0; i < withRoom.length; i++) {
+      if (!sameDir(withRoom[i], sDir) && !(withRoom[i][0] === -sDir[0] && withRoom[i][1] === -sDir[1])) { tDirs.push(withRoom[i]); }
+    }
+    if (tDirs.length < 2) { return null; }
+    tDirs = shuffle(tDirs).slice(0, 2);
+    for (j = 0; j < 2; j++) {
+      room = rayRoom(f, r, tDirs[j]);
+      t = 1 + randInt(room);
+      targetSqs.push(sqName(f + tDirs[j][0] * t, r + tDirs[j][1] * t));
+    }
+    room = rayRoom(f, r, sDir);
+    t = 1 + randInt(room);
+    S = sqName(f + sDir[0] * t, r + sDir[1] * t);
+    reserveBetween(S, D);
+    reserveBetween(D, targetSqs[0]);
+    reserveBetween(D, targetSqs[1]);
+  }
+
+  reserve(D); reserve(S); reserve(targetSqs[0]); reserve(targetSqs[1]);
+  put(S, att, 'w');
+
+  // 2) Цілі
+  var pool = TARGET_POOL[att], type, tries;
+  for (i = 0; i < 2; i++) {
+    for (tries = 0; tries < 20; tries++) {
+      type = pick(pool);
+      if ((counts.b[type] || 0) < PIECE_CAP[type]) { break; }
+      type = null;
+    }
+    if (!type) { return null; }
+    put(targetSqs[i], type, 'b');
+  }
+
+  // 3) Зайві фігури
+  var colors = ['w', 'b'], nExtra, c, sqs, placed, ptype, rk;
+  for (c = 0; c < 2; c++) {
+    nExtra = randRange(colors[c] === 'w' ? level.extraW : level.extraB);
+    sqs = shuffle(freeSquares());
+    placed = 0;
+    for (i = 0; i < sqs.length && placed < nExtra; i++) {
+      ptype = pick(FILLER_POOL);
+      if ((counts[colors[c]][ptype] || 0) >= PIECE_CAP[ptype]) { continue; }
+      rk = sqRank(sqs[i]);
+      if (ptype === 'p') {
+        if (colors[c] === 'w' && (rk < 1 || rk > 5)) { continue; }
+        if (colors[c] === 'b' && (rk < 2 || rk > 6)) { continue; }
+      }
+      put(sqs[i], ptype, colors[c]);
+      placed++;
+    }
+  }
+
+  // 4) Королі — на клітинки, де їх не б'є суперник (чорний король-ціль уже стоїть)
+  var free = shuffle(freeSquares()), kw = null, kb = findKing(pos, 'b');
+  if (!kb) {
+    for (i = 0; i < free.length; i++) {
+      if (!attackersOf(pos, free[i], 'w').length) { kb = free[i]; break; }
+    }
+    if (!kb) { return null; }
+    put(kb, 'k', 'b');
+  }
+  for (i = 0; i < free.length; i++) {
+    if (pos[free[i]] || free[i] === kb) { continue; }
+    if (!attackersOf(pos, free[i], 'b').length) { kw = free[i]; break; }
+  }
+  if (!kw) { return null; }
+  put(kw, 'k', 'w');
+
+  return { pos: pos, from: S, to: D, piece: att };
+}
+
+// Швидка перевірка задуманого ходу без chess.js: безпечна клітинка й дві цілі.
+// Відсіює безнадійних кандидатів, перш ніж робити повний (дорожчий) розбір.
+function quickFork(c) {
+  var after = clonePos(c.pos), piece = after[c.from], list, i, o, n = 0;
+  delete after[c.from];
+  after[c.to] = piece;
+  if (attackersOf(after, c.to, 'b').length) { return false; }
+  list = attacksFrom(after, c.to);
+  for (i = 0; i < list.length; i++) {
+    o = after[list[i]];
+    if (o && o.color === 'b' && o.type !== 'p' &&
+        (o.type === 'k' || VALUE[o.type] > VALUE[piece.type] || attackersOf(after, list[i], 'b').length === 0)) { n++; }
+  }
+  return n >= 2;
+}
+
+// Позиція підходить, якщо вилка рівно одна й це задумана.
+function validateCandidate(c, level, needDecoy) {
+  var wk = findKing(c.pos, 'w'), bk = findKing(c.pos, 'b'), recs, forks, f;
+  if (!wk || !bk) { return null; }
+  if (attackersOf(c.pos, bk, 'w').length) { return null; } // чорний король під шахом — позиція неможлива
+  if (attackersOf(c.pos, wk, 'b').length) { return null; } // білі під шахом — не хочемо
+  recs = analyzeMoves(c.pos, 'w');
+  forks = forksOf(recs);
+  if (forks.length !== 1) { return null; }
+  f = forks[0];
+  if (f.from !== c.from || f.to !== c.to || !f.strict || f.promotion) { return null; }
+  if (needDecoy && countDecoys(recs) < 1) { return null; }
+  return recs;
+}
+
+// Фінальна перевірка позиції гравця color (із дзеркалом для чорних).
+function solveFork(pos, color) {
+  var recs = analyzeMoves(pos, color), forks = forksOf(recs);
+  if (forks.length !== 1 || !forks[0].strict) { return null; }
+  return { rec: forks[0], recs: recs };
+}
+
+function makePuzzle(levelNo) {
+  var level = LEVELS[levelNo - 1], att = pick(level.attackers), attempt, c, ok, color, pos, from, to, res, i, targets, moves;
+  for (attempt = 0; attempt < 3000; attempt++) {
+    c = buildCandidate(level, att);
+    if (!c || !quickFork(c)) { continue; }
+    ok = validateCandidate(c, level, level.decoy && attempt < 900);
+    if (!ok) { continue; }
+
+    color = (Math.random() < 0.5) ? 'w' : 'b';
+    pos = c.pos; from = c.from; to = c.to;
+    if (color === 'b') { pos = mirrorPos(pos); from = mirrorSq(from); to = mirrorSq(to); }
+    res = solveFork(pos, color);
+    if (!res || res.rec.from !== from || res.rec.to !== to) { continue; }
+
+    moves = {};
+    for (i = 0; i < res.recs.length; i++) { moves[res.recs[i].from + res.recs[i].to] = res.recs[i]; }
+    targets = res.rec.targets.slice().sort(function (a, b) { return VALUE[b.type] - VALUE[a.type]; });
+    return {
+      level: levelNo, color: color, fen: toFen(pos, color), pos: pos,
+      from: from, to: to, piece: res.rec.piece, targets: targets, moves: moves
+    };
+  }
+  return null;
+}
+/* ENGINE:END */
+</script>
+
+<script>
+// ---------- Інтерфейс ----------
+var STORE_KEY = 'fork-finder-v1';
+var GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+var NAME_NOM = { k: 'король', q: 'ферзь', r: 'тура', b: 'слон', n: 'кінь', p: 'пішак' };
+var NAME_ACC = { k: 'короля', q: 'ферзя', r: 'туру', b: 'слона', n: 'коня', p: 'пішака' };
+
+var store = loadStore();
+var state = {
+  level: 1, index: 0, correct: 0, results: [], seen: {},
+  puzzle: null, game: null, selected: null, legalTo: {},
+  answered: false, flipped: false
+};
+var pieceEls = {};
+var timers = [];
+
+function byId(id) { return document.getElementById(id); }
+var dom = {
+  levels: byId('levels'), board: byId('board'), pieces: byId('pieces'), arrows: byId('arrows'),
+  badge: byId('forkBadge'), status: byId('status'), nextBtn: byId('nextBtn'),
+  taskText: byId('taskText'), sideChip: byId('sideChip'),
+  files: byId('files'), ranks: byId('ranks'),
+  lvlNum: byId('lvlNum'), lvlDesc: byId('lvlDesc'),
+  statIndex: byId('statIndex'), statCorrect: byId('statCorrect'), dots: byId('dots'),
+  records: byId('records'), totalStars: byId('totalStars'),
+  overlay: byId('roundOverlay'), roundTitle: byId('roundTitle'), roundStars: byId('roundStars'),
+  roundScore: byId('roundScore'), roundSub: byId('roundSub'), roundRecord: byId('roundRecord'),
+  againBtn: byId('againBtn'), upBtn: byId('upBtn'),
+  resetBtn: byId('resetBtn'), resetConfirm: byId('resetConfirm'), resetYes: byId('resetYes'), resetNo: byId('resetNo')
+};
+
+// ----- Збереження -----
+function loadStore() {
+  var empty = { best: {}, level: 1 };
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      var o = JSON.parse(raw);
+      if (o && typeof o === 'object') {
+        if (!o.best || typeof o.best !== 'object') { o.best = {}; }
+        if (!(o.level >= 1 && o.level <= LEVELS.length)) { o.level = 1; }
+        return o;
+      }
+    }
+  } catch (e) {}
+  return empty;
+}
+function saveStore() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {}
+}
+
+function starsFor(score) {
+  if (score >= 9) { return 3; }
+  if (score >= 7) { return 2; }
+  if (score >= 5) { return 1; }
+  return 0;
+}
+function starText(n) {
+  var s = '', i;
+  for (i = 0; i < 3; i++) { s += (i < n) ? '★' : '☆'; }
+  return s;
+}
+function cap(s) { return s.charAt(0).toUpperCase() + s.substring(1); }
+
+function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+function clearTimers() { while (timers.length) { clearTimeout(timers.pop()); } }
+
+// ----- Малювання дошки -----
+function displayCol(f) { return state.flipped ? 7 - f : f; }
+function displayRow(r) { return state.flipped ? r : 7 - r; }
+
+function pieceLabel(p) {
+  var white = (p.color === 'w');
+  var adj = (p.type === 'r') ? (white ? 'біла' : 'чорна') : (white ? 'білий' : 'чорний');
+  return adj + ' ' + NAME_NOM[p.type];
+}
+
+function buildSquares() {
+  var f, r, row, col, btn, sq, c, order = [];
+  dom.board.innerHTML = '';
+  for (row = 0; row < 8; row++) {
+    for (col = 0; col < 8; col++) {
+      f = state.flipped ? 7 - col : col;
+      r = state.flipped ? row : 7 - row;
+      sq = sqName(f, r);
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sq ' + (((f + r) % 2 === 0) ? 'dark' : 'light');
+      btn.setAttribute('data-sq', sq);
+      dom.board.appendChild(btn);
+    }
+  }
+  dom.files.innerHTML = '';
+  dom.ranks.innerHTML = '';
+  for (col = 0; col < 8; col++) {
+    c = document.createElement('span');
+    c.textContent = FILES.charAt(state.flipped ? 7 - col : col);
+    dom.files.appendChild(c);
+  }
+  for (row = 0; row < 8; row++) {
+    c = document.createElement('span');
+    c.textContent = String(state.flipped ? row + 1 : 8 - row);
+    dom.ranks.appendChild(c);
+  }
+}
+
+function squareEl(sq) { return dom.board.querySelector('[data-sq="' + sq + '"]'); }
+
+function placePieceEl(el, sq) {
+  el.style.left = (displayCol(sqFile(sq)) * 12.5) + '%';
+  el.style.top = (displayRow(sqRank(sq)) * 12.5) + '%';
+}
+
+function renderPieces(pos) {
+  var sq, p, el;
+  dom.pieces.innerHTML = '';
+  pieceEls = {};
+  for (sq in pos) {
+    if (pos.hasOwnProperty(sq)) {
+      p = pos[sq];
+      el = document.createElement('div');
+      el.className = 'piece ' + p.color;
+      el.textContent = GLYPH[p.type] + '︎';
+      placePieceEl(el, sq);
+      dom.pieces.appendChild(el);
+      pieceEls[sq] = el;
+    }
+  }
+  // підписи для читалок екрана
+  var sqs = dom.board.children, i, s, q;
+  for (i = 0; i < sqs.length; i++) {
+    s = sqs[i].getAttribute('data-sq');
+    q = pos[s];
+    sqs[i].setAttribute('aria-label', q ? (s + ', ' + pieceLabel(q)) : s);
+  }
+}
+
+function fitPieces() {
+  var w = dom.board.clientWidth;
+  if (w) { dom.pieces.style.fontSize = Math.floor(w / 8 * 0.84) + 'px'; }
+}
+
+function movePieceEl(from, to) {
+  var el = pieceEls[from], target = pieceEls[to];
+  if (!el) { return; }
+  if (target) {
+    target.className += ' gone';
+    (function (t) { later(function () { if (t.parentNode) { t.parentNode.removeChild(t); } }, 350); })(target);
+  }
+  delete pieceEls[from];
+  pieceEls[to] = el;
+  placePieceEl(el, to);
+}
+
+function clearMarks() {
+  var els = dom.board.children, i;
+  for (i = 0; i < els.length; i++) {
+    els[i].className = els[i].className.replace(/ (sel|dot|cap|wrong|dest|tgt)/g, '');
+  }
+}
+
+function clearArrows() {
+  while (dom.arrows.firstChild) { dom.arrows.removeChild(dom.arrows.firstChild); }
+  dom.badge.className = 'fork-badge';
+}
+
+function svgEl(name) { return document.createElementNS('http://www.w3.org/2000/svg', name); }
+function center(sq) { return { x: displayCol(sqFile(sq)) + 0.5, y: displayRow(sqRank(sq)) + 0.5 }; }
+
+function drawArrow(fromSq, toSq, delay) {
+  var a = center(fromSq), b = center(toSq);
+  var dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy);
+  var ux = dx / len, uy = dy / len;
+  var sx = a.x + ux * 0.3, sy = a.y + uy * 0.3;
+  var tipx = b.x - ux * 0.3, tipy = b.y - uy * 0.3;
+  var bx = tipx - ux * 0.32, by = tipy - uy * 0.32;
+  var px = -uy * 0.18, py = ux * 0.18;
+  var line = svgEl('path'), head = svgEl('polygon');
+  line.setAttribute('d', 'M' + sx + ' ' + sy + ' L' + bx + ' ' + by);
+  line.setAttribute('pathLength', '1');
+  line.setAttribute('class', 'arrow-line');
+  line.style.animationDelay = delay + 's';
+  head.setAttribute('points', tipx + ',' + tipy + ' ' + (bx + px) + ',' + (by + py) + ' ' + (bx - px) + ',' + (by - py));
+  head.setAttribute('class', 'arrow-head');
+  head.style.animationDelay = (delay + 0.4) + 's';
+  dom.arrows.appendChild(line);
+  dom.arrows.appendChild(head);
+}
+
+function showBadge(text) {
+  dom.badge.textContent = text;
+  dom.badge.className = 'fork-badge';
+  void dom.badge.offsetWidth; // перезапуск анімації
+  dom.badge.className = 'fork-badge show';
+}
+
+// ----- Панель -----
+function renderLevels() {
+  var i, b, lv;
+  dom.levels.innerHTML = '';
+  for (i = 0; i < LEVELS.length; i++) {
+    lv = LEVELS[i];
+    b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'lvl-btn' + (lv.id === state.level ? ' current' : ((store.best[lv.id] && store.best[lv.id].stars > 0) ? ' done' : ''));
+    b.setAttribute('data-level', String(lv.id));
+    b.setAttribute('aria-label', 'Рівень ' + lv.id + ': ' + lv.name);
+    b.innerHTML = '<span>' + lv.id + '</span><span class="ico">' + lv.icon + '</span>';
+    dom.levels.appendChild(b);
+  }
+}
+
+function renderRecords() {
+  var i, lv, best, row, total = 0, html = '';
+  for (i = 0; i < LEVELS.length; i++) {
+    lv = LEVELS[i];
+    best = store.best[lv.id];
+    if (best) { total += best.stars; }
+    html += '<div class="stat-row"><span class="label">' + lv.id + ' · ' + lv.name + '</span><span class="value">' +
+      (best ? best.score + '<small>' + starText(best.stars) + '</small>' : '–') + '</span></div>';
+  }
+  dom.records.innerHTML = html;
+  dom.totalStars.textContent = total + ' / ' + (LEVELS.length * 3);
+}
+
+function renderRound() {
+  var i, d, html = '';
+  dom.lvlNum.textContent = state.level + ' · ' + LEVELS[state.level - 1].name;
+  dom.lvlDesc.textContent = LEVELS[state.level - 1].desc;
+  dom.statIndex.innerHTML = Math.min(state.index + 1, ROUND_SIZE) + '<small>/ ' + ROUND_SIZE + '</small>';
+  dom.statCorrect.textContent = String(state.correct);
+  for (i = 0; i < ROUND_SIZE; i++) {
+    d = state.results[i];
+    html += '<i class="' + (d === true ? 'ok' : (d === false ? 'no' : (i === state.index ? 'now' : ''))) + '"></i>';
+  }
+  dom.dots.innerHTML = html;
+}
+
+function setStatus(cls, lead, text) {
+  dom.status.className = 'status ' + cls;
+  dom.status.innerHTML = (lead ? '<span class="lead">' + lead + '</span>' : '') + text;
+}
+
+// ----- Хід гри -----
+function startRound(level) {
+  clearTimers();
+  state.level = level;
+  state.index = 0;
+  state.correct = 0;
+  state.results = [];
+  state.seen = {};
+  store.level = level;
+  saveStore();
+  dom.overlay.className = 'overlay';
+  renderLevels();
+  nextPuzzle();
+}
+
+function nextPuzzle() {
+  var pz = null, guard = 0;
+  clearTimers();
+  clearArrows();
+  clearMarks();
+  if (state.index >= ROUND_SIZE) { finishRound(); return; }
+
+  while (guard < 5) {
+    pz = makePuzzle(state.level);
+    if (pz && !state.seen[pz.fen]) { break; }
+    guard++;
+  }
+  if (!pz) {
+    setStatus('bad', 'Ой!', 'Не вдалося створити задачу. Натисни «Далі», щоб спробувати ще раз.');
+    dom.nextBtn.className = 'btn primary next-btn';
+    return;
+  }
+  state.seen[pz.fen] = true;
+  state.puzzle = pz;
+  state.game = new Chess(pz.fen);
+  state.selected = null;
+  state.legalTo = {};
+  state.answered = false;
+  state.flipped = (pz.color === 'b');
+
+  buildSquares();
+  renderPieces(pz.pos);
+  fitPieces();
+  dom.sideChip.className = 'side-chip ' + pz.color;
+  dom.taskText.textContent = 'Хід ' + (pz.color === 'w' ? 'білих' : 'чорних') + ': знайди вилку';
+  dom.nextBtn.className = 'btn primary next-btn off';
+  setStatus('', '', 'Торкнись фігури, потім клітинки, куди її поставити.');
+  renderRound();
+}
+
+function selectSquare(sq) {
+  var ms = state.game.moves({ square: sq, verbose: true }), i, el;
+  clearMarks();
+  state.legalTo = {};
+  state.selected = sq;
+  squareEl(sq).className += ' sel';
+  for (i = 0; i < ms.length; i++) {
+    state.legalTo[ms[i].to] = true;
+    el = squareEl(ms[i].to);
+    el.className += ' dot' + (ms[i].captured ? ' cap' : '');
+  }
+}
+
+function deselect() {
+  clearMarks();
+  state.selected = null;
+  state.legalTo = {};
+}
+
+function onBoardClick(e) {
+  var t = e.target, sq, piece;
+  while (t && t !== dom.board && !(t.getAttribute && t.getAttribute('data-sq'))) { t = t.parentNode; }
+  if (!t || t === dom.board || state.answered || !state.puzzle) { return; }
+  sq = t.getAttribute('data-sq');
+  if (state.selected && state.legalTo[sq]) { attempt(state.selected, sq); return; }
+  piece = state.game.get(sq);
+  if (state.selected === sq) { deselect(); return; }
+  if (piece && piece.color === state.puzzle.color) {
+    var has = state.game.moves({ square: sq }).length;
+    if (has) { selectSquare(sq); } else { deselect(); }
+  } else {
+    deselect();
+  }
+}
+
+function targetsText(list) {
+  var names = [], i;
+  for (i = 0; i < list.length; i++) { names.push('<b>' + NAME_ACC[list[i].type] + '</b>'); }
+  if (names.length === 1) { return names[0]; }
+  return names.slice(0, names.length - 1).join(', ') + ' і ' + names[names.length - 1];
+}
+
+// Показ правильного ходу: фігура ходить, потім стрілки на цілі.
+function playSolution(badgeText, delay) {
+  var pz = state.puzzle, i;
+  later(function () {
+    clearMarks();
+    state.game.move({ from: pz.from, to: pz.to });
+    movePieceEl(pz.from, pz.to);
+    squareEl(pz.to).className += ' dest';
+  }, delay);
+  later(function () {
+    for (i = 0; i < pz.targets.length; i++) {
+      drawArrow(pz.to, pz.targets[i].sq, i * 0.25);
+      squareEl(pz.targets[i].sq).className += ' tgt';
+    }
+  }, delay + 450);
+  later(function () { showBadge(badgeText); }, delay + 450 + 300 + pz.targets.length * 250);
+}
+
+function attempt(from, to) {
+  var pz = state.puzzle, ok = (from === pz.from && to === pz.to), rec, reason, text;
+  state.answered = true;
+  state.results[state.index] = ok;
+  if (ok) { state.correct++; }
+  deselect();
+  renderRound();
+  dom.nextBtn.textContent = (state.index + 1 >= ROUND_SIZE) ? 'Результат' : 'Далі →';
+
+  text = cap(NAME_NOM[pz.piece]) + ' на <b>' + pz.to + '</b> атакує: ' + targetsText(pz.targets) + '.';
+  if (ok) {
+    setStatus('good', 'Вилка!', text);
+    playSolution('Вилка!', 0);
+    later(function () { dom.nextBtn.className = 'btn primary next-btn'; }, 600);
+  } else {
+    rec = pz.moves[from + to];
+    if (rec && !rec.safe && rec.targets.length >= 2) { reason = 'Вилка була б, але клітинка під боєм — фігуру з\'їдять.'; }
+    else if (rec && !rec.safe) { reason = 'Ця клітинка під боєм — фігуру з\'їдять.'; }
+    else if (rec && rec.targets.length === 1) { reason = 'Тут лише одна ціль, а потрібні дві.'; }
+    else { reason = 'Тут немає двох цілей.'; }
+    squareEl(to).className += ' wrong';
+    setStatus('bad', 'Не те.', reason + ' Дивись, де була вилка: ' + text);
+    playSolution('Ось вилка!', 1100);
+    later(function () { dom.nextBtn.className = 'btn primary next-btn'; }, 1500);
+  }
+}
+
+function onNext() {
+  if (!state.answered && state.puzzle) { return; }
+  state.index++;
+  nextPuzzle();
+}
+
+function finishRound() {
+  var score = state.correct, stars = starsFor(score), prev = store.best[state.level], isRecord = false, i, s = '';
+  if (!prev || score > prev.score) {
+    store.best[state.level] = { score: score, stars: Math.max(stars, prev ? prev.stars : 0) };
+    isRecord = score > 0;
+  } else if (stars > prev.stars) {
+    prev.stars = stars;
+  }
+  saveStore();
+  renderLevels();
+  renderRecords();
+
+  for (i = 0; i < 3; i++) { s += (i < stars) ? '★' : '<span class="off">★</span>'; }
+  dom.roundStars.innerHTML = s;
+  dom.roundScore.textContent = score + ' з ' + ROUND_SIZE;
+  dom.roundTitle.textContent = (stars === 3) ? 'Чудово!' : (stars >= 1 ? 'Добре!' : 'Спробуй ще');
+  dom.roundSub.textContent = (stars === 3) ? 'Ти бачиш вилки майже всюди.' : 'Дев\'ять правильних дають три зірки.';
+  dom.roundRecord.innerHTML = isRecord ? '<span class="record-badge">Новий рекорд!</span>' : '';
+  dom.upBtn.style.display = (state.level < LEVELS.length) ? '' : 'none';
+  dom.overlay.className = 'overlay show';
+}
+
+// ----- Події -----
+dom.board.addEventListener('click', onBoardClick);
+dom.nextBtn.addEventListener('click', onNext);
+dom.againBtn.addEventListener('click', function () { startRound(state.level); });
+dom.upBtn.addEventListener('click', function () { startRound(Math.min(state.level + 1, LEVELS.length)); });
+dom.levels.addEventListener('click', function (e) {
+  var t = e.target;
+  while (t && t !== dom.levels && !(t.getAttribute && t.getAttribute('data-level'))) { t = t.parentNode; }
+  if (t && t !== dom.levels) { startRound(parseInt(t.getAttribute('data-level'), 10)); }
+});
+dom.resetBtn.addEventListener('click', function () { dom.resetConfirm.className = 'reset-confirm show'; });
+dom.resetNo.addEventListener('click', function () { dom.resetConfirm.className = 'reset-confirm'; });
+dom.resetYes.addEventListener('click', function () {
+  store.best = {};
+  saveStore();
+  dom.resetConfirm.className = 'reset-confirm';
+  renderLevels();
+  renderRecords();
+});
+window.addEventListener('resize', fitPieces);
+
+// ----- Старт -----
+if (typeof Chess === 'undefined') {
+  setStatus('bad', 'Ой!', 'Не вдалося завантажити шаховий рушій (chess.js). Перевір інтернет і онови сторінку.');
+  dom.taskText.textContent = 'Немає зв\'язку';
+} else {
+  renderRecords();
+  startRound(store.level);
+}
+</script>
+</body>
+</html>
