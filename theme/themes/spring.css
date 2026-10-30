@@ -1,0 +1,42 @@
+@charset "UTF-8";
+@import url('https://fonts.googleapis.com/css2?family=Arsenal:wght@700&display=swap');
+/* Тема: весна (01.03 – 31.03). */
+html:root{
+  --theme-title: "Весна прийшла";
+  --decor-items: "🌸 🌷 🦋 🐝 🌼";
+  --decor-motion: fall;
+  --theme-font: 'Arsenal';
+  --theme-font-weight: 700;
+
+  --bg: #0e1913;
+  --bg-glow: #1d3a28;
+  --panel: #15251b;
+  --panel-2: #1e3427;
+  --panel-hi: #1f3a2a;
+  --panel-hi-2: #223b2b;
+  --hairline: #3a5a46;
+  --frame: #07100b;
+  --frame-hi: #14281d;
+  --overlay-rgb: 6, 14, 10;
+
+  --text: #f5f9ef;
+  --text-dim: #c5d6c3;
+  --text-faint: #a8c0a9;
+
+  --gold: #f68fb4;
+  --gold-soft: #ffc4d8;
+  --gold-deep: #d8607f;
+  --on-gold: #2a0a16;
+  --gold-rgb: 246, 143, 180;
+  --gold-dark-rgb: 170, 40, 90;
+
+  --board-light: #f3ead7;
+  --board-dark: #387480;
+  --board-dark-hi: #488490;
+  --blocked-a: #2c4636;
+  --blocked-b: #223a2c;
+  --arrow-safe: #10241a;
+
+  --danger: #ec8f72;
+  --danger-rgb: 236, 143, 114;
+}

@@ -1,0 +1,48 @@
+@charset "UTF-8";
+@import url('https://fonts.googleapis.com/css2?family=Arsenal:wght@700&display=swap');
+/* Тема: Хелловін (24.10 – 01.11). Дивись theme/README.md, як зробити нову тему з цього файлу. */
+html:root{
+  /* --- Напис на плашці, малюнки декору, рух (fall — падають, rise — летять вгору, bob — гойдаються) --- */
+  --theme-title: "Тиждень Хелловіну";
+  --decor-items: "🎃 🦇 🍂 👻 🕸️";
+  --decor-motion: bob;
+  --theme-font: 'Arsenal';
+  --theme-font-weight: 700;
+
+  /* --- Фон і панелі --- */
+  --bg: #130b1a;
+  --bg-glow: #2a1540;
+  --panel: #1f1229;
+  --panel-2: #2b1a3a;
+  --panel-hi: #2d1a3d;
+  --panel-hi-2: #35204a;
+  --hairline: #54386d;
+  --frame: #0a0610;
+  --frame-hi: #261638;
+  --overlay-rgb: 14, 6, 22;
+
+  /* --- Текст --- */
+  --text: #f7eddd;
+  --text-dim: #d3c4df;
+  --text-faint: #ad9dbd;
+
+  /* --- Акцент (гарбузовий) --- */
+  --gold: #ff8a1f;
+  --gold-soft: #ffc47a;
+  --gold-deep: #d4690f;
+  --on-gold: #1c0a00;
+  --gold-rgb: 255, 138, 31;
+  --gold-dark-rgb: 170, 76, 0;
+
+  /* --- Дошка --- */
+  --board-light: #ecd9b8;
+  --board-dark: #7d5a8f;
+  --board-dark-hi: #8d6aa0;
+  --blocked-a: #3d2a52;
+  --blocked-b: #30203f;
+  --arrow-safe: #23142f;
+
+  /* --- Правильно / помилка (як у всіх темах, щоб діти не плутали) --- */
+  --danger: #e8876a;
+  --danger-rgb: 232, 135, 106;
+}

@@ -1,0 +1,107 @@
+@charset "UTF-8";
+/* Спільні стилі всіх тем: фон, декоративний шар, плашка з назвою, кнопка декору.
+   Підключається тільки разом із темою (не для default). Кольори — лише зі змінних :root. */
+
+/* Фон кладемо на html, щоб декор (z-index: -1) був видний над ним, але під вмістом. */
+html:root{
+  background: radial-gradient(120% 90% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%) fixed, var(--bg);
+}
+html:root body{
+  background: none;
+  box-sizing: border-box;
+  /* Місце під плашку й кнопку (44px + відступи), щоб вони не закривали низ сторінки. */
+  padding-bottom: 64px;
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+
+/* Шрифт заголовків. Тема задає --theme-font (рядок для font-family); без нього лишається як у грі. */
+html:root h1,
+html:root .topbar .title{
+  font-family: var(--theme-font, 'Fraunces'), Georgia, serif;
+  font-weight: var(--theme-font-weight, 600);
+}
+
+/* ---------- Декоративний шар ---------- */
+.theme-decor{
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.theme-decor-item{
+  position: absolute;
+  line-height: 1;
+  opacity: .4;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  will-change: transform;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+html.theme-decor-off .theme-decor{ display: none; }
+
+@keyframes theme-fall{
+  from{ transform: translate3d(0, -12vh, 0) rotate(0deg); }
+  to{ transform: translate3d(var(--drift, 0px), 112vh, 0) rotate(300deg); }
+}
+@keyframes theme-rise{
+  from{ transform: translate3d(0, 112vh, 0) rotate(0deg); }
+  to{ transform: translate3d(var(--drift, 0px), -12vh, 0) rotate(-200deg); }
+}
+@keyframes theme-bob{
+  0%, 100%{ transform: translate3d(0, 0, 0) rotate(-8deg); }
+  50%{ transform: translate3d(var(--drift, 0px), -22px, 0) rotate(8deg); }
+}
+
+/* ---------- Плашка й кнопка в кутках ---------- */
+.theme-badge,
+.theme-toggle{
+  position: fixed;
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 5;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  box-shadow: 0 4px 14px -6px rgba(0,0,0,.6);
+}
+.theme-badge{
+  left: max(8px, env(safe-area-inset-left));
+  max-width: calc(100vw - 80px);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  pointer-events: none;
+}
+.theme-toggle{
+  right: max(8px, env(safe-area-inset-right));
+  width: 44px; height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.theme-toggle:focus-visible{ outline: 2px solid var(--gold-soft); outline-offset: 2px; }
+/* Вимкнений декор: кнопка тьмяніє й перекреслена */
+.theme-toggle[aria-pressed="false"]{ opacity: .75; }
+.theme-toggle[aria-pressed="false"]::after{
+  content: "";
+  position: absolute;
+  left: 22%; right: 22%; top: 50%;
+  height: 3px;
+  background: var(--text);
+  border-radius: 2px;
+  transform: rotate(-45deg);
+}
+
+/* «Менше руху»: ні декору, ні кнопки */
+@media (prefers-reduced-motion: reduce){
+  .theme-decor, .theme-toggle{ display: none; }
+}

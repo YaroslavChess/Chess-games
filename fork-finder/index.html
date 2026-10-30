@@ -28,6 +28,31 @@
     --blocked-a: #443c30;
     --blocked-b: #37312a;
     --danger: #c96a4d;
+    --ink: #120f0b;
+    --on-gold: #241a08;
+    --gold-deep: #a9782c;
+    --frame-hi: #241b10;
+    --panel-hi: #2a2013;
+    --panel-hi-2: #3a2e1a;
+    --done-a: #3a4f3c;
+    --done-b: #2a3a2c;
+    --done-line: #4a6a4e;
+    --arrow-safe: #3b2f20;
+    --piece-w: #fbf5e6;
+    --piece-w-line: #241a0e;
+    --piece-b: #1b140d;
+    --piece-b-line: #e9dcc0;
+    --piece-w-a: #f1e9d8;
+    --piece-w-b: #f0cf8f;
+    --piece-b-a: #3a3025;
+    --piece-b-b: #120f0b;
+    --gold-rgb: 216, 169, 76;
+    --gold-dark-rgb: 160, 110, 30;
+    --green-rgb: 46, 204, 113;
+    --green-soft-rgb: 168, 224, 187;
+    --target-rgb: 87, 180, 122;
+    --danger-rgb: 201, 106, 77;
+    --overlay-rgb: 10, 8, 5;
     --radius-lg: 18px;
     --radius-md: 12px;
     --radius-sm: 8px;
@@ -88,8 +113,8 @@
   .lvl-btn .ico{ font-size: 1.15rem; font-family: 'DejaVu Sans','Segoe UI Symbol','Noto Sans Symbols 2',sans-serif; }
   .lvl-btn:hover{ transform: translateY(-2px); border-color: var(--gold); color: var(--gold-soft); }
   .lvl-btn:focus-visible{ outline: 2px solid var(--gold-soft); outline-offset:2px; }
-  .lvl-btn.done{ background: linear-gradient(160deg, #3a4f3c, #2a3a2c); color: var(--green-soft); border-color: #4a6a4e; }
-  .lvl-btn.current{ background: linear-gradient(160deg, var(--gold), #a9782c); color: #241a08; border-color: var(--gold-soft); box-shadow: 0 0 0 3px rgba(216,169,76,.18); }
+  .lvl-btn.done{ background: linear-gradient(160deg, var(--done-a), var(--done-b)); color: var(--green-soft); border-color: var(--done-line); }
+  .lvl-btn.current{ background: linear-gradient(160deg, var(--gold), var(--gold-deep)); color: var(--on-gold); border-color: var(--gold-soft); box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.18); }
 
   main.stage{ display:flex; gap:26px; align-items:flex-start; flex-wrap:wrap; justify-content:center; }
 
@@ -111,7 +136,7 @@
     position:relative;
     width: min(520px, 88vw);
     padding: 22px 22px 30px 30px;
-    background: linear-gradient(160deg, #241b10, var(--frame) 70%);
+    background: linear-gradient(160deg, var(--frame-hi), var(--frame) 70%);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-deep), inset 0 0 0 1px #000;
   }
@@ -142,7 +167,7 @@
   .sq.light{ background: var(--board-light); }
   .sq.dark{ background: var(--board-dark); }
   .sq:focus-visible{ outline: 3px solid var(--gold-soft); outline-offset:-3px; z-index:3; }
-  .sq.sel{ box-shadow: inset 0 0 0 100px rgba(216,169,76,.5); }
+  .sq.sel{ box-shadow: inset 0 0 0 100px rgba(var(--gold-rgb),.5); }
 
   /* крапки можливих ходів */
   .sq.dot::after{
@@ -151,32 +176,32 @@
     width:26%; height:26%;
     transform: translate(-50%,-50%);
     border-radius:50%;
-    background: rgba(216,169,76,.6);
-    box-shadow: 0 0 0 2px rgba(216,169,76,.25);
+    background: rgba(var(--gold-rgb),.6);
+    box-shadow: 0 0 0 2px rgba(var(--gold-rgb),.25);
   }
   .sq.dot.cap::after{
     width:86%; height:86%;
     background: transparent;
-    box-shadow: inset 0 0 0 4px rgba(216,169,76,.7);
+    box-shadow: inset 0 0 0 4px rgba(var(--gold-rgb),.7);
   }
-  .sq.dot.light::after{ background-color: rgba(160,110,30,.5); }
+  .sq.dot.light::after{ background-color: rgba(var(--gold-dark-rgb),.5); }
   .sq.dot.cap.light::after{ background-color: transparent; }
 
   .sq.wrong::before{
     content:""; position:absolute; top:0; right:0; bottom:0; left:0;
-    background: rgba(201,106,77,.55);
+    background: rgba(var(--danger-rgb),.55);
     box-shadow: inset 0 0 0 3px var(--danger);
   }
   .sq.dest::before{
     content:""; position:absolute; top:0; right:0; bottom:0; left:0;
     box-shadow: inset 0 0 0 4px var(--green);
-    background: rgba(46,204,113,.22);
+    background: rgba(var(--green-rgb),.22);
   }
   .sq.tgt::before{
     content:""; position:absolute; top:5%; right:5%; bottom:5%; left:5%;
     border-radius: 50%;
-    box-shadow: 0 0 0 3px var(--danger), 0 0 14px 2px rgba(201,106,77,.8);
-    background: rgba(201,106,77,.28);
+    box-shadow: 0 0 0 3px var(--danger), 0 0 14px 2px rgba(var(--danger-rgb),.8);
+    background: rgba(var(--danger-rgb),.28);
     opacity:0;
     animation: ring-in .4s ease-out forwards;
   }
@@ -246,8 +271,8 @@
   .fork-badge{
     position:absolute; left:50%; top:46%;
     transform: translate(-50%,-50%) scale(.4);
-    background: linear-gradient(160deg, var(--gold), #a9782c);
-    color:#241a08;
+    background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+    color:var(--on-gold);
     font-family:'Fraunces', Georgia, serif;
     font-weight:700;
     font-size: clamp(1.3rem, 7vw, 2.1rem);
@@ -331,7 +356,7 @@
   }
   .btn:hover{ border-color: var(--gold); transform: translateY(-1px); }
   .btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
-  .btn.primary{ background: linear-gradient(160deg, var(--gold), #a9782c); color: #241a08; border-color: transparent; }
+  .btn.primary{ background: linear-gradient(160deg, var(--gold), var(--gold-deep)); color: var(--on-gold); border-color: transparent; }
   .btn.ghost{ background: transparent; }
   .btn.small{ padding: 7px 10px; font-size:.78rem; }
   .btn.danger-confirm{ border-color: var(--danger); color: var(--danger); }
@@ -346,7 +371,7 @@
   .overlay{
     position:absolute; top:0; right:0; bottom:0; left:0;
     display:flex; align-items:center; justify-content:center;
-    background: rgba(10,8,5,.78);
+    background: rgba(var(--overlay-rgb),.78);
     opacity:0; pointer-events:none;
     transition: opacity .28s ease;
     z-index:10;
@@ -371,7 +396,7 @@
   .score-big{ font-family:'JetBrains Mono', monospace; font-weight:700; font-size: 1.4rem; color: var(--text); }
   .record-badge{
     display:inline-block; align-self:center;
-    font-size:.75rem; color:#241a08; background: var(--gold-soft);
+    font-size:.75rem; color:var(--on-gold); background: var(--gold-soft);
     padding:2px 10px; border-radius: 999px; font-weight:800;
   }
   .complete-card .btn{ padding: 10px 14px; font-size: .95rem; }
@@ -393,6 +418,7 @@
     .ranks{ top:16px; bottom:24px; }
   }
 </style>
+<script src="../theme/theme.js"></script>
 </head>
 <body>
 <div class="wrap">

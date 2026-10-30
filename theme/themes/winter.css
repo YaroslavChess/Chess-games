@@ -1,0 +1,42 @@
+@charset "UTF-8";
+@import url('https://fonts.googleapis.com/css2?family=Arsenal:wght@700&display=swap');
+/* Тема: зима — Миколай, Різдво, Новий рік (01.12 – 10.01). */
+html:root{
+  --theme-title: "Зимові свята";
+  --decor-items: "❄️ ⭐ 🎄 ❅ 🎁 🔔";
+  --decor-motion: fall;
+  --theme-font: 'Arsenal';
+  --theme-font-weight: 700;
+
+  --bg: #0a1424;
+  --bg-glow: #17335a;
+  --panel: #10223c;
+  --panel-2: #183050;
+  --panel-hi: #1a3355;
+  --panel-hi-2: #1b3558;
+  --hairline: #34557f;
+  --frame: #050c18;
+  --frame-hi: #112640;
+  --overlay-rgb: 4, 10, 20;
+
+  --text: #f3f8fd;
+  --text-dim: #bcd0e6;
+  --text-faint: #9bb5d2;
+
+  --gold: #f2c14e;
+  --gold-soft: #ffe19a;
+  --gold-deep: #c4901f;
+  --on-gold: #1a1200;
+  --gold-rgb: 242, 193, 78;
+  --gold-dark-rgb: 150, 100, 0;
+
+  --board-light: #dce8f4;
+  --board-dark: #46698f;
+  --board-dark-hi: #56799f;
+  --blocked-a: #26405f;
+  --blocked-b: #1d3350;
+  --arrow-safe: #0d1c30;
+
+  --danger: #e8876a;
+  --danger-rgb: 232, 135, 106;
+}

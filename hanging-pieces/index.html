@@ -26,6 +26,33 @@
     --green: #2ecc71;
     --green-soft: #a8e0bb;
     --danger: #c96a4d;
+    --blocked-a: #443c30;
+    --blocked-b: #37312a;
+    --ink: #120f0b;
+    --on-gold: #241a08;
+    --gold-deep: #a9782c;
+    --frame-hi: #241b10;
+    --panel-hi: #2a2013;
+    --panel-hi-2: #3a2e1a;
+    --done-a: #3a4f3c;
+    --done-b: #2a3a2c;
+    --done-line: #4a6a4e;
+    --arrow-safe: #3b2f20;
+    --piece-w: #fbf5e6;
+    --piece-w-line: #241a0e;
+    --piece-b: #1b140d;
+    --piece-b-line: #e9dcc0;
+    --piece-w-a: #f1e9d8;
+    --piece-w-b: #f0cf8f;
+    --piece-b-a: #3a3025;
+    --piece-b-b: #120f0b;
+    --gold-rgb: 216, 169, 76;
+    --gold-dark-rgb: 160, 110, 30;
+    --green-rgb: 46, 204, 113;
+    --green-soft-rgb: 168, 224, 187;
+    --target-rgb: 87, 180, 122;
+    --danger-rgb: 201, 106, 77;
+    --overlay-rgb: 10, 8, 5;
     --radius-lg: 18px;
     --radius-md: 12px;
     --radius-sm: 8px;
@@ -109,8 +136,8 @@
   .btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
   .btn:disabled{ opacity:.4; cursor:not-allowed; }
   .btn.primary{
-    background: linear-gradient(160deg, var(--gold), #a9782c);
-    color: #241a08;
+    background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+    color: var(--on-gold);
     border-color: transparent;
   }
   .btn.ghost{ background: transparent; }
@@ -143,8 +170,8 @@
   .choice:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
   .choice.on{
     border-color: var(--gold-soft);
-    background: linear-gradient(160deg, #3a2e1a, var(--panel-2));
-    box-shadow: 0 0 0 3px rgba(216,169,76,.18);
+    background: linear-gradient(160deg, var(--panel-hi-2), var(--panel-2));
+    box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.18);
   }
   .choice .num{
     flex: 0 0 auto;
@@ -158,8 +185,8 @@
     color: var(--text-faint);
   }
   .choice.on .num{
-    background: linear-gradient(160deg, var(--gold), #a9782c);
-    color: #241a08;
+    background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+    color: var(--on-gold);
     border-color: var(--gold-soft);
   }
   .choice .txt{ display:flex; flex-direction:column; gap:3px; min-width:0; }
@@ -231,7 +258,7 @@
   .timer-bar{
     height:100%;
     width:100%;
-    background: linear-gradient(90deg, #a9782c, var(--gold));
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold));
   }
   .timer-bar.low{ background: var(--danger); }
   .timer-text{
@@ -246,7 +273,7 @@
   .board-frame{
     position:relative;
     padding: 10px;
-    background: linear-gradient(160deg, #241b10, var(--frame) 70%);
+    background: linear-gradient(160deg, var(--frame-hi), var(--frame) 70%);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-deep), inset 0 0 0 1px #000;
   }
@@ -290,14 +317,14 @@
     stroke-linejoin: round;
     pointer-events:none;
   }
-  .pc.w{ fill:#fbf5e6; stroke:#241a0e; stroke-width:.05px; }
-  .pc.b{ fill:#1b140d; stroke:#e9dcc0; stroke-width:.03px; }
+  .pc.w{ fill:var(--piece-w); stroke:var(--piece-w-line); stroke-width:.05px; }
+  .pc.b{ fill:var(--piece-b); stroke:var(--piece-b-line); stroke-width:.03px; }
 
   .hl{ pointer-events:none; }
-  .hl.sel{ fill: rgba(216,169,76,.38); stroke: var(--gold-soft); stroke-width:.06px; }
-  .hl.ok{ fill: rgba(46,204,113,.28); stroke: var(--green); stroke-width:.06px; }
-  .hl.bad{ fill: rgba(201,106,77,.30); stroke: var(--danger); stroke-width:.06px; }
-  .hl.miss{ fill: rgba(216,169,76,.10); stroke: var(--danger); stroke-width:.06px; stroke-dasharray:.14 .1; }
+  .hl.sel{ fill: rgba(var(--gold-rgb),.38); stroke: var(--gold-soft); stroke-width:.06px; }
+  .hl.ok{ fill: rgba(var(--green-rgb),.28); stroke: var(--green); stroke-width:.06px; }
+  .hl.bad{ fill: rgba(var(--danger-rgb),.30); stroke: var(--danger); stroke-width:.06px; }
+  .hl.miss{ fill: rgba(var(--gold-rgb),.10); stroke: var(--danger); stroke-width:.06px; stroke-dasharray:.14 .1; }
 
   .badge-bg{ stroke:#000; stroke-width:.02px; }
   .badge-bg.ok{ fill: var(--green); }
@@ -309,13 +336,13 @@
     font-weight:800;
     text-anchor:middle;
     dominant-baseline:central;
-    fill:#120f0b;
+    fill:var(--ink);
     pointer-events:none;
   }
   .arrow{ pointer-events:none; }
   .arrow.ok{ stroke: var(--green); fill: var(--green); }
   .arrow.miss{ stroke: var(--danger); fill: var(--danger); }
-  .arrow.safe{ stroke: #3b2f20; fill: #3b2f20; }
+  .arrow.safe{ stroke: var(--arrow-safe); fill: var(--arrow-safe); }
   .arrow line{ stroke-width:.1px; stroke-linecap:round; opacity:.9; }
   .arrow.safe line{ stroke-dasharray:.16 .14; stroke-linecap:butt; opacity:.8; }
   .arrow polygon{ stroke:none; opacity:.95; }
@@ -324,7 +351,7 @@
   .overlay{
     position:absolute; top:0; right:0; bottom:0; left:0;
     display:flex; align-items:center; justify-content:center;
-    background: rgba(10,8,5,.78);
+    background: rgba(var(--overlay-rgb),.78);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     z-index:10;
@@ -395,7 +422,7 @@
     flex:0 0 auto;
     width:20px; height:20px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
-    font-weight:800; font-size:.8rem; color:#120f0b;
+    font-weight:800; font-size:.8rem; color:var(--ink);
     margin-top:1px;
   }
   .feedback li.ok .mk{ background: var(--green); }
@@ -423,6 +450,7 @@
     .board-frame{ padding: 7px; }
   }
 </style>
+<script src="../theme/theme.js"></script>
 </head>
 <body>
 <div class="wrap">

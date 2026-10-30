@@ -1,0 +1,205 @@
+/* Теми оформлення для всіх ігор. Підключення: <script src="../theme/theme.js"></script>
+   Як це працює: цей файл вибирає тему, підключає theme/base.css і theme/themes/<назва>.css.
+   Тема лише міняє CSS-змінні з :root та додає декор за вмістом. Логіку ігор не чіпає.
+   Якщо цей файл не завантажився — ігри працюють як раніше. Докладніше: theme/README.md */
+(function () {
+  'use strict';
+
+  // Розклад тем. Рік не вказується. Формат дати: 'день.місяць'.
+  // Проміжок через Новий рік (напр. 01.12 – 10.01) працює.
+  // Якщо збігаються кілька рядків, виграє перший. Нічого не збіглося — тема default.
+  var SCHEDULE = [
+    { name: 'halloween', from: '24.10', to: '01.11' },
+    { name: 'winter',    from: '01.12', to: '10.01' },
+    { name: 'spring',    from: '01.03', to: '31.03' },
+    { name: 'ukraine',   from: '20.08', to: '25.08' },
+    { name: 'ukraine',   from: '28.09', to: '02.10' }
+  ];
+
+  var DECOR_MAX = 15;            // не більше стількох плаваючих елементів
+  var DECOR_KEY = 'chess-theme-decor';   // localStorage: 'off' — декор вимкнено
+
+  /* ---------- Вибір теми ---------- */
+
+  // 'день.місяць' -> число місяць*100+день (10.01 -> 110). Помилка -> -1.
+  function parseDay(text) {
+    var m = /^\s*(\d{1,2})\.(\d{1,2})\s*$/.exec(String(text));
+    if (!m) { return -1; }
+    var day = parseInt(m[1], 10);
+    var month = parseInt(m[2], 10);
+    if (day < 1 || day > 31 || month < 1 || month > 12) { return -1; }
+    return month * 100 + day;
+  }
+
+  // Чи потрапляє дата (місяць*100+день) у проміжок. Проміжок може йти через Новий рік.
+  function inRange(today, from, to) {
+    if (from < 0 || to < 0) { return false; }
+    if (from <= to) { return today >= from && today <= to; }
+    return today >= from || today <= to;
+  }
+
+  function scheduledTheme(date) {
+    var today = (date.getMonth() + 1) * 100 + date.getDate();
+    var i;
+    for (i = 0; i < SCHEDULE.length; i = i + 1) {
+      if (inRange(today, parseDay(SCHEDULE[i].from), parseDay(SCHEDULE[i].to))) {
+        return SCHEDULE[i].name;
+      }
+    }
+    return 'default';
+  }
+
+  // Порядок: ?theme=назва в URL -> розклад -> default.
+  function pickTheme(search, date) {
+    var m = /[?&]theme=([^&#]*)/.exec(search || '');
+    if (m) {
+      var asked = '';
+      try { asked = decodeURIComponent(m[1]); } catch (e) { asked = ''; }
+      asked = asked.toLowerCase();
+      if (/^[a-z0-9-]+$/.test(asked)) { return asked; }
+    }
+    return scheduledTheme(date);
+  }
+
+  /* ---------- Допоміжне ---------- */
+
+  function storageGet(key) {
+    try { return window.localStorage.getItem(key); } catch (e) { return null; }
+  }
+  function storageSet(key, value) {
+    try { window.localStorage.setItem(key, value); } catch (e) { /* без збереження теж працює */ }
+  }
+
+  function cssVar(name) {
+    var v = '';
+    try { v = window.getComputedStyle(document.documentElement).getPropertyValue(name); } catch (e) { v = ''; }
+    // значення в лапках: "Тиждень Хелловіну" -> Тиждень Хелловіну
+    return String(v).replace(/^\s*["']|["']\s*$/g, '').replace(/^\s+|\s+$/g, '');
+  }
+
+  function addStylesheet(href, onload, onerror) {
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.onload = onload;
+    link.onerror = onerror;
+    document.head.appendChild(link);
+    return link;
+  }
+
+  /* ---------- Декор і кнопка ---------- */
+
+  function buildDecor(themeName) {
+    var title = cssVar('--theme-title');
+    var items = cssVar('--decor-items').split(/\s+/);
+    var motion = cssVar('--decor-motion');
+    if (motion !== 'fall' && motion !== 'rise' && motion !== 'bob') { motion = 'fall'; }
+    if (items.length === 1 && items[0] === '') { items = []; }
+
+    var reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { reduce = false; }
+
+    // Плашка з назвою теми
+    if (title) {
+      var badge = document.createElement('div');
+      badge.className = 'theme-badge';
+      badge.textContent = title;
+      document.body.appendChild(badge);
+    }
+
+    // При «менше руху» декору й кнопки немає зовсім
+    if (reduce || items.length === 0) { return; }
+
+    var layer = document.createElement('div');
+    layer.className = 'theme-decor';
+    layer.setAttribute('aria-hidden', 'true');
+    var count = Math.min(DECOR_MAX, 12);
+    var i;
+    for (i = 0; i < count; i = i + 1) {
+      var el = document.createElement('span');
+      el.className = 'theme-decor-item';
+      el.textContent = items[i % items.length];
+      // розкидаємо рівномірно, без випадковості, щоб вигляд був стабільним
+      var slot = (i * 37) % count;
+      el.style.left = Math.round((slot + 0.5) * 100 / count) + '%';
+      el.style.top = ((i * 53) % 90) + '%';
+      el.style.fontSize = (20 + (i * 7) % 16) + 'px';
+      el.style.animationName = 'theme-' + motion;
+      el.style.animationDuration = (16 + (i * 5) % 14) + 's';
+      el.style.animationDelay = '-' + ((i * 3) % 16) + 's';
+      el.style.setProperty('--drift', (((i % 5) - 2) * 18) + 'px');
+      layer.appendChild(el);
+    }
+    document.body.insertBefore(layer, document.body.firstChild);
+
+    // Кнопка в кутку: вмикає й вимикає декор
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'theme-toggle';
+    btn.textContent = items[0];
+    document.body.appendChild(btn);
+
+    function show(on) {
+      var root = document.documentElement;
+      if (on) { root.className = root.className.replace(/\s*theme-decor-off\b/, ''); }
+      else if (root.className.indexOf('theme-decor-off') < 0) { root.className = root.className + ' theme-decor-off'; }
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var label = on ? 'Вимкнути прикраси' : 'Увімкнути прикраси';
+      btn.setAttribute('aria-label', label);
+      btn.title = label;
+    }
+    show(storageGet(DECOR_KEY) !== 'off');
+    btn.onclick = function () {
+      var on = document.documentElement.className.indexOf('theme-decor-off') >= 0;
+      show(on);
+      storageSet(DECOR_KEY, on ? 'on' : 'off');
+    };
+  }
+
+  /* ---------- Запуск ---------- */
+
+  function start() {
+    var name = pickTheme(window.location.search, new Date());
+    if (name === 'default') { return; }
+
+    // Адреса папки theme/ береться з адреси цього скрипта
+    var script = document.currentScript;
+    if (!script) {
+      var all = document.getElementsByTagName('script');
+      script = all[all.length - 1];
+    }
+    var base = String(script.src).replace(/theme\.js(\?.*)?(#.*)?$/, '');
+
+    var themeLink;
+    var cssReady = false;
+    var domReady = false;
+
+    function tryBuild() {
+      if (!cssReady || !domReady) { return; }
+      document.documentElement.setAttribute('data-theme', name);
+      var meta = document.querySelector('meta[name="theme-color"]');
+      var bg = cssVar('--bg');
+      if (meta && bg) { meta.setAttribute('content', bg); }
+      buildDecor(name);
+    }
+
+    var baseLink = addStylesheet(base + 'base.css', null, null);
+    themeLink = addStylesheet(base + 'themes/' + name + '.css', function () {
+      cssReady = true;
+      tryBuild();
+    }, function () {
+      // такої теми немає — лишаємо гру без змін
+      if (themeLink.parentNode) { themeLink.parentNode.removeChild(themeLink); }
+      if (baseLink.parentNode) { baseLink.parentNode.removeChild(baseLink); }
+    });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { domReady = true; tryBuild(); });
+    } else {
+      domReady = true;
+      tryBuild();
+    }
+  }
+
+  try { start(); } catch (e) { /* якщо щось пішло не так — гра працює як раніше */ }
+})();
