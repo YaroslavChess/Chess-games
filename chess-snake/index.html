@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Кінь-змійка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #120f0b;
+    --bg-glow: #1c1712;
+    --panel: #1c1712;
+    --panel-2: #241d15;
+    --hairline: #3a3025;
+    --board-light: #ead9ba;
+    --board-dark: #86644a;
+    --board-dark-hi: #977252;
+    --frame: #0c0a08;
+    --text: #f1e9d8;
+    --text-dim: #b7a98e;
+    --text-faint: #7d7361;
+    --gold: #d8a94c;
+    --gold-soft: #f0cf8f;
+    --green: #2ecc71;
+    --green-soft: #a8e0bb;
+    --blocked-a: #443c30;
+    --blocked-b: #37312a;
+    --danger: #c96a4d;
+    --ink: #120f0b;
+    --on-gold: #241a08;
+    --gold-deep: #a9782c;
+    --frame-hi: #241b10;
+    --panel-hi: #2a2013;
+    --panel-hi-2: #3a2e1a;
+    --done-a: #3a4f3c;
+    --done-b: #2a3a2c;
+    --done-line: #4a6a4e;
+    --arrow-safe: #3b2f20;
+    --piece-w: #fbf5e6;
+    --piece-w-line: #241a0e;
+    --piece-b: #1b140d;
+    --piece-b-line: #e9dcc0;
+    --gold-rgb: 216, 169, 76;
+    --gold-dark-rgb: 160, 110, 30;
+    --green-rgb: 46, 204, 113;
+    --green-soft-rgb: 168, 224, 187;
+    --target-rgb: 87, 180, 122;
+    --danger-rgb: 201, 106, 77;
+    --overlay-rgb: 10, 8, 5;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-deep: 0 24px 60px -24px rgba(0,0,0,.75);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin: 0;
+    background:
+      radial-gradient(120% 90% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    min-height: 100%;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 24px 18px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .title-block h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size: clamp(1.7rem, 1.2rem + 2vw, 2.4rem);
+    letter-spacing: -0.01em;
+    margin:0;
+    color: var(--gold-soft);
+    text-wrap: balance;
+  }
+  .title-block p{
+    margin: 4px 0 0;
+    color: var(--text-dim);
+    font-size: .92rem;
+    max-width: 56ch;
+  }
+  .knight-badge{
+    font-size: 2.1rem;
+    line-height:1;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,.5));
+    transform: scaleX(-1);
+  }
+  .title-row{ display:flex; align-items:center; gap:12px; }
+
+  /* вибір розміру дошки */
+  .sizes{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .size-btn{
+    flex: 1 1 0;
+    min-width: 92px;
+    max-width: 180px;
+    min-height: 54px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size: 1.15rem;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    cursor:pointer;
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .size-btn:hover{ transform: translateY(-2px); border-color: var(--gold); color: var(--gold-soft); }
+  .size-btn:focus-visible{ outline: 2px solid var(--gold-soft); outline-offset:2px; }
+  .size-btn.current{
+    background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+    color: var(--on-gold);
+    border-color: var(--gold-soft);
+    box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.18);
+  }
+  .size-btn .trophy{ font-size: 1rem; }
+
+  main.stage{
+    display:flex;
+    gap:26px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+
+  /* дошка */
+  .board-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+    width: min(520px, 100%);
+  }
+  .board-frame{
+    position:relative;
+    width: 100%;
+    padding: 22px 22px 30px 30px;
+    background: linear-gradient(160deg, var(--frame-hi), var(--frame) 70%);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-deep), inset 0 0 0 1px rgba(0,0,0,.9);
+  }
+  .board-wrap{
+    position:relative;
+    width:100%;
+    height:0;
+    padding-bottom:100%; /* квадрат без aspect-ratio (Safari < 15) */
+    border-radius: var(--radius-sm);
+    overflow:hidden;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.9), 0 10px 30px -12px rgba(0,0,0,.7);
+  }
+  .board{
+    display:grid;
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    width:100%; height:100%;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+  }
+  .sq{
+    position:relative;
+    border:none;
+    padding:0;
+    margin:0;
+    font: inherit;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:0; min-height:0;
+  }
+  .sq.light{ background: var(--board-light); }
+  .sq.dark{ background: var(--board-dark); }
+  .sq:focus-visible{ outline: 3px solid var(--gold-soft); outline-offset:-3px; z-index:3;}
+
+  .sq .num{
+    position:relative;
+    z-index:2;
+    font-size: 1em;
+    line-height:1;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dim);
+    pointer-events:none;
+  }
+
+  /* хвіст: відвідана клітинка заблокована */
+  .sq.tail{
+    background-image: repeating-linear-gradient(135deg, var(--blocked-a) 0 7px, var(--blocked-b) 7px 14px);
+    cursor: not-allowed;
+  }
+  /* свіжий хвіст світліший: видно, куди кінь щойно йшов */
+  .sq.tail.r1::before, .sq.tail.r2::before, .sq.tail.r3::before{
+    content:"";
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    background: rgb(var(--gold-rgb));
+  }
+  .sq.tail.r1::before{ opacity:.42; }
+  .sq.tail.r2::before{ opacity:.26; }
+  .sq.tail.r3::before{ opacity:.12; }
+  .sq.tail.r1 .num{ color: var(--gold-soft); }
+  .sq.tail.r2 .num{ color: var(--gold-soft); }
+
+  .sq.pop .num{ animation: pop-num .35s cubic-bezier(.31,1.4,.56,1); }
+  @keyframes pop-num{
+    0%{ transform: scale(.3); opacity:0; }
+    100%{ transform: scale(1); opacity:1; }
+  }
+
+  .sq.head{ box-shadow: inset 0 0 0 3px rgba(var(--gold-rgb),.75); }
+
+  /* можливі ходи */
+  .sq.target::before{
+    content:"";
+    position:absolute; top:12%; right:12%; bottom:12%; left:12%;
+    border-radius: 6px;
+    background: radial-gradient(circle at 50% 45%, rgba(var(--target-rgb),.55), rgba(var(--target-rgb),.12) 70%);
+    box-shadow: inset 0 0 0 2px rgba(var(--green-soft-rgb),.85);
+    animation: pulse-target 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse-target{
+    0%,100%{ transform: scale(.92); opacity:.85; }
+    50%{ transform: scale(1); opacity:1; }
+  }
+  /* підказка */
+  .sq.target.hint::before{
+    top:6%; right:6%; bottom:6%; left:6%;
+    background: radial-gradient(circle at 50% 45%, rgba(var(--gold-rgb),.7), rgba(var(--gold-rgb),.2) 70%);
+    box-shadow: inset 0 0 0 3px var(--gold-soft);
+  }
+
+  /* кінь */
+  .knight-token{
+    position:absolute;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none;
+    z-index:5;
+    line-height:1;
+    transition: left .3s cubic-bezier(.31,1.4,.56,1), top .3s cubic-bezier(.31,1.4,.56,1);
+  }
+  .knight-token.no-anim{ transition:none; }
+  .knight-glyph{
+    display:block;
+    font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', 'DejaVu Sans', sans-serif;
+    line-height:1;
+    color: var(--piece-w);
+    text-shadow:
+      1px 0 0 var(--piece-w-line), -1px 0 0 var(--piece-w-line),
+      0 1px 0 var(--piece-w-line), 0 -1px 0 var(--piece-w-line),
+      1px 1px 0 var(--piece-w-line), -1px -1px 0 var(--piece-w-line),
+      1px -1px 0 var(--piece-w-line), -1px 1px 0 var(--piece-w-line);
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.5));
+  }
+  .knight-token.hop .knight-glyph{ animation: hop .3s cubic-bezier(.31,1.4,.56,1); }
+  @keyframes hop{
+    0%{ transform: translateY(0) scale(1); }
+    45%{ transform: translateY(-22%) scale(1.08); }
+    100%{ transform: translateY(0) scale(1); }
+  }
+
+  /* підписи навколо дошки */
+  .files, .ranks{
+    position:absolute;
+    display:flex;
+    color: var(--text-faint);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight:700;
+  }
+  .files span, .ranks span{ flex:1 1 0; text-align:center; }
+  .ranks span{ display:flex; align-items:center; justify-content:center; }
+  .files{ left:30px; right:22px; bottom:9px; }
+  .ranks{ top:22px; bottom:30px; left:8px; width:14px; flex-direction:column; }
+
+  /* рядок стану */
+  .status{
+    width:100%;
+    min-height: 3.2em;
+    margin:0;
+    padding: 10px 14px;
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    color: var(--text-dim);
+    font-size: .92rem;
+    line-height:1.4;
+    text-align:center;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* кнопки під дошкою */
+  .actions{ display:flex; gap:10px; width:100%; }
+  .btn{
+    appearance:none;
+    border:1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text);
+    padding: 14px 14px;
+    border-radius: var(--radius-sm);
+    font-family:'Manrope', sans-serif;
+    font-weight:800;
+    font-size: 1rem;
+    cursor:pointer;
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    width:100%;
+  }
+  .btn:hover:not(:disabled){ border-color: var(--gold); transform: translateY(-1px); }
+  .btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.primary{
+    background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+    color: var(--on-gold);
+    border-color: transparent;
+  }
+  .btn.ghost{ background: transparent; }
+
+  /* права панель */
+  .panel{
+    width: min(260px, 100%);
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+  }
+  .card h2{
+    margin:0 0 12px;
+    font-size:.72rem;
+    text-transform: uppercase;
+    letter-spacing:.09em;
+    color: var(--text-faint);
+    font-weight:700;
+  }
+  .stat-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .stat-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .stat-row .label{ color: var(--text-dim); font-size:.85rem; }
+  .stat-row .value{
+    font-family:'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight:700;
+    font-size: 1.02rem;
+    color: var(--text);
+  }
+  .stat-row .value.gold{ color: var(--gold-soft); }
+  .stat-row .value small{ color: var(--text-faint); font-weight:600; font-size:.72rem; margin-left:5px;}
+
+  .bar{
+    height: 10px;
+    margin-top: 12px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    border: 1px solid var(--hairline);
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    width:0;
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold-soft));
+    transition: width .3s ease;
+  }
+
+  footer.hint{
+    text-align:center;
+    color: var(--text-faint);
+    font-size: .8rem;
+    max-width: 62ch;
+    margin: 4px auto 0;
+    line-height:1.5;
+  }
+
+  /* вікно кінця гри */
+  .overlay{
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    display:flex; align-items:center; justify-content:center;
+    padding: 16px;
+    background: rgba(var(--overlay-rgb),.72);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity:0;
+    visibility:hidden;
+    transition: opacity .28s ease, visibility 0s linear .28s;
+    z-index:50;
+  }
+  .overlay.show{ opacity:1; visibility:visible; transition: opacity .28s ease; }
+  .complete-card{
+    background: var(--panel);
+    border: 1px solid var(--gold);
+    border-radius: var(--radius-md);
+    padding: 22px 24px;
+    text-align:center;
+    width: min(340px, 100%);
+    max-height: 100%;
+    overflow-y:auto;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,.8);
+    transform: translateY(8px) scale(.97);
+    transition: transform .28s cubic-bezier(.31,1.4,.56,1);
+  }
+  .overlay.show .complete-card{ transform: translateY(0) scale(1); }
+  .complete-card.final-card{
+    border-color: var(--gold-soft);
+    background: linear-gradient(165deg, var(--panel-hi), var(--panel) 65%);
+    box-shadow: 0 0 0 1px var(--gold-soft), 0 30px 80px -20px rgba(var(--gold-rgb),.35);
+  }
+  .complete-card .cup{ font-size: 2.2rem; line-height:1.2; }
+  .final-card .cup{ font-size: 2.8rem; animation: final-bob 2.4s ease-in-out infinite; }
+  @keyframes final-bob{
+    0%,100%{ transform: translateY(0) rotate(0deg); }
+    50%{ transform: translateY(-5px) rotate(-4deg); }
+  }
+  .complete-card h3{
+    font-family:'Fraunces', serif;
+    font-size: 1.35rem;
+    margin: 6px 0 4px;
+    color: var(--gold-soft);
+  }
+  .complete-card .sub{ color: var(--text-dim); font-size:.9rem; line-height:1.45; margin-bottom: 14px; }
+  .complete-stats{
+    display:flex;
+    justify-content:center;
+    gap: 24px;
+    margin-bottom: 16px;
+  }
+  .complete-stats .n{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size: 1.2rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .complete-stats .l{ font-size:.68rem; color: var(--text-faint); text-transform:uppercase; letter-spacing:.06em; }
+  .record-badge{
+    display:inline-block;
+    font-size:.78rem;
+    color:var(--on-gold);
+    background: var(--gold-soft);
+    padding:3px 10px;
+    border-radius: 999px;
+    font-weight:800;
+    margin-bottom: 12px;
+  }
+  .complete-card .btn + .btn{ margin-top: 8px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .sq.target::before{ animation:none; }
+    .sq.pop .num{ animation:none; }
+    .knight-token{ transition:none; }
+    .knight-token.hop .knight-glyph{ animation:none; }
+    .complete-card, .overlay, .bar-fill{ transition:none; }
+    .final-card .cup{ animation:none; }
+  }
+
+  @media (max-width: 560px){
+    .wrap{ padding: 18px 14px 40px; }
+    .board-frame{ padding: 16px 16px 24px 24px; }
+    .files{ left:24px; right:16px; bottom:6px; }
+    .ranks{ top:16px; bottom:24px; left:5px; }
+  }
+</style>
+<script src="../theme/theme.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="title-block">
+    <div class="title-row">
+      <span class="knight-badge" aria-hidden="true">&#9822;&#xFE0E;</span>
+      <h1>Кінь-змійка</h1>
+    </div>
+    <p>Кожен хід коня лишає хвіст: клітинка, де він був, закривається. Обійди якомога більше клітинок, доки є ходи.</p>
+  </header>
+
+  <nav class="sizes" id="sizes" aria-label="Розмір дошки"></nav>
+
+  <main class="stage">
+    <div class="board-col">
+      <div class="board-frame">
+        <div class="board-wrap" id="boardWrap">
+          <div class="board" id="board" role="grid" aria-label="Шахова дошка"></div>
+          <div class="knight-token" id="knightToken" aria-hidden="true"><span class="knight-glyph">&#9822;&#xFE0E;</span></div>
+        </div>
+        <div class="ranks" id="ranks" aria-hidden="true"></div>
+        <div class="files" id="files" aria-hidden="true"></div>
+      </div>
+
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+
+      <div class="actions">
+        <button class="btn primary" id="hintBtn" type="button">💡 Підказка (3)</button>
+        <button class="btn ghost" id="newBtn" type="button">↻ Нова гра</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="card">
+        <h2>Ця гра</h2>
+        <div class="stat-row"><span class="label">Обійдено клітинок</span><span class="value gold" id="statCount">1 / 25</span></div>
+        <div class="stat-row"><span class="label">Можливих ходів</span><span class="value" id="statMoves">0</span></div>
+        <div class="stat-row"><span class="label">Підказок лишилось</span><span class="value" id="statHints">3</span></div>
+        <div class="bar" aria-hidden="true"><div class="bar-fill" id="barFill"></div></div>
+      </div>
+
+      <div class="card">
+        <h2>Рекорди</h2>
+        <div id="records"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="hint">Тапни зелену клітинку, щоб походити конем. Число на клітинці — номер ходу. Підказка працює за правилом Варнсдорфа: іди туди, звідки далі найменше ходів. Повний обхід дошки дає 🏆.</footer>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+  <div class="complete-card" id="endCard">
+    <div class="cup" id="endIcon" aria-hidden="true">🏁</div>
+    <h3 id="endTitle"></h3>
+    <div class="sub" id="endSub"></div>
+    <div id="endBadge"></div>
+    <div class="complete-stats">
+      <div><div class="n" id="endCount">0</div><div class="l">клітинок</div></div>
+      <div><div class="n" id="endBest">0</div><div class="l">рекорд</div></div>
+    </div>
+    <button class="btn primary" id="againBtn" type="button">Ще раз</button>
+    <button class="btn ghost" id="lookBtn" type="button">Подивитись дошку</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SIZES = [5, 6, 8];
+  var FILES = ['a','b','c','d','e','f','g','h'];
+  var KNIGHT_OFFSETS = [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
+  var HINTS_PER_GAME = 3;
+  var STORAGE_KEY = 'chesssnake_v1';
+
+  // ===== ЛОГІКА (без DOM) =====
+  // Клітинка — число idx = rank * n + file. Координати з боку білих:
+  // file 0 = a, rank 0 = перша горизонталь (a1 — внизу ліворуч).
+
+  function squareName(n, idx){
+    return FILES[idx % n] + (Math.floor(idx / n) + 1);
+  }
+
+  // Усі клітинки, куди кінь може стрибнути з idx (без урахування хвоста).
+  function knightTargets(n, idx){
+    var f = idx % n, r = Math.floor(idx / n);
+    var res = [];
+    for(var k = 0; k < KNIGHT_OFFSETS.length; k++){
+      var nf = f + KNIGHT_OFFSETS[k][0];
+      var nr = r + KNIGHT_OFFSETS[k][1];
+      if(nf < 0 || nf >= n || nr < 0 || nr >= n) continue;
+      res.push(nr * n + nf);
+    }
+    return res;
+  }
+
+  // visited[i] = номер ходу, яким кінь став на клітинку i (0 — ще не був).
+  function createGame(n, start){
+    var visited = [];
+    for(var i = 0; i < n * n; i++) visited.push(0);
+    visited[start] = 1;
+    return { n: n, visited: visited, pos: start, count: 1 };
+  }
+
+  // Вільні ходи з клітинки idx: не відвідані.
+  function freeMoves(g, idx){
+    var all = knightTargets(g.n, idx);
+    var res = [];
+    for(var k = 0; k < all.length; k++){
+      if(g.visited[all[k]] === 0) res.push(all[k]);
+    }
+    return res;
+  }
+
+  function isFreeMove(g, idx){
+    var m = freeMoves(g, g.pos);
+    for(var k = 0; k < m.length; k++){
+      if(m[k] === idx) return true;
+    }
+    return false;
+  }
+
+  function doMove(g, to){
+    if(!isFreeMove(g, to)) return false;
+    g.count += 1;
+    g.visited[to] = g.count;
+    g.pos = to;
+    return true;
+  }
+
+  function isOver(g){ return freeMoves(g, g.pos).length === 0; }
+  function isFull(g){ return g.count === g.n * g.n; }
+
+  // Скільки вільних ходів буде в коня, якщо він стане на idx.
+  function onwardCount(g, idx){
+    return freeMoves(g, idx).length;
+  }
+
+  // Правило Варнсдорфа: з усіх ходів вибрати той, звідки далі найменше вільних ходів.
+  // Якщо таких кілька — той, що найдалі від центру (кути закриваємо першими).
+  // Якщо й так порівну — з меншим номером клітинки (щоб підказка була стабільна).
+  function hintMove(g){
+    var moves = freeMoves(g, g.pos);
+    if(moves.length === 0) return -1;
+    var mid = (g.n - 1) / 2;
+    var best = -1, bestCount = 99, bestDist = -1;
+    for(var k = 0; k < moves.length; k++){
+      var m = moves[k];
+      var c = onwardCount(g, m);
+      var dx = (m % g.n) - mid, dy = Math.floor(m / g.n) - mid;
+      var d = dx * dx + dy * dy;
+      if(c < bestCount || (c === bestCount && d > bestDist) ||
+         (c === bestCount && d === bestDist && m < best)){
+        best = m; bestCount = c; bestDist = d;
+      }
+    }
+    return best;
+  }
+
+  // На непарній дошці (5x5) повний обхід починається лише з клітинок кольору кутів:
+  // з інших його не існує. Щоб трофей завжди був досяжний, випадковий старт — лише з них.
+  function canStartFullTour(n, idx){
+    if(n % 2 === 1) return ((idx % n) + Math.floor(idx / n)) % 2 === 0;
+    return true;
+  }
+
+  function randomStart(n, rnd){
+    var list = [];
+    for(var i = 0; i < n * n; i++){
+      if(canStartFullTour(n, i)) list.push(i);
+    }
+    return list[Math.floor(rnd() * list.length)];
+  }
+  // ===== КІНЕЦЬ ЛОГІКИ =====
+
+  // ----- збереження (рекорди й останній розмір) -----
+  var save = loadSave();
+
+  function loadSave(){
+    var s = { size: 5, best: {}, trophy: {} };
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var p = JSON.parse(raw);
+        if(p && typeof p === 'object'){
+          if(SIZES.indexOf(p.size) >= 0) s.size = p.size;
+          for(var i = 0; i < SIZES.length; i++){
+            var key = String(SIZES[i]);
+            if(p.best && typeof p.best[key] === 'number' && p.best[key] > 0) s.best[key] = Math.floor(p.best[key]);
+            if(p.trophy && p.trophy[key] === true) s.trophy[key] = true;
+          }
+        }
+      }
+    }catch(e){}
+    return s;
+  }
+  function writeSave(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(save)); }catch(e){}
+  }
+  function bestFor(n){ return save.best[String(n)] || 0; }
+
+  // Записує результат гри. Повертає true, якщо це новий рекорд.
+  function recordResult(g){
+    var key = String(g.n);
+    var isNew = false;
+    if(g.count > bestFor(g.n)){
+      save.best[key] = g.count;
+      isNew = true;
+    }
+    if(isFull(g)) save.trophy[key] = true;
+    if(isNew || isFull(g)) writeSave();
+    return isNew;
+  }
+
+  // ----- екран -----
+  var sizesEl = document.getElementById('sizes');
+  var boardEl = document.getElementById('board');
+  var tokenEl = document.getElementById('knightToken');
+  var ranksEl = document.getElementById('ranks');
+  var filesEl = document.getElementById('files');
+  var statusEl = document.getElementById('status');
+  var hintBtn = document.getElementById('hintBtn');
+  var newBtn = document.getElementById('newBtn');
+  var statCount = document.getElementById('statCount');
+  var statMoves = document.getElementById('statMoves');
+  var statHints = document.getElementById('statHints');
+  var barFill = document.getElementById('barFill');
+  var recordsEl = document.getElementById('records');
+  var overlayEl = document.getElementById('overlay');
+  var endCard = document.getElementById('endCard');
+
+  var size = save.size;
+  var g = null;
+  var cells = [];
+  var nums = [];
+  var hintsLeft = HINTS_PER_GAME;
+  var hintIdx = -1;
+  var finished = false;
+  var endTimer = null;
+
+  function setStatus(text){ statusEl.textContent = text; }
+
+  function makeSquareHandler(i){
+    return function(){ onSquare(i); };
+  }
+
+  function buildBoard(){
+    boardEl.innerHTML = '';
+    boardEl.style.gridTemplateColumns = 'repeat(' + size + ', 1fr)';
+    boardEl.style.gridTemplateRows = 'repeat(' + size + ', 1fr)';
+    boardEl.setAttribute('aria-label', 'Шахова дошка ' + size + ' на ' + size);
+    cells = [];
+    nums = [];
+    for(var r = size - 1; r >= 0; r--){
+      for(var f = 0; f < size; f++){
+        var i = r * size + f;
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.setAttribute('data-idx', String(i));
+        var num = document.createElement('span');
+        num.className = 'num';
+        b.appendChild(num);
+        b.addEventListener('click', makeSquareHandler(i));
+        boardEl.appendChild(b);
+        cells[i] = b;
+        nums[i] = num;
+      }
+    }
+    var rankHtml = '', fileHtml = '';
+    for(var k = size; k >= 1; k--) rankHtml += '<span>' + k + '</span>';
+    for(var c = 0; c < size; c++) fileHtml += '<span>' + FILES[c] + '</span>';
+    ranksEl.innerHTML = rankHtml;
+    filesEl.innerHTML = fileHtml;
+    tokenEl.style.width = (100 / size) + '%';
+    tokenEl.style.height = (100 / size) + '%';
+    fit();
+  }
+
+  // Розмір цифр і коня залежить від розміру клітинки.
+  function fit(){
+    var w = boardEl.clientWidth;
+    if(!w) return;
+    var cell = w / size;
+    boardEl.style.fontSize = Math.round(cell * 0.4) + 'px';
+    tokenEl.style.fontSize = Math.round(cell * 0.78) + 'px';
+  }
+
+  function placeToken(animate){
+    var f = g.pos % size, r = Math.floor(g.pos / size);
+    var pct = 100 / size;
+    if(!animate) tokenEl.classList.add('no-anim');
+    tokenEl.style.left = (f * pct) + '%';
+    tokenEl.style.top = ((size - 1 - r) * pct) + '%';
+    if(!animate){
+      void tokenEl.offsetWidth;
+      tokenEl.classList.remove('no-anim');
+    }else{
+      tokenEl.classList.remove('hop');
+      void tokenEl.offsetWidth;
+      tokenEl.classList.add('hop');
+    }
+  }
+
+  function render(){
+    var moves = finished ? [] : freeMoves(g, g.pos);
+    var isTarget = {};
+    for(var m = 0; m < moves.length; m++) isTarget[moves[m]] = true;
+
+    for(var i = 0; i < size * size; i++){
+      var f = i % size, r = Math.floor(i / size);
+      var cls = 'sq ' + (((f + r) % 2 === 0) ? 'dark' : 'light');
+      var v = g.visited[i];
+      var label = squareName(size, i);
+      var numText = '';
+      if(i === g.pos){
+        cls += ' head';
+        label += ', тут кінь';
+      }else if(v > 0){
+        var age = g.count - v;
+        cls += ' tail';
+        if(age <= 3) cls += ' r' + age;
+        numText = String(v);
+        label += ', відвідана, хід ' + v;
+      }else if(isTarget[i]){
+        cls += ' target';
+        if(i === hintIdx) cls += ' hint';
+        label += ', можливий хід';
+      }
+      cells[i].className = cls;
+      cells[i].setAttribute('aria-label', label);
+      nums[i].textContent = numText;
+    }
+
+    var total = size * size;
+    statCount.textContent = g.count + ' / ' + total;
+    statMoves.textContent = String(moves.length);
+    statHints.textContent = String(hintsLeft);
+    barFill.style.width = (g.count * 100 / total) + '%';
+    hintBtn.textContent = '💡 Підказка (' + hintsLeft + ')';
+    hintBtn.disabled = finished || hintsLeft <= 0;
+    renderSizes();
+    renderRecords();
+  }
+
+  function renderSizes(){
+    var html = '';
+    for(var i = 0; i < SIZES.length; i++){
+      var n = SIZES[i];
+      html += '<button type="button" class="size-btn' + (n === size ? ' current' : '') +
+        '" data-size="' + n + '" aria-pressed="' + (n === size) + '">' +
+        n + '×' + n + (save.trophy[String(n)] ? ' <span class="trophy" aria-label="трофей">🏆</span>' : '') +
+        '</button>';
+    }
+    sizesEl.innerHTML = html;
+  }
+
+  function renderRecords(){
+    var html = '';
+    for(var i = 0; i < SIZES.length; i++){
+      var n = SIZES[i];
+      var b = bestFor(n);
+      html += '<div class="stat-row"><span class="label">' + n + '×' + n +
+        (save.trophy[String(n)] ? ' 🏆' : '') + '</span><span class="value">' +
+        (b ? b : '—') + '<small>/ ' + (n * n) + '</small></span></div>';
+    }
+    recordsEl.innerHTML = html;
+  }
+
+  function startNewGame(){
+    if(endTimer){ clearTimeout(endTimer); endTimer = null; }
+    // Кинув гру посередині — пройдений шлях теж рахується в рекорд.
+    if(g && !finished && g.n === size && g.count > 1) recordResult(g);
+    overlayEl.classList.remove('show');
+    finished = false;
+    hintsLeft = HINTS_PER_GAME;
+    hintIdx = -1;
+    g = createGame(size, randomStart(size, Math.random));
+    if(cells.length !== size * size) buildBoard();
+    placeToken(false);
+    render();
+    setStatus('Кінь стоїть на ' + squareName(size, g.pos) + '. Обери зелену клітинку.');
+  }
+
+  function setSize(n){
+    if(n === size) return;
+    if(g && !finished && g.count > 1) recordResult(g);
+    size = n;
+    save.size = n;
+    writeSave();
+    cells = [];
+    g = null;
+    buildBoard();
+    startNewGame();
+  }
+
+  function resultMessage(count, total, full){
+    if(full) return 'Кінь побував на кожній клітинці. Ти планував маршрут наперед і довів його до кінця!';
+    if(count >= total * 0.8) return 'Майже вся дошка! Ти довго шукав шлях і не здавався.';
+    if(count >= total * 0.5) return 'Гарний маршрут. Спробуй так: перед ходом дивись, звідки в коня далі найменше виходів.';
+    return 'Кожна спроба вчить. Порада: спершу йди на клітинки, звідки далі мало ходів, — кути закривай рано.';
+  }
+
+  function finish(){
+    finished = true;
+    var full = isFull(g);
+    var isNew = recordResult(g);
+    var total = size * size;
+    hintIdx = -1;
+    render();
+    setStatus(full ? 'Повний обхід! 🏆' : 'Ходів більше немає. Обійдено ' + g.count + ' з ' + total + '.');
+
+    document.getElementById('endIcon').textContent = full ? '🏆' : '🏁';
+    document.getElementById('endTitle').textContent = full ? 'Повний обхід!' : 'Ходів більше немає';
+    document.getElementById('endSub').textContent = resultMessage(g.count, total, full);
+    document.getElementById('endBadge').innerHTML = isNew ? '<span class="record-badge">Новий рекорд!</span>' : '';
+    document.getElementById('endCount').textContent = g.count + ' / ' + total;
+    document.getElementById('endBest').textContent = String(bestFor(size));
+    endCard.className = 'complete-card' + (full ? ' final-card' : '');
+    endTimer = setTimeout(function(){
+      overlayEl.classList.add('show');
+      document.getElementById('againBtn').focus();
+    }, full ? 500 : 800);
+  }
+
+  function onSquare(i){
+    if(finished){
+      setStatus('Гру закінчено. Натисни «Нова гра».');
+      return;
+    }
+    if(i === g.pos){
+      setStatus('Тут стоїть кінь. Обери зелену клітинку.');
+      return;
+    }
+    if(!isFreeMove(g, i)){
+      if(g.visited[i] > 0) setStatus('Це хвіст: кінь уже був тут на ході ' + g.visited[i] + '.');
+      else setStatus('Кінь ходить літерою Г: два кроки в один бік і один убік.');
+      return;
+    }
+    var prev = g.pos;
+    doMove(g, i);
+    hintIdx = -1;
+    placeToken(true);
+    render();
+    cells[prev].classList.add('pop');
+    if(isOver(g)){
+      finish();
+      return;
+    }
+    var left = freeMoves(g, g.pos).length;
+    if(left === 1) setStatus('Хід ' + g.count + '. Лишився лише один хід.');
+    else setStatus('Хід ' + g.count + '. Можливих ходів: ' + left + '.');
+  }
+
+  function onHint(){
+    if(finished || hintsLeft <= 0) return;
+    if(hintIdx >= 0){
+      setStatus('Підказка вже на дошці: золота клітинка.');
+      return;
+    }
+    var moves = freeMoves(g, g.pos);
+    var h = hintMove(g);
+    if(h < 0) return;
+    hintIdx = h;
+    // Єдиний хід підказкою не рахуємо.
+    if(moves.length > 1) hintsLeft -= 1;
+    render();
+    var c = onwardCount(g, h);
+    if(moves.length === 1){
+      setStatus('Є лише один хід.');
+    }else{
+      setStatus('Підказка: з ' + squareName(size, h) + ' далі ' +
+        (c === 0 ? 'ходів не буде' : (c === 1 ? 'лише 1 хід' : 'ходів: ' + c)) +
+        ' — найменше серед усіх. Такі клітинки краще відвідати першими.');
+    }
+  }
+
+  // ----- події -----
+  sizesEl.addEventListener('click', function(e){
+    var t = e.target;
+    while(t && t !== sizesEl && !t.getAttribute('data-size')) t = t.parentNode;
+    if(!t || t === sizesEl) return;
+    setSize(parseInt(t.getAttribute('data-size'), 10));
+  });
+  hintBtn.addEventListener('click', onHint);
+  newBtn.addEventListener('click', startNewGame);
+  document.getElementById('againBtn').addEventListener('click', startNewGame);
+  document.getElementById('lookBtn').addEventListener('click', function(){
+    overlayEl.classList.remove('show');
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') overlayEl.classList.remove('show');
+  });
+  window.addEventListener('resize', fit);
+
+  buildBoard();
+  startNewGame();
+})();
+</script>
+</body>
+</html>
