@@ -1,11 +1,13 @@
 /**
  * Приймає результати тренажера (POST, JSON у text/plain) і дописує їх у таблицю,
  * до якої прив'язаний скрипт. Аркуші створюються автоматично.
+ * Також приймає підсумки шахових уроків (lesson/) — аркуш «Уроки».
  * Інструкція: english/SETUP.md
  */
 
 var ANSWERS_SHEET = 'Відповіді';
 var SESSIONS_SHEET = 'Сесії';
+var LESSONS_SHEET = 'Уроки';
 
 var ANSWERS_HEADER = [
   'Час', 'Учень', 'Вкладка', 'Налаштування', 'Питання',
@@ -14,6 +16,9 @@ var ANSWERS_HEADER = [
 var SESSIONS_HEADER = [
   'Дата', 'Учень', 'Вкладка', 'Scope', 'Direction', 'Input Method',
   'Тривалість (с)', 'Пройдено карток', 'Точність (%)', 'Помилки', 'Статус'
+];
+var LESSONS_HEADER = [
+  'Дата', 'Учень', 'Урок', 'Режим', 'Зірочки', 'З можливих', 'Помилки', 'Розділи', 'Посилання'
 ];
 
 function doPost(e) {
@@ -25,6 +30,8 @@ function doPost(e) {
       appendAnswer_(data);
     } else if (data.kind === 'session') {
       appendSession_(data);
+    } else if (data.kind === 'lesson') {
+      appendLesson_(data);
     }
     return ContentService.createTextOutput('ok');
   } catch (err) {
@@ -70,6 +77,22 @@ function appendSession_(d) {
     Number(d.accuracy) || 0,
     text_(mistakes),
     d.status === 'completed' ? 'завершено' : 'перервано'
+  ]);
+}
+
+// Підсумок шахового уроку (lesson/index.html?...&s=Ім'я).
+function appendLesson_(d) {
+  var sheet = getSheet_(LESSONS_SHEET, LESSONS_HEADER);
+  sheet.appendRow([
+    new Date(d.ts),
+    text_(d.student),
+    text_(d.lesson),
+    text_(d.mode),
+    Number(d.stars) || 0,
+    Number(d.maxStars) || 0,
+    Number(d.mistakes) || 0,
+    text_(d.details),
+    text_(d.link)
   ]);
 }
 
