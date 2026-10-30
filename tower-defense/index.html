@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Шахова оборона</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #120f0b;
+    --bg-glow: #1c1712;
+    --panel: #1c1712;
+    --panel-2: #241d15;
+    --hairline: #3a3025;
+    --board-light: #ead9ba;
+    --board-dark: #86644a;
+    --board-dark-hi: #977252;
+    --frame: #0c0a08;
+    --text: #f1e9d8;
+    --text-dim: #b7a98e;
+    --text-faint: #7d7361;
+    --gold: #d8a94c;
+    --gold-soft: #f0cf8f;
+    --green: #2ecc71;
+    --green-soft: #a8e0bb;
+    --blocked-a: #443c30;
+    --blocked-b: #37312a;
+    --danger: #c96a4d;
+    --ink: #120f0b;
+    --on-gold: #241a08;
+    --gold-deep: #a9782c;
+    --frame-hi: #241b10;
+    --panel-hi: #2a2013;
+    --panel-hi-2: #3a2e1a;
+    --done-a: #3a4f3c;
+    --done-b: #2a3a2c;
+    --done-line: #4a6a4e;
+    --arrow-safe: #3b2f20;
+    --piece-w: #fbf5e6;
+    --piece-w-line: #241a0e;
+    --piece-b: #1b140d;
+    --piece-b-line: #e9dcc0;
+    --piece-w-a: #f1e9d8;
+    --piece-w-b: #f0cf8f;
+    --piece-b-a: #3a3025;
+    --piece-b-b: #120f0b;
+    --gold-rgb: 216, 169, 76;
+    --gold-dark-rgb: 160, 110, 30;
+    --green-rgb: 46, 204, 113;
+    --green-soft-rgb: 168, 224, 187;
+    --target-rgb: 87, 180, 122;
+    --danger-rgb: 201, 106, 77;
+    --overlay-rgb: 10, 8, 5;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-deep: 0 24px 60px -24px rgba(0,0,0,.75);
+    --move-ms: 400ms;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:
+      radial-gradient(120% 90% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    min-height: 100%;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 24px 18px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  header.top{ display:flex; align-items:center; }
+  .title-row{ display:flex; align-items:center; gap:12px; }
+  .badge{
+    font-size: 2.1rem;
+    line-height:1;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,.5));
+  }
+  .title-block h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size: clamp(1.7rem, 1.2rem + 2vw, 2.4rem);
+    letter-spacing: -0.01em;
+    margin:0;
+    color: var(--gold-soft);
+    text-wrap: balance;
+  }
+  .title-block p{
+    margin: 4px 0 0;
+    color: var(--text-dim);
+    font-size: .92rem;
+    max-width: 46ch;
+  }
+
+  /* рядок зі станом гри */
+  .stats{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:10px;
+    max-width: 560px;
+    width:100%;
+    margin: 0 auto;
+  }
+  .stat{
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    padding: 8px 6px;
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+  }
+  .stat .k{
+    font-size:.66rem;
+    text-transform: uppercase;
+    letter-spacing:.08em;
+    color: var(--text-faint);
+    font-weight:700;
+  }
+  .stat .v{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size: 1.1rem;
+    color: var(--text);
+  }
+  .stat .v.gold{ color: var(--gold-soft); }
+  .hearts .on{ color: var(--danger); }
+  .hearts .off{ color: var(--text-faint); }
+
+  main.stage{
+    display:flex;
+    gap:26px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+
+  /* дошка */
+  .board-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+  }
+  .board-frame{
+    position:relative;
+    width: min(520px, 88vw);
+    padding: 22px 22px 30px 30px;
+    background: linear-gradient(160deg, var(--frame-hi), var(--frame) 70%);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-deep), inset 0 0 0 1px rgba(0,0,0,.9);
+  }
+  .board-wrap{
+    position:relative;
+    width:100%;
+    height:0;
+    padding-bottom:100%; /* квадрат без aspect-ratio (Safari < 15) */
+    border-radius: var(--radius-sm);
+    overflow:hidden;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.9), 0 10px 30px -12px rgba(0,0,0,.7);
+  }
+  .board{
+    display:grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    width:100%; height:100%;
+  }
+  .sq{
+    position:relative;
+    border:none;
+    padding:0;
+    margin:0;
+    font: inherit;
+    cursor: pointer;
+    display:block;
+  }
+  .sq.light{ background: var(--board-light); }
+  .sq.dark{ background: var(--board-dark); }
+  .sq:focus-visible{ outline: 3px solid var(--gold-soft); outline-offset:-3px; z-index:3; }
+
+  /* зона атаки: чим більше фігур б'є клітинку, тим насиченіше */
+  .sq.z1::before, .sq.z2::before, .sq.z3::before{
+    content:"";
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    pointer-events:none;
+  }
+  .sq.z1::before{ background: rgba(var(--green-rgb),.34); }
+  .sq.z2::before{ background: rgba(var(--green-rgb),.54); }
+  .sq.z3::before{ background: rgba(var(--green-rgb),.74); }
+
+  /* вибрана фігура і її зона */
+  .sq.sz{ box-shadow: inset 0 0 0 3px var(--gold-soft); }
+  .sq.sel{ box-shadow: inset 0 0 0 5px var(--gold); z-index:2; }
+
+  /* куди можна ставити */
+  .sq.hint::after{
+    content:"";
+    position:absolute;
+    left:50%; top:50%;
+    width:24%; height:24%;
+    transform: translate(-50%,-50%);
+    border-radius:50%;
+    background: rgba(var(--gold-rgb),.75);
+    box-shadow: 0 0 0 2px rgba(var(--gold-dark-rgb),.35);
+    pointer-events:none;
+  }
+  /* верхні ряди під час розстановки трохи притемнені */
+  .placing .sq.far::after{
+    content:"";
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    background: rgba(var(--overlay-rgb),.30);
+    pointer-events:none;
+  }
+  .zone-line{
+    display:none;
+    position:absolute; left:0; right:0; top:50%;
+    border-top: 2px dashed var(--gold-soft);
+    pointer-events:none;
+    z-index:1;
+  }
+  .placing-on .zone-line{ display:block; }
+
+  /* скільки пішаків прийде по цій лінії */
+  .lane{
+    display:none;
+    position:absolute;
+    top:3px; left:50%;
+    transform: translateX(-50%);
+    padding: 0 5px;
+    border-radius: 9px;
+    background: rgba(var(--danger-rgb),.92);
+    color: var(--ink);
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size: 11px;
+    line-height: 16px;
+    pointer-events:none;
+  }
+  .lane.show{ display:block; }
+
+  /* фігури лежать окремим шаром над клітинками */
+  .pieces{
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    pointer-events:none;
+    z-index:2;
+  }
+  .tok{
+    position:absolute;
+    width:12.5%; height:12.5%;
+    display:flex; align-items:center; justify-content:center;
+    transition: left var(--move-ms) ease, top var(--move-ms) ease, opacity .35s ease, transform .35s ease;
+    animation: pop .28s ease-out;
+  }
+  .tok .g{
+    display:block;
+    line-height:1;
+    font-family: 'Segoe UI Symbol', 'Noto Sans Symbols 2', 'Noto Sans Symbols', 'DejaVu Sans', 'Apple Symbols', sans-serif;
+  }
+  .tok.w .g{
+    color: var(--piece-w);
+    text-shadow: 1px 0 0 var(--piece-w-line), -1px 0 0 var(--piece-w-line), 0 1px 0 var(--piece-w-line), 0 -1px 0 var(--piece-w-line), 0 3px 5px rgba(0,0,0,.45);
+  }
+  .tok.b .g{
+    color: var(--piece-b);
+    text-shadow: 1px 0 0 var(--piece-b-line), -1px 0 0 var(--piece-b-line), 0 1px 0 var(--piece-b-line), 0 -1px 0 var(--piece-b-line), 0 3px 5px rgba(0,0,0,.45);
+  }
+  .tok.gone{ opacity:0; transform: scale(.4); }
+  .tok.fire .g{ animation: fire .35s ease-out; }
+  /* червона рамка: цей пішак наступним кроком з'їсть фігуру */
+  .tok.threat::before{
+    content:"";
+    position:absolute; top:6%; right:6%; bottom:6%; left:6%;
+    border-radius: 50%;
+    border: 3px solid var(--danger);
+    background: rgba(var(--danger-rgb),.28);
+    animation: threat 0.9s ease-in-out infinite;
+  }
+  @keyframes pop{
+    0%{ transform: scale(.5); opacity:0; }
+    100%{ transform: scale(1); opacity:1; }
+  }
+  @keyframes fire{
+    0%{ transform: scale(1); }
+    40%{ transform: scale(1.22); }
+    100%{ transform: scale(1); }
+  }
+  @keyframes threat{
+    0%,100%{ opacity:.55; }
+    50%{ opacity:1; }
+  }
+
+  /* лінії «хто кого з'їв» */
+  .fx{
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    z-index:3;
+  }
+  .shot{
+    stroke-width: .09;
+    stroke-linecap: round;
+    animation: shot .6s ease-out forwards;
+  }
+  .shot.ok{ stroke: var(--green); }
+  .shot.bad{ stroke: var(--danger); }
+  @keyframes shot{
+    0%{ opacity:1; }
+    100%{ opacity:0; }
+  }
+
+  /* підписи навколо рамки */
+  .files, .ranks{
+    position:absolute;
+    display:flex;
+    color: var(--text-faint);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight:700;
+  }
+  .files{ left:30px; right:22px; bottom:9px; }
+  .files span{ flex:1; text-align:center; }
+  .ranks{ top:22px; bottom:30px; left:10px; flex-direction:column; }
+  .ranks span{ flex:1; display:flex; align-items:center; }
+
+  .msg{
+    width: min(520px, 88vw);
+    min-height: 3.2em;
+    padding: 10px 14px;
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    color: var(--text-dim);
+    font-size: .92rem;
+    line-height: 1.4;
+  }
+  .msg.bad{ border-color: var(--danger); color: var(--text); }
+
+  /* права панель */
+  .panel{
+    width: min(300px, 88vw);
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+  }
+  .card h2{
+    margin:0 0 10px;
+    font-size:.72rem;
+    text-transform: uppercase;
+    letter-spacing:.09em;
+    color: var(--text-faint);
+    font-weight:700;
+  }
+  .shop{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .shop-btn{
+    appearance:none;
+    border:1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    padding: 8px 6px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    font-family:'Manrope', sans-serif;
+    font-weight:700;
+    font-size:.82rem;
+    min-height: 74px;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .shop-btn .g{
+    font-size: 2rem;
+    line-height:1;
+    color: var(--piece-w);
+    text-shadow: 1px 0 0 var(--piece-w-line), -1px 0 0 var(--piece-w-line), 0 1px 0 var(--piece-w-line), 0 -1px 0 var(--piece-w-line);
+  }
+  .shop-btn .c{ font-family:'JetBrains Mono', monospace; color: var(--gold-soft); font-size:.8rem; }
+  .shop-btn:hover:not(:disabled){ border-color: var(--gold); transform: translateY(-1px); }
+  .shop-btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
+  .shop-btn.on{ border-color: var(--gold-soft); background: var(--panel-hi-2); box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.2); }
+  .shop-btn:disabled{ opacity:.4; cursor:not-allowed; }
+
+  .btn{
+    appearance:none;
+    border:1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-family:'Manrope', sans-serif;
+    font-weight:700;
+    font-size: .95rem;
+    cursor:pointer;
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    width:100%;
+  }
+  .btn:hover:not(:disabled){ border-color: var(--gold); transform: translateY(-1px); }
+  .btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.primary{
+    background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+    color: var(--on-gold);
+    border-color: transparent;
+    font-size: 1.05rem;
+    padding: 14px;
+  }
+  .btn.ghost{ background: transparent; }
+  .btn.small{ padding: 9px 10px; font-size:.82rem; }
+  .btn.pressed{ border-color: var(--gold-soft); background: var(--panel-hi-2); color: var(--gold-soft); }
+  .btn.danger-confirm{ border-color: var(--danger); color: var(--danger); }
+  .btn[hidden]{ display:none; }
+  .ctl{ display:flex; flex-direction:column; gap:8px; }
+  .ctl-row{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+
+  .rules{ font-size:.84rem; color: var(--text-dim); line-height:1.5; }
+  .rules ol{ margin:0; padding-left: 1.2em; }
+  .rules li{ margin-bottom: 4px; }
+  .rules summary{ cursor:pointer; font-weight:700; color: var(--text); margin-bottom: 8px; }
+  .rules b{ color: var(--gold-soft); }
+
+  /* вікно кінця гри */
+  .overlay{
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(var(--overlay-rgb),.76);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity:0;
+    pointer-events:none;
+    transition: opacity .28s ease;
+    z-index:10;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .end-card{
+    background: var(--panel);
+    border: 1px solid var(--gold);
+    border-radius: var(--radius-md);
+    padding: 20px 20px;
+    text-align:center;
+    width: min(320px, 90%);
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,.8);
+  }
+  .end-card .cup{ font-size: 2rem; }
+  .end-card h3{
+    font-family:'Fraunces', serif;
+    font-size: 1.3rem;
+    margin: 6px 0 4px;
+    color: var(--gold-soft);
+  }
+  .end-card .sub{ color: var(--text-dim); font-size:.88rem; margin-bottom: 14px; line-height:1.4; }
+  .end-card .rec{ color: var(--green-soft); font-size:.88rem; margin-bottom: 12px; font-weight:700; }
+
+  @media (prefers-reduced-motion: reduce){
+    .tok{ animation:none; transition:none; }
+    .tok.fire .g, .tok.threat::before{ animation:none; }
+    .shot{ animation:none; opacity:.8; }
+    .overlay, .btn, .shop-btn{ transition:none; }
+  }
+
+  /* вузький екран: під час хвилі магазин не потрібен, кнопка «Пауза» одразу під дошкою */
+  @media (max-width: 880px){
+    .waving #shopCard{ display:none; }
+  }
+
+  @media (max-width: 560px){
+    .wrap{ padding: 18px 14px 40px; }
+    .board-frame{ padding: 16px 16px 24px 24px; }
+    .files{ left:24px; right:16px; }
+    .ranks{ top:16px; bottom:24px; }
+    .stat .v{ font-size: 1rem; }
+    .stat{ padding: 6px 4px; }
+    .stats{ gap: 6px; }
+    .title-block p{ display:none; }
+    .badge{ font-size: 1.7rem; }
+    .shop{ grid-template-columns: repeat(4, 1fr); gap:6px; }
+    .shop-btn{ min-height: 68px; padding: 6px 2px; font-size:.7rem; }
+    .shop-btn .g{ font-size: 1.6rem; }
+    .shop-btn .c{ font-size:.7rem; }
+    .msg{ min-height: 4.4em; font-size:.88rem; }
+    .lane{ font-size: 9px; line-height: 13px; padding: 0 3px; top:2px; }
+  }
+</style>
+<script src="../theme/theme.js"></script>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <header class="top">
+    <div class="title-row">
+      <span class="badge" aria-hidden="true">♜</span>
+      <div class="title-block">
+        <h1>Шахова оборона</h1>
+        <p>Розстав фігури й не пропусти пішаків до першого ряду.</p>
+      </div>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Стан гри">
+    <div class="stat"><span class="k">Хвиля</span><span class="v" id="vWave">1/10</span></div>
+    <div class="stat"><span class="k">Життя</span><span class="v hearts" id="vLives"></span></div>
+    <div class="stat"><span class="k">Очки</span><span class="v gold" id="vBudget">0</span></div>
+    <div class="stat"><span class="k">Рекорд</span><span class="v" id="vBest">0</span></div>
+  </section>
+
+  <main class="stage">
+    <div class="board-col">
+      <div class="board-frame">
+        <div class="board-wrap placing-on" id="boardWrap">
+          <div class="board placing" id="board" aria-label="Шахова дошка 8 на 8"></div>
+          <div class="zone-line" id="zoneLine"></div>
+          <div class="pieces" id="pieces"></div>
+          <svg class="fx" id="fx" viewBox="0 0 8 8" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div class="overlay" id="overlay">
+            <div class="end-card">
+              <div class="cup" id="endIcon">🛡️</div>
+              <h3 id="endTitle"></h3>
+              <div class="sub" id="endSub"></div>
+              <div class="rec" id="endRec"></div>
+              <button class="btn primary" id="againBtn" type="button">Ще раз</button>
+            </div>
+          </div>
+        </div>
+        <div class="files" id="files" aria-hidden="true"></div>
+        <div class="ranks" id="ranks" aria-hidden="true"></div>
+      </div>
+      <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    </div>
+
+    <div class="panel">
+      <div class="card" id="shopCard">
+        <h2>Магазин фігур</h2>
+        <div class="shop" id="shop"></div>
+      </div>
+
+      <div class="card">
+        <h2>Керування</h2>
+        <div class="ctl">
+          <button class="btn primary" id="goBtn" type="button">Старт хвилі 1</button>
+          <button class="btn" id="takeBtn" type="button" hidden>Забрати фігуру</button>
+          <div class="ctl-row">
+            <button class="btn small" id="zonesBtn" type="button" aria-pressed="true">Зони атаки: так</button>
+            <button class="btn small" id="speedBtn" type="button">Швидкість x1</button>
+          </div>
+          <button class="btn small ghost" id="resetBtn" type="button">Почати спочатку</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <details class="rules" open>
+          <summary>Як грати</summary>
+          <ol>
+            <li>Купи фігури й постав їх на <b>нижні 4 ряди</b>.</li>
+            <li>Натисни «Старт»: пішаки йдуть згори вниз.</li>
+            <li>Після кожного кроку пішаків кожна твоя фігура <b>з'їдає одного</b> пішака, якого атакує, і стоїть на місці.</li>
+            <li>Пішак по діагоналі перед твоєю фігурою (<b>червона рамка</b>) наступним кроком з'їсть її.</li>
+            <li>Пішак дійшов до 1-го ряду — мінус життя. Життів три.</li>
+            <li>Червоні числа зверху — скільки пішаків прийде по лінії.</li>
+          </ol>
+        </details>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ===== ЛОГІКА БОЮ (без малювання; перевіряється тестами в node) ===== */
+
+var FILES = 'abcdefgh';
+var COST = { q: 9, r: 5, b: 3, n: 3 };
+var NAMES = { q: 'Ферзь', r: 'Тура', b: 'Слон', n: 'Кінь' };
+var WAVES = 10;          // всього хвиль
+var LIVES = 3;
+var START_BUDGET = 12;
+var HOME_RANKS = 4;      // ставимо на ряди 1-4
+
+var DIRS_ROOK = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+var DIRS_BISHOP = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+var DIRS_QUEEN = DIRS_ROOK.concat(DIRS_BISHOP);
+var KNIGHT_JUMPS = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]];
+
+/* Клітинка = число 0..63. a1 = 0, b1 = 1, ... h8 = 63. Ряд 0 = перший ряд (внизу, з боку білих). */
+function sqOf(f, r) { return r * 8 + f; }
+function fileOf(sq) { return sq % 8; }
+function rankOf(sq) { return Math.floor(sq / 8); }
+function onBoard(f, r) { return f >= 0 && f < 8 && r >= 0 && r < 8; }
+function sqName(sq) { return FILES.charAt(fileOf(sq)) + (rankOf(sq) + 1); }
+
+/* Дошка = масив із 64 елементів: null або { id, type: 'q'|'r'|'b'|'n'|'p', color: 'w'|'b' }.
+   Білі ('w') - твої фігури. Чорні пішаки ('p', 'b') йдуть вниз. */
+function emptyBoard() {
+  var b = [];
+  var i;
+  for (i = 0; i < 64; i = i + 1) { b.push(null); }
+  return b;
+}
+
+function newState() {
+  return {
+    board: emptyBoard(),
+    nextId: 1,
+    wave: 1,             // номер хвилі, яка буде або йде
+    cleared: 0,          // скільки хвиль відбито
+    lives: LIVES,
+    budget: START_BUDGET,
+    status: 'place',     // 'place' - розстановка, 'wave' - іде хвиля, 'cleared' - хвилю відбито, 'lost', 'won'
+    tick: 0,
+    queue: [],           // пішаки, які ще з'являться: { tick, file }
+    sig: '',
+    stats: { killed: 0, leaked: 0, lost: 0, stuck: 0 }
+  };
+}
+
+/* ---------- Куди б'є фігура ---------- */
+
+/* Клітинки, які атакує фігура на клітинці sq. Далекобійні (ферзь, тура, слон) зупиняються
+   на першій зайнятій клітинці: її вони атакують, а далі не бачать. */
+function attackedSquares(board, sq) {
+  var p = board[sq];
+  var out = [];
+  var f = fileOf(sq);
+  var r = rankOf(sq);
+  var i;
+  var dirs;
+  var nf;
+  var nr;
+  if (!p) { return out; }
+  if (p.type === 'n') {
+    for (i = 0; i < KNIGHT_JUMPS.length; i = i + 1) {
+      nf = f + KNIGHT_JUMPS[i][0];
+      nr = r + KNIGHT_JUMPS[i][1];
+      if (onBoard(nf, nr)) { out.push(sqOf(nf, nr)); }
+    }
+    return out;
+  }
+  if (p.type === 'p') {
+    /* чорний пішак б'є вниз по діагоналі */
+    if (onBoard(f - 1, r - 1)) { out.push(sqOf(f - 1, r - 1)); }
+    if (onBoard(f + 1, r - 1)) { out.push(sqOf(f + 1, r - 1)); }
+    return out;
+  }
+  if (p.type === 'r') { dirs = DIRS_ROOK; }
+  else if (p.type === 'b') { dirs = DIRS_BISHOP; }
+  else { dirs = DIRS_QUEEN; }
+  for (i = 0; i < dirs.length; i = i + 1) {
+    nf = f + dirs[i][0];
+    nr = r + dirs[i][1];
+    while (onBoard(nf, nr)) {
+      out.push(sqOf(nf, nr));
+      if (board[sqOf(nf, nr)] !== null) { break; }
+      nf = nf + dirs[i][0];
+      nr = nr + dirs[i][1];
+    }
+  }
+  return out;
+}
+
+/* Скільки твоїх фігур б'є кожну клітинку (масив із 64 чисел). Для підсвітки зон. */
+function attackCounts(board) {
+  var counts = [];
+  var sq;
+  var list;
+  var i;
+  for (sq = 0; sq < 64; sq = sq + 1) { counts.push(0); }
+  for (sq = 0; sq < 64; sq = sq + 1) {
+    if (board[sq] && board[sq].color === 'w') {
+      list = attackedSquares(board, sq);
+      for (i = 0; i < list.length; i = i + 1) { counts[list[i]] = counts[list[i]] + 1; }
+    }
+  }
+  return counts;
+}
+
+/* ---------- Розстановка ---------- */
+
+/* Усі функції розстановки повертають '' (все добре) або текст помилки. */
+function placePiece(state, type, sq) {
+  if (state.status !== 'place') { return 'Зараз ставити не можна.'; }
+  if (!COST[type]) { return 'Невідома фігура.'; }
+  if (rankOf(sq) >= HOME_RANKS) { return 'Ставимо тільки на нижні 4 ряди.'; }
+  if (state.board[sq]) { return 'Ця клітинка зайнята.'; }
+  if (COST[type] > state.budget) { return 'Не вистачає очок.'; }
+  state.board[sq] = { id: state.nextId, type: type, color: 'w' };
+  state.nextId = state.nextId + 1;
+  state.budget = state.budget - COST[type];
+  return '';
+}
+
+function movePiece(state, from, to) {
+  if (state.status !== 'place') { return 'Зараз пересувати не можна.'; }
+  if (!state.board[from]) { return 'Тут немає фігури.'; }
+  if (rankOf(to) >= HOME_RANKS) { return 'Ставимо тільки на нижні 4 ряди.'; }
+  if (state.board[to]) { return 'Ця клітинка зайнята.'; }
+  state.board[to] = state.board[from];
+  state.board[from] = null;
+  return '';
+}
+
+/* Забрати фігуру: очки повертаються повністю. */
+function takePiece(state, sq) {
+  var p = state.board[sq];
+  if (state.status !== 'place') { return 'Зараз забирати не можна.'; }
+  if (!p) { return 'Тут немає фігури.'; }
+  state.budget = state.budget + COST[p.type];
+  state.board[sq] = null;
+  return '';
+}
+
+function countPieces(board) {
+  var n = 0;
+  var i;
+  for (i = 0; i < 64; i = i + 1) {
+    if (board[i] && board[i].color === 'w') { n = n + 1; }
+  }
+  return n;
+}
+
+function countPawns(board) {
+  var n = 0;
+  var i;
+  for (i = 0; i < 64; i = i + 1) {
+    if (board[i] && board[i].type === 'p') { n = n + 1; }
+  }
+  return n;
+}
+
+/* ---------- Хвилі ---------- */
+
+/* Невеликий генератор випадкових чисел із зерном: одна й та сама хвиля завжди однакова. */
+function makeRng(seed) {
+  var s = seed >>> 0;
+  return function () {
+    var t;
+    s = (s + 0x6D2B79F5) >>> 0;
+    t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t = t ^ (t + Math.imul(t ^ (t >>> 7), t | 61));
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function waveSize(n) { return 4 + 3 * n + Math.floor(n * n / 2); }   /* 7, 12, 18, ... 84 пішаки */
+function wavePerTick(n) { return 1 + Math.floor((n + 1) / 2); }     /* скільки пішаків з'являється за крок */
+function waveBonus(n) { return 4; }                                 /* очки після відбитої хвилі n */
+
+/* Розклад хвилі: масив { tick, file }. За один крок з'являється до perTick пішаків на різних лініях. */
+function buildWave(n) {
+  var rng = makeRng(1000 + n * 7919);
+  var total = waveSize(n);
+  var per = wavePerTick(n);
+  var queue = [];
+  var tick = 0;
+  var left = total;
+  var used;
+  var count;
+  var file;
+  var k;
+  while (left > 0) {
+    count = Math.min(per, left);
+    used = {};
+    for (k = 0; k < count; k = k + 1) {
+      file = Math.floor(rng() * 8);
+      while (used[file]) { file = (file + 1) % 8; }
+      used[file] = true;
+      queue.push({ tick: tick, file: file });
+    }
+    left = left - count;
+    tick = tick + 1;
+  }
+  return queue;
+}
+
+/* Скільки пішаків прийде по кожній лінії (масив із 8 чисел). */
+function laneCounts(queue) {
+  var c = [0, 0, 0, 0, 0, 0, 0, 0];
+  var i;
+  for (i = 0; i < queue.length; i = i + 1) { c[queue[i].file] = c[queue[i].file] + 1; }
+  return c;
+}
+
+function startWave(state) {
+  if (state.status !== 'place') { return 'Хвиля вже йде.'; }
+  if (countPieces(state.board) === 0) { return 'Спершу постав хоча б одну фігуру.'; }
+  state.status = 'wave';
+  state.queue = buildWave(state.wave);
+  state.tick = 0;
+  state.stats = { killed: 0, leaked: 0, lost: 0, stuck: 0 };
+  return '';
+}
+
+/* ---------- Крок ворогів ---------- */
+
+/* Найцінніша твоя фігура, яку пішак на клітинці sq атакує по діагоналі (або -1). */
+function pawnVictim(board, sq) {
+  var f = fileOf(sq);
+  var r = rankOf(sq);
+  var best = -1;
+  var cands = [sqOf(f - 1, r - 1), sqOf(f + 1, r - 1)];
+  var i;
+  var s;
+  if (r === 0) { return -1; }
+  for (i = 0; i < 2; i = i + 1) {
+    if (i === 0 && f === 0) { continue; }
+    if (i === 1 && f === 7) { continue; }
+    s = cands[i];
+    if (board[s] && board[s].color === 'w') {
+      if (best < 0 || COST[board[s].type] > COST[board[best].type]) { best = s; }
+    }
+  }
+  return best;
+}
+
+/* Рядок-«відбиток» дошки: щоб помітити, що за цілий крок нічого не змінилось. */
+function signature(board) {
+  var s = '';
+  var i;
+  for (i = 0; i < 64; i = i + 1) { s = s + (board[i] ? board[i].id : 0) + ','; }
+  return s;
+}
+
+/* Один крок ворогів: пішаки йдуть на клітинку вниз (а якщо атакують твою фігуру - б'ють її),
+   потім згори з'являються нові. Йдемо знизу вгору, щоб колона пішаків рухалась разом.
+   Повертає список подій для малювання. */
+function enemyPhase(state) {
+  var events = [];
+  var board = state.board;
+  var sq;
+  var p;
+  var victim;
+  var dest;
+  var taken;
+  var rest;
+  var q;
+  var i;
+  var top;
+  if (state.status !== 'wave') { return events; }
+  state.sig = signature(board);
+
+  for (sq = 0; sq < 64; sq = sq + 1) {
+    p = board[sq];
+    if (!p || p.type !== 'p') { continue; }
+    victim = pawnVictim(board, sq);
+    dest = -1;
+    if (victim >= 0) { dest = victim; }
+    else if (board[sq - 8] === null) { dest = sq - 8; }
+    if (dest < 0) { continue; }          /* пішак упирається в фігуру і стоїть */
+    taken = board[dest];
+    board[dest] = p;
+    board[sq] = null;
+    if (taken) {
+      state.stats.lost = state.stats.lost + 1;
+      events.push({ type: 'pawnTakes', pawnId: p.id, pieceId: taken.id, from: sq, to: dest });
+    }
+    if (rankOf(dest) === 0) {
+      board[dest] = null;
+      state.lives = state.lives - 1;
+      state.stats.leaked = state.stats.leaked + 1;
+      events.push({ type: 'leak', id: p.id, from: sq, to: dest });
+    }
+  }
+
+  if (state.lives <= 0) {
+    state.lives = 0;
+    state.status = 'lost';
+    return events;
+  }
+
+  /* нові пішаки з'являються на 8-му ряду; якщо клітинка зайнята - чекають наступного кроку */
+  rest = [];
+  top = 7;
+  for (i = 0; i < state.queue.length; i = i + 1) {
+    q = state.queue[i];
+    if (q.tick <= state.tick && board[sqOf(q.file, top)] === null) {
+      board[sqOf(q.file, top)] = { id: state.nextId, type: 'p', color: 'b' };
+      events.push({ type: 'spawn', id: state.nextId, to: sqOf(q.file, top) });
+      state.nextId = state.nextId + 1;
+    } else {
+      rest.push(q);
+    }
+  }
+  state.queue = rest;
+  state.tick = state.tick + 1;
+  return events;
+}
+
+/* ---------- Крок твоїх фігур ---------- */
+
+/* Наскільки пішак небезпечний (більше - з'їдати раніше):
+   чим нижче, тим гірше; той, що б'є фігуру - ще гірше; той, що наступним кроком дійде до 1-го ряду - найгірше. */
+function pawnDanger(board, sq) {
+  var r = rankOf(sq);
+  var d = 7 - r;
+  var victim = pawnVictim(board, sq);
+  if (victim >= 0) { d = d + 10 + COST[board[victim].type]; }
+  if (r === 1 && (victim >= 0 || board[sq - 8] === null)) { d = d + 100; }
+  return d;
+}
+
+/* Кожна твоя фігура з'їдає одного пішака на клітинці, яку атакує, і лишається на місці.
+   Усі цілі беруться з дошки до взяття, тому порядок фігур не міняє, що вони бачать.
+   Першими вибирають фігури з найменшим вибором, щоб не відбирати цілі одна в одної.
+   Після цього перевіряємо, чи хвилю відбито. */
+function capturePhase(state) {
+  var events = [];
+  var board = state.board;
+  var shooters = [];
+  var danger = {};
+  var taken = {};
+  var sq;
+  var list;
+  var targets;
+  var i;
+  var j;
+  var s;
+  var best;
+  var allDue;
+  var stuckList;
+  if (state.status !== 'wave') { return events; }
+
+  for (sq = 0; sq < 64; sq = sq + 1) {
+    if (board[sq] && board[sq].color === 'w') {
+      list = attackedSquares(board, sq);
+      targets = [];
+      for (i = 0; i < list.length; i = i + 1) {
+        if (board[list[i]] && board[list[i]].type === 'p') {
+          targets.push(list[i]);
+          if (danger[list[i]] === undefined) { danger[list[i]] = pawnDanger(board, list[i]); }
+        }
+      }
+      if (targets.length > 0) { shooters.push({ sq: sq, id: board[sq].id, targets: targets }); }
+    }
+  }
+  shooters.sort(function (a, b) {
+    if (a.targets.length !== b.targets.length) { return a.targets.length - b.targets.length; }
+    return a.sq - b.sq;
+  });
+
+  for (i = 0; i < shooters.length; i = i + 1) {
+    s = shooters[i];
+    best = -1;
+    for (j = 0; j < s.targets.length; j = j + 1) {
+      if (taken[s.targets[j]]) { continue; }
+      if (best < 0 || danger[s.targets[j]] > danger[best]) { best = s.targets[j]; }
+    }
+    if (best >= 0) {
+      taken[best] = true;
+      events.push({ type: 'kill', pieceId: s.id, from: s.sq, to: best, pawnId: board[best].id });
+    }
+  }
+  for (i = 0; i < events.length; i = i + 1) {
+    board[events[i].to] = null;
+    state.stats.killed = state.stats.killed + 1;
+  }
+
+  /* хвилю відбито: нових пішаків не буде і на дошці їх немає */
+  if (state.queue.length === 0 && countPawns(board) === 0) {
+    state.status = 'cleared';
+    return events;
+  }
+  /* глухий кут: за цілий крок нічого не змінилось і нових пішаків не буде - решта застрягла
+     (наприклад, пішак упирається у твою фігуру, яка його не б'є). Вони зникають без шкоди. */
+  allDue = true;
+  for (i = 0; i < state.queue.length; i = i + 1) {
+    if (state.queue[i].tick >= state.tick) { allDue = false; }
+  }
+  if (allDue && signature(board) === state.sig) {
+    stuckList = [];
+    for (sq = 0; sq < 64; sq = sq + 1) {
+      if (board[sq] && board[sq].type === 'p') { stuckList.push(sq); board[sq] = null; }
+    }
+    state.stats.stuck = stuckList.length;
+    state.queue = [];
+    events.push({ type: 'stuck', squares: stuckList });
+    state.status = 'cleared';
+  }
+  return events;
+}
+
+/* Крок ворогів + крок твоїх фігур. Для тестів і ботів. */
+function runTick(state) {
+  var a = enemyPhase(state);
+  var b = capturePhase(state);
+  return a.concat(b);
+}
+
+/* Після відбитої хвилі: очки, наступна хвиля або перемога. */
+function finishWave(state) {
+  if (state.status !== 'cleared') { return; }
+  state.cleared = state.wave;
+  if (state.wave >= WAVES) {
+    state.status = 'won';
+    return;
+  }
+  state.budget = state.budget + waveBonus(state.wave);
+  state.wave = state.wave + 1;
+  state.status = 'place';
+}
+
+/* ===== КІНЕЦЬ ЛОГІКИ БОЮ ===== */
+
+
+/* ===== МАЛЮВАННЯ І КЕРУВАННЯ ===== */
+
+var STORE_KEY = 'tower-defense-best';
+var GLYPH = { q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+var STEP_MS = { 1: 1100, 2: 550 };
+var SVG_NS = 'http://www.w3.org/2000/svg';
+
+var state = newState();
+var best = loadBest();
+var speed = 1;
+var showZones = true;
+var selShop = '';        /* тип фігури, яку зараз купуємо: 'q' | 'r' | 'b' | 'n' | '' */
+var selSq = -1;          /* вибрана своя фігура на дошці */
+var paused = false;
+var timer = null;
+var pending = null;
+var resetArmed = false;
+var praiseIndex = 0;
+
+var sqEls = [];
+var laneEls = [];
+var pieceEls = {};
+
+var boardWrapEl = document.getElementById('boardWrap');
+var boardEl = document.getElementById('board');
+var piecesEl = document.getElementById('pieces');
+var fxEl = document.getElementById('fx');
+var msgEl = document.getElementById('msg');
+var shopEl = document.getElementById('shop');
+var goBtn = document.getElementById('goBtn');
+var takeBtn = document.getElementById('takeBtn');
+var zonesBtn = document.getElementById('zonesBtn');
+var speedBtn = document.getElementById('speedBtn');
+var resetBtn = document.getElementById('resetBtn');
+var overlayEl = document.getElementById('overlay');
+var shopBtns = {};
+
+var PRAISE = [
+  'Ти уважно розставив фігури!',
+  'Ти не здався, і це спрацювало.',
+  'Ти перевірив зони атаки перед стартом.',
+  'Ти шукав кращу розстановку, і це видно.'
+];
+
+/* ---------- Рекорд ---------- */
+
+function loadBest() {
+  var v = 0;
+  try {
+    v = parseInt(localStorage.getItem(STORE_KEY), 10);
+  } catch (e) {
+    v = 0;
+  }
+  if (isNaN(v) || v < 0) { v = 0; }
+  return v;
+}
+
+function saveBest(n) {
+  if (n <= best) { return; }
+  best = n;
+  try {
+    localStorage.setItem(STORE_KEY, String(n));
+  } catch (e) {
+    /* без сховища гра працює далі, просто рекорд не збережеться */
+  }
+}
+
+/* ---------- Побудова сторінки ---------- */
+
+function buildBoard() {
+  var r;
+  var f;
+  var b;
+  var lane;
+  var labels = '';
+  var ranks = '';
+  for (r = 7; r >= 0; r = r - 1) {
+    for (f = 0; f < 8; f = f + 1) {
+      b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('data-sq', String(sqOf(f, r)));
+      b.addEventListener('click', makeSquareHandler(sqOf(f, r)));
+      if (r === 7) {
+        lane = document.createElement('span');
+        lane.className = 'lane';
+        b.appendChild(lane);
+        laneEls[f] = lane;
+      }
+      boardEl.appendChild(b);
+      sqEls[sqOf(f, r)] = b;
+    }
+  }
+  for (f = 0; f < 8; f = f + 1) { labels = labels + '<span>' + FILES.charAt(f) + '</span>'; }
+  for (r = 8; r >= 1; r = r - 1) { ranks = ranks + '<span>' + r + '</span>'; }
+  document.getElementById('files').innerHTML = labels;
+  document.getElementById('ranks').innerHTML = ranks;
+}
+
+function buildShop() {
+  var types = ['q', 'r', 'b', 'n'];
+  var i;
+  var b;
+  for (i = 0; i < types.length; i = i + 1) {
+    b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'shop-btn';
+    b.innerHTML = '<span class="g">' + GLYPH[types[i]] + '</span><span>' + NAMES[types[i]] + '</span><span class="c">' + COST[types[i]] + ' очок</span>';
+    b.addEventListener('click', makeShopHandler(types[i]));
+    shopEl.appendChild(b);
+    shopBtns[types[i]] = b;
+  }
+}
+
+function makeSquareHandler(sq) { return function () { onSquare(sq); }; }
+function makeShopHandler(type) { return function () { onShop(type); }; }
+
+/* Розмір фігур залежить від ширини дошки. */
+function fitBoard() {
+  var w = boardWrapEl.clientWidth;
+  piecesEl.style.fontSize = Math.round(w / 8 * 0.8) + 'px';
+}
+
+/* ---------- Повідомлення ---------- */
+
+function say(text, bad) {
+  msgEl.textContent = text;
+  msgEl.className = bad ? 'msg bad' : 'msg';
+}
+
+/* ---------- Дії гравця ---------- */
+
+function onShop(type) {
+  if (state.status !== 'place') { return; }
+  if (COST[type] > state.budget) { say('Не вистачає очок на ' + NAMES[type].toLowerCase() + 'а.', true); return; }
+  selSq = -1;
+  if (selShop === type) {
+    selShop = '';
+    say('Обери фігуру в магазині.');
+  } else {
+    selShop = type;
+    say(NAMES[type] + ' вибрано. Тапни порожню клітинку на нижніх 4 рядах.');
+  }
+  render();
+}
+
+function onSquare(sq) {
+  var p = state.board[sq];
+  var err;
+  if (state.status !== 'place') { return; }
+  if (selShop) {
+    if (p) {
+      selShop = '';
+      selSq = sq;
+      say('Вибрано: ' + NAMES[p.type].toLowerCase() + ' на ' + sqName(sq) + '. Тапни порожню клітинку, щоб переставити.');
+    } else {
+      err = placePiece(state, selShop, sq);
+      if (err) {
+        say(err, true);
+      } else {
+        say(NAMES[selShop] + ' стоїть на ' + sqName(sq) + '.');
+        if (COST[selShop] > state.budget) { selShop = ''; }
+      }
+    }
+  } else if (selSq >= 0) {
+    if (sq === selSq) {
+      selSq = -1;
+      say('Обери фігуру в магазині або на дошці.');
+    } else if (p) {
+      selSq = sq;
+      say('Вибрано: ' + NAMES[p.type].toLowerCase() + ' на ' + sqName(sq) + '.');
+    } else {
+      err = movePiece(state, selSq, sq);
+      if (err) {
+        say(err, true);
+      } else {
+        say('Фігура тепер на ' + sqName(sq) + '.');
+        selSq = -1;
+      }
+    }
+  } else if (p) {
+    selSq = sq;
+    say('Вибрано: ' + NAMES[p.type].toLowerCase() + ' на ' + sqName(sq) + '. Тапни порожню клітинку, щоб переставити.');
+  } else {
+    say('Спершу обери фігуру в магазині.');
+  }
+  render();
+}
+
+function onTake() {
+  var p = state.board[selSq];
+  var err;
+  if (!p) { return; }
+  err = takePiece(state, selSq);
+  if (err) { say(err, true); return; }
+  say('Фігуру забрано. Очки повернулись.');
+  selSq = -1;
+  render();
+}
+
+function onGo() {
+  var err;
+  if (state.status === 'wave') {
+    togglePause();
+    return;
+  }
+  if (state.status !== 'place') { return; }
+  err = startWave(state);
+  if (err) { say(err, true); render(); return; }
+  selShop = '';
+  selSq = -1;
+  paused = false;
+  say('Хвиля ' + state.wave + ' іде! Пішаків: ' + waveSize(state.wave) + '.');
+  render();
+  scrollToTop();
+  later(stepEnemy, 700);
+}
+
+/* На телефоні кнопка «Старт» під дошкою: після натискання показуємо дошку. */
+function scrollToTop() {
+  try {
+    window.scrollTo(0, 0);
+  } catch (e) {
+    /* не страшно */
+  }
+}
+
+function onZones() {
+  showZones = !showZones;
+  render();
+}
+
+function onSpeed() {
+  speed = speed === 1 ? 2 : 1;
+  render();
+}
+
+function onReset() {
+  if (!resetArmed) {
+    resetArmed = true;
+    render();
+    return;
+  }
+  resetArmed = false;
+  newGame();
+}
+
+function newGame() {
+  stopTimer();
+  state = newState();
+  selShop = '';
+  selSq = -1;
+  paused = false;
+  resetArmed = false;
+  overlayEl.className = 'overlay';
+  clearPieces();
+  say('Купи фігуру, тапни її, потім тапни клітинку внизу.');
+  render();
+}
+
+/* ---------- Хід хвилі: таймер ---------- */
+
+function later(fn, ms) {
+  timer = setTimeout(function () {
+    timer = null;
+    if (paused) { pending = fn; } else { fn(); }
+  }, ms);
+}
+
+function stopTimer() {
+  if (timer) { clearTimeout(timer); }
+  timer = null;
+  pending = null;
+}
+
+function togglePause() {
+  var f;
+  paused = !paused;
+  if (!paused && pending) {
+    f = pending;
+    pending = null;
+    f();
+  }
+  render();
+}
+
+function stepEnemy() {
+  var ms = STEP_MS[speed];
+  var events = enemyPhase(state);
+  render(events);
+  if (state.status === 'lost') {
+    later(showEnd, ms);
+    return;
+  }
+  later(stepCapture, ms * 0.5);
+}
+
+function stepCapture() {
+  var ms = STEP_MS[speed];
+  var events = capturePhase(state);
+  render(events);
+  if (state.status === 'cleared') {
+    later(onWaveCleared, ms);
+    return;
+  }
+  later(stepEnemy, ms * 0.5);
+}
+
+function onWaveCleared() {
+  var st = state.stats;
+  var n = state.wave;
+  var text;
+  finishWave(state);
+  saveBest(state.cleared);
+  if (state.status === 'won') {
+    showEnd();
+    return;
+  }
+  text = 'Хвиля ' + n + ' відбита! ' + PRAISE[praiseIndex % PRAISE.length] +
+    ' З\'їдено: ' + st.killed + '. Прорвалось: ' + st.leaked + '. Втрачено фігур: ' + st.lost + '.' +
+    (st.stuck > 0 ? ' Застрягло (прибрано): ' + st.stuck + '.' : '') +
+    ' +' + waveBonus(n) + ' очок.';
+  praiseIndex = praiseIndex + 1;
+  say(text);
+  render();
+}
+
+function showEnd() {
+  var won = state.status === 'won';
+  var rec = '';
+  saveBest(state.cleared);
+  document.getElementById('endIcon').textContent = won ? '🏆' : '🛡️';
+  document.getElementById('endTitle').textContent = won ? 'Усі 10 хвиль відбито!' : 'Оборону прорвано';
+  if (won) {
+    document.getElementById('endSub').textContent = 'Ти дійшов до кінця і не здався. Спробуй іншу розстановку?';
+  } else {
+    document.getElementById('endSub').textContent = 'Хвилю ' + state.wave + ' не вдалося втримати. Відбито хвиль: ' + state.cleared +
+      '. Спробуй іншу розстановку: зони атаки допоможуть.';
+  }
+  if (state.cleared > 0 && state.cleared >= best) { rec = 'Рекорд: ' + best + ' з 10 хвиль'; }
+  document.getElementById('endRec').textContent = rec;
+  overlayEl.className = 'overlay show';
+  render();
+}
+
+/* ---------- Малювання ---------- */
+
+function render(events) {
+  renderStats();
+  renderSquares();
+  renderPieces(events || []);
+  renderPanel();
+}
+
+function renderStats() {
+  var hearts = '';
+  var i;
+  for (i = 0; i < LIVES; i = i + 1) {
+    hearts = hearts + (i < state.lives ? '<span class="on">♥</span>' : '<span class="off">♡</span>');
+  }
+  document.getElementById('vWave').textContent = state.wave + '/' + WAVES;
+  document.getElementById('vLives').innerHTML = hearts;
+  document.getElementById('vBudget').textContent = String(state.budget);
+  document.getElementById('vBest').textContent = String(best);
+}
+
+function renderSquares() {
+  var counts = attackCounts(state.board);
+  var zone = {};
+  var lanes = laneCounts(state.status === 'place' ? buildWave(state.wave) : []);
+  var placing = state.status === 'place';
+  var sq;
+  var f;
+  var r;
+  var cls;
+  var p;
+  var c;
+  var list;
+  var i;
+  var label;
+  if (selSq >= 0 && state.board[selSq]) {
+    list = attackedSquares(state.board, selSq);
+    for (i = 0; i < list.length; i = i + 1) { zone[list[i]] = true; }
+  }
+  document.getElementById('wrap').className = state.status === 'wave' ? 'wrap waving' : 'wrap';
+  boardEl.className = placing ? 'board placing' : 'board';
+  boardWrapEl.className = placing ? 'board-wrap placing-on' : 'board-wrap';
+  for (sq = 0; sq < 64; sq = sq + 1) {
+    f = fileOf(sq);
+    r = rankOf(sq);
+    p = state.board[sq];
+    cls = 'sq ' + ((f + r) % 2 === 0 ? 'dark' : 'light');
+    if (r >= HOME_RANKS) { cls = cls + ' far'; }
+    c = counts[sq];
+    if (showZones && c > 0 && !(p && p.color === 'w')) { cls = cls + ' z' + Math.min(c, 3); }
+    if (zone[sq]) { cls = cls + ' sz'; }
+    if (sq === selSq) { cls = cls + ' sel'; }
+    if (placing && selShop && !p && r < HOME_RANKS) { cls = cls + ' hint'; }
+    sqEls[sq].className = cls;
+    label = sqName(sq);
+    if (p) { label = label + ', ' + (p.type === 'p' ? 'пішак' : NAMES[p.type].toLowerCase()); }
+    sqEls[sq].setAttribute('aria-label', label);
+  }
+  for (f = 0; f < 8; f = f + 1) {
+    if (placing && lanes[f] > 0) {
+      laneEls[f].textContent = String(lanes[f]);
+      laneEls[f].className = 'lane show';
+    } else {
+      laneEls[f].className = 'lane';
+    }
+  }
+}
+
+function placeToken(el, sq) {
+  el.style.left = (fileOf(sq) * 12.5) + '%';
+  el.style.top = ((7 - rankOf(sq)) * 12.5) + '%';
+}
+
+function makeToken(p) {
+  var el = document.createElement('div');
+  var g = document.createElement('span');
+  el.className = 'tok ' + (p.color === 'w' ? 'w' : 'b');
+  g.className = 'g';
+  g.textContent = GLYPH[p.type] + '︎';   /* FE0E: не робити з пішака емодзі */
+  el.appendChild(g);
+  return el;
+}
+
+function removeLater(el) {
+  setTimeout(function () {
+    if (el.parentNode) { el.parentNode.removeChild(el); }
+  }, 450);
+}
+
+function clearPieces() {
+  var id;
+  for (id in pieceEls) {
+    if (pieceEls.hasOwnProperty(id) && pieceEls[id].parentNode) {
+      pieceEls[id].parentNode.removeChild(pieceEls[id]);
+    }
+  }
+  pieceEls = {};
+}
+
+function addShot(from, to, cls) {
+  var line = document.createElementNS(SVG_NS, 'line');
+  line.setAttribute('x1', String(fileOf(from) + 0.5));
+  line.setAttribute('y1', String(7 - rankOf(from) + 0.5));
+  line.setAttribute('x2', String(fileOf(to) + 0.5));
+  line.setAttribute('y2', String(7 - rankOf(to) + 0.5));
+  line.setAttribute('class', 'shot ' + cls);
+  fxEl.appendChild(line);
+  setTimeout(function () {
+    if (line.parentNode) { line.parentNode.removeChild(line); }
+  }, 700);
+}
+
+function renderPieces(events) {
+  var seen = {};
+  var sq;
+  var p;
+  var el;
+  var id;
+  var i;
+  var ev;
+  var pe;
+  document.documentElement.style.setProperty('--move-ms', Math.round(STEP_MS[speed] * 0.4) + 'ms');
+
+  for (sq = 0; sq < 64; sq = sq + 1) {
+    p = state.board[sq];
+    if (!p) { continue; }
+    seen[p.id] = true;
+    el = pieceEls[p.id];
+    if (!el) {
+      el = makeToken(p);
+      placeToken(el, sq);
+      piecesEl.appendChild(el);
+      pieceEls[p.id] = el;
+    } else {
+      placeToken(el, sq);
+    }
+    if (p.type === 'p') {
+      el.className = 'tok b' + (pawnVictim(state.board, sq) >= 0 ? ' threat' : '');
+    }
+  }
+
+  for (id in pieceEls) {
+    if (pieceEls.hasOwnProperty(id) && !seen[id]) {
+      el = pieceEls[id];
+      for (i = 0; i < events.length; i = i + 1) {
+        if (events[i].type === 'leak' && String(events[i].id) === id) { placeToken(el, events[i].to); }
+      }
+      el.className = el.className + ' gone';
+      removeLater(el);
+      delete pieceEls[id];
+    }
+  }
+
+  for (i = 0; i < events.length; i = i + 1) {
+    ev = events[i];
+    if (ev.type === 'kill') {
+      addShot(ev.from, ev.to, 'ok');
+      pe = pieceEls[ev.pieceId];
+      if (pe) { pe.className = pe.className + ' fire'; }
+    } else if (ev.type === 'pawnTakes') {
+      addShot(ev.from, ev.to, 'bad');
+    }
+  }
+}
+
+function renderPanel() {
+  var placing = state.status === 'place';
+  var type;
+  for (type in shopBtns) {
+    if (shopBtns.hasOwnProperty(type)) {
+      shopBtns[type].disabled = !placing || COST[type] > state.budget;
+      shopBtns[type].className = 'shop-btn' + (selShop === type ? ' on' : '');
+    }
+  }
+  if (placing) {
+    goBtn.hidden = false;
+    goBtn.textContent = 'Старт хвилі ' + state.wave + ' (' + waveSize(state.wave) + ' пішаків)';
+  } else if (state.status === 'wave') {
+    goBtn.hidden = false;
+    goBtn.textContent = paused ? 'Далі' : 'Пауза';
+  } else {
+    goBtn.hidden = true;
+  }
+  if (placing && selSq >= 0 && state.board[selSq]) {
+    takeBtn.hidden = false;
+    takeBtn.textContent = 'Забрати фігуру (+' + COST[state.board[selSq].type] + ')';
+  } else {
+    takeBtn.hidden = true;
+  }
+  zonesBtn.textContent = 'Зони атаки: ' + (showZones ? 'так' : 'ні');
+  zonesBtn.setAttribute('aria-pressed', showZones ? 'true' : 'false');
+  zonesBtn.className = 'btn small' + (showZones ? ' pressed' : '');
+  speedBtn.textContent = 'Швидкість x' + speed;
+  speedBtn.className = 'btn small' + (speed === 2 ? ' pressed' : '');
+  resetBtn.textContent = resetArmed ? 'Точно? Тапни ще раз' : 'Почати спочатку';
+  resetBtn.className = 'btn small ghost' + (resetArmed ? ' danger-confirm' : '');
+}
+
+/* ---------- Старт ---------- */
+
+buildBoard();
+buildShop();
+goBtn.addEventListener('click', onGo);
+takeBtn.addEventListener('click', onTake);
+zonesBtn.addEventListener('click', onZones);
+speedBtn.addEventListener('click', onSpeed);
+resetBtn.addEventListener('click', onReset);
+document.getElementById('againBtn').addEventListener('click', newGame);
+window.addEventListener('resize', fitBoard);
+fitBoard();
+say('Купи фігуру, тапни її, потім тапни клітинку внизу.');
+render();
+</script>
+</body>
+</html>
