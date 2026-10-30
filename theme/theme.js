@@ -156,6 +156,46 @@
     };
   }
 
+  /* ---------- Підпис автора (в усіх іграх і темах, навіть у default) ---------- */
+
+  var SIGN_URL = 'https://yaroslavchess.com';
+  var SIGN_TEXT = 'Ярослав Бартко \u00b7 yaroslavchess.com';
+
+  // Підпис — звичайний блок наприкінці сторінки (не fixed), тому нічого не перекриває.
+  // Кольори — зі змінних :root гри; у темі default base.css не підключається, тож стилі тут.
+  function buildSignature() {
+    if (document.getElementById('author-sign')) { return; }
+    var style = document.createElement('style');
+    style.textContent =
+      '#author-sign{display:block;box-sizing:border-box;text-align:center;' +
+      'padding:14px 16px;padding-bottom:calc(14px + env(safe-area-inset-bottom));' +
+      'font:600 12px/1.3 Manrope,ui-sans-serif,system-ui,sans-serif;}' +
+      '#author-sign a{color:var(--text-dim,inherit);text-decoration:none;' +
+      'display:inline-block;padding:8px 10px;border-radius:8px;}' +
+      '#author-sign a:hover,#author-sign a:focus-visible{text-decoration:underline;}';
+    document.head.appendChild(style);
+
+    var box = document.createElement('div');
+    box.id = 'author-sign';
+    var link = document.createElement('a');
+    link.href = SIGN_URL;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = SIGN_TEXT;
+    box.appendChild(link);
+    document.body.appendChild(box);
+  }
+
+  function startSignature() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        try { buildSignature(); } catch (e) { /* без підпису гра теж працює */ }
+      });
+    } else {
+      buildSignature();
+    }
+  }
+
   /* ---------- Запуск ---------- */
 
   function start() {
@@ -201,5 +241,6 @@
     }
   }
 
+  try { startSignature(); } catch (e) { /* без підпису гра теж працює */ }
   try { start(); } catch (e) { /* якщо щось пішло не так — гра працює як раніше */ }
 })();
