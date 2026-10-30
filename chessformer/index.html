@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Шахоформер</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #120f0b;
+    --bg-glow: #1c1712;
+    --panel: #1c1712;
+    --panel-2: #241d15;
+    --hairline: #3a3025;
+    --board-light: #ead9ba;
+    --board-dark: #86644a;
+    --board-dark-hi: #977252;
+    --frame: #0c0a08;
+    --text: #f1e9d8;
+    --text-dim: #b7a98e;
+    --text-faint: #7d7361;
+    --gold: #d8a94c;
+    --gold-soft: #f0cf8f;
+    --green: #2ecc71;
+    --green-soft: #a8e0bb;
+    --blocked-a: #443c30;
+    --blocked-b: #37312a;
+    --danger: #c96a4d;
+    --ink: #120f0b;
+    --on-gold: #241a08;
+    --gold-deep: #a9782c;
+    --frame-hi: #241b10;
+    --panel-hi: #2a2013;
+    --panel-hi-2: #3a2e1a;
+    --done-a: #3a4f3c;
+    --done-b: #2a3a2c;
+    --done-line: #4a6a4e;
+    --arrow-safe: #3b2f20;
+    --piece-w: #fbf5e6;
+    --piece-w-line: #241a0e;
+    --piece-b: #1b140d;
+    --piece-b-line: #e9dcc0;
+    --piece-w-a: #f1e9d8;
+    --piece-w-b: #f0cf8f;
+    --piece-b-a: #3a3025;
+    --piece-b-b: #120f0b;
+    --gold-rgb: 216, 169, 76;
+    --gold-dark-rgb: 160, 110, 30;
+    --green-rgb: 46, 204, 113;
+    --green-soft-rgb: 168, 224, 187;
+    --target-rgb: 87, 180, 122;
+    --danger-rgb: 201, 106, 77;
+    --overlay-rgb: 10, 8, 5;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-deep: 0 24px 60px -24px rgba(0,0,0,.75);
+  }
+
+  *{box-sizing:border-box;}
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(120% 90% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 22px 14px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  header.top{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .title-row{ display:flex; align-items:center; gap:12px; }
+  .title-block h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size: clamp(1.7rem, 1.2rem + 2vw, 2.4rem);
+    letter-spacing: -0.01em;
+    margin:0;
+    color: var(--gold-soft);
+    text-wrap: balance;
+  }
+  .title-block p{
+    margin: 4px 0 0;
+    color: var(--text-dim);
+    font-size: .92rem;
+    max-width: 46ch;
+  }
+  .badge{
+    font-size: 2.1rem;
+    line-height:1;
+    color: var(--piece-w);
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,.5));
+  }
+
+  /* вибір рівня */
+  .levels{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .lvl-btn{
+    flex: 0 0 auto;
+    width: 42px; height: 46px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size: .9rem;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:1px;
+    padding:0;
+    cursor:pointer;
+    touch-action: manipulation;
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .lvl-btn .st{ font-size:.58rem; letter-spacing:.02em; color: var(--text-faint); }
+  .lvl-btn:hover{ transform: translateY(-2px); border-color: var(--gold); }
+  .lvl-btn:focus-visible{ outline: 2px solid var(--gold-soft); outline-offset:2px; }
+  .lvl-btn.done{ background: linear-gradient(160deg, var(--done-a), var(--done-b)); color: var(--green-soft); border-color: var(--done-line); }
+  .lvl-btn.done .st{ color: var(--green-soft); }
+  .lvl-btn.current{ background: linear-gradient(160deg, var(--gold), var(--gold-deep)); color: var(--on-gold); border-color: var(--gold-soft); box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.18); }
+  .lvl-btn.current .st{ color: var(--on-gold); }
+
+  main.stage{
+    display:flex;
+    gap:22px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+
+  .board-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    max-width:100%;
+  }
+  .level-title{
+    align-self:stretch;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .level-title .name{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size:1.2rem;
+    color: var(--gold-soft);
+  }
+  .level-title .tip{
+    color: var(--text-dim);
+    font-size:.88rem;
+    line-height:1.4;
+  }
+
+  .board-frame{
+    position:relative;
+    padding: 8px;
+    background: linear-gradient(160deg, var(--frame-hi), var(--frame) 70%);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-deep), inset 0 0 0 1px rgba(0,0,0,1);
+    max-width:100%;
+  }
+  .board{
+    position:relative;
+    display:grid;
+    border-radius: var(--radius-sm);
+    overflow:hidden;
+    box-shadow: 0 0 0 1px rgba(0,0,0,1);
+    background: var(--panel);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+
+  .cell{
+    position:relative;
+    cursor:pointer;
+    overflow:hidden;
+  }
+  .cell.air.dk{ background: var(--panel-2); }
+  .cell.air.lt{ background: var(--panel); }
+  .cell.block{ cursor:default; }
+  .cell.block.dk{ background: var(--board-dark); }
+  .cell.block.lt{ background: var(--board-dark-hi); }
+  .cell.block.top{ box-shadow: inset 0 3px 0 var(--board-light); }
+
+  .cell svg{
+    position:absolute; left:0; top:0;
+    width:100%; height:100%;
+    pointer-events:none;
+  }
+  .spike path{ fill: var(--danger); stroke: var(--frame); stroke-width:1.5; stroke-linejoin:round; }
+  .crown .body{ fill: var(--gold); stroke: var(--gold-deep); stroke-width:1.5; stroke-linejoin:round; }
+  .crown .gem{ fill: var(--gold-soft); }
+  .cell.goal svg{
+    filter: drop-shadow(0 0 5px rgba(var(--gold-rgb),.85));
+    animation: crown-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes crown-pulse{
+    0%,100%{ transform: scale(.92); }
+    50%{ transform: scale(1.02); }
+  }
+
+  .cell.xform .xf{
+    position:absolute;
+    left:12%; top:12%; right:12%; bottom:12%;
+    border-radius:50%;
+    border: 2px dashed var(--gold);
+    background: rgba(var(--gold-rgb),.14);
+    color: var(--gold-soft);
+    font-size: calc(var(--cell) * .5);
+    line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none;
+  }
+
+  /* підказки ходів */
+  .cell.hint::after{
+    content:"";
+    position:absolute;
+    left:50%; top:50%;
+    width:28%; height:28%;
+    transform: translate(-50%,-50%);
+    border-radius:50%;
+    background: rgba(var(--green-rgb),.85);
+    box-shadow: 0 0 0 2px rgba(var(--green-soft-rgb),.5);
+    pointer-events:none;
+    z-index:2;
+  }
+  .cell.hint.spike::after{ background: rgba(var(--danger-rgb),.9); }
+  .cell.hint.goal::after{
+    width:86%; height:86%;
+    background: transparent;
+    box-shadow: inset 0 0 0 3px var(--green-soft);
+    border-radius: 8px;
+  }
+  .cell.sel::before{
+    content:"";
+    position:absolute; left:0; top:0; right:0; bottom:0;
+    box-shadow: inset 0 0 0 3px var(--gold-soft);
+    background: rgba(var(--gold-rgb),.2);
+    pointer-events:none;
+    z-index:1;
+  }
+
+  /* фігура */
+  .token{
+    position:absolute;
+    left:0; top:0;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none;
+    z-index:5;
+    font-size: calc(var(--cell) * .82);
+    line-height:1;
+    color: var(--piece-w);
+    text-shadow:
+      1px 0 0 var(--piece-w-line), -1px 0 0 var(--piece-w-line),
+      0 1px 0 var(--piece-w-line), 0 -1px 0 var(--piece-w-line),
+      0 3px 5px rgba(0,0,0,.55);
+    transition-property: left, top;
+    transition-timing-function: cubic-bezier(.31,1.2,.56,1);
+  }
+  .token.pop{ animation: pop .3s ease; }
+  @keyframes pop{
+    0%{ transform: scale(.6); }
+    60%{ transform: scale(1.25); }
+    100%{ transform: scale(1); }
+  }
+  .token.dead{ animation: shake .4s ease; opacity:.75; }
+  @keyframes shake{
+    0%,100%{ transform: translateX(0); }
+    25%{ transform: translateX(-12%); }
+    75%{ transform: translateX(12%); }
+  }
+
+  .msg{
+    min-height: 2.6em;
+    align-self:stretch;
+    text-align:center;
+    color: var(--text-dim);
+    font-size:.9rem;
+    line-height:1.35;
+  }
+  .msg.bad{ color: var(--danger); }
+  .msg.good{ color: var(--green-soft); }
+
+  .actions{
+    display:flex;
+    gap:10px;
+    align-self:stretch;
+  }
+  .btn{
+    appearance:none;
+    border:1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-family:'Manrope', sans-serif;
+    font-weight:700;
+    font-size: 1rem;
+    cursor:pointer;
+    transition: transform .12s ease, border-color .12s ease;
+    flex:1 1 0;
+    touch-action: manipulation;
+  }
+  .btn:hover:not(:disabled){ border-color: var(--gold); transform: translateY(-1px); }
+  .btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.primary{
+    background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+    color: var(--on-gold);
+    border-color: transparent;
+  }
+
+  /* бічна панель */
+  .panel{
+    width: min(280px, 100%);
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+  }
+  .card h2{
+    margin:0 0 10px;
+    font-size:.72rem;
+    text-transform: uppercase;
+    letter-spacing:.09em;
+    color: var(--text-faint);
+    font-weight:700;
+  }
+  .stat-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .stat-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .stat-row .label{ color: var(--text-dim); font-size:.85rem; }
+  .stat-row .value{
+    font-family:'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight:700;
+    font-size: 1rem;
+    color: var(--text);
+  }
+  .stat-row .value.gold{ color: var(--gold-soft); }
+  .rules{
+    margin:0;
+    padding-left: 1.1em;
+    color: var(--text-dim);
+    font-size:.86rem;
+    line-height:1.5;
+  }
+  .rules li{ margin-bottom:4px; }
+  .piece-how{
+    margin:0;
+    color: var(--text-dim);
+    font-size:.88rem;
+    line-height:1.45;
+  }
+
+  /* вікно перемоги */
+  .overlay{
+    position:absolute; left:0; top:0; right:0; bottom:0;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(var(--overlay-rgb),.72);
+    opacity:0;
+    pointer-events:none;
+    transition: opacity .28s ease;
+    z-index:10;
+    border-radius: var(--radius-lg);
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .win-card{
+    background: var(--panel);
+    border: 1px solid var(--gold);
+    border-radius: var(--radius-md);
+    padding: 18px 18px;
+    text-align:center;
+    width: min(300px, 92%);
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,.8);
+  }
+  .win-card h3{
+    font-family:'Fraunces', serif;
+    font-size: 1.3rem;
+    margin: 0 0 4px;
+    color: var(--gold-soft);
+  }
+  .win-stars{ font-size:2rem; letter-spacing:.1em; color: var(--gold); line-height:1.2; }
+  .win-card .sub{ color: var(--text-dim); font-size:.88rem; margin: 6px 0 12px; line-height:1.4; }
+  .record-badge{
+    display:inline-block;
+    font-size:.72rem;
+    color:var(--on-gold);
+    background: var(--gold-soft);
+    padding:2px 8px;
+    border-radius: 999px;
+    font-weight:800;
+    margin-bottom: 10px;
+  }
+  .win-actions{ display:flex; flex-direction:column; gap:8px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .cell.goal svg{ animation:none; }
+    .token.pop, .token.dead{ animation:none; }
+    .overlay{ transition:none; }
+  }
+</style>
+<script src="../theme/theme.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="title-row">
+      <span class="badge" aria-hidden="true">♜&#xFE0E;</span>
+      <div class="title-block">
+        <h1>Шахоформер</h1>
+        <p>Доведи фігуру до корони. Фігура ходить за шаховими правилами, а після кожного ходу падає вниз.</p>
+      </div>
+    </div>
+  </header>
+
+  <nav class="levels" id="levels" aria-label="Рівні"></nav>
+
+  <main class="stage">
+    <div class="board-col">
+      <div class="level-title">
+        <div class="name" id="levelName"></div>
+        <div class="tip" id="levelTip"></div>
+      </div>
+      <div class="board-frame" id="frame">
+        <div class="board" id="board"></div>
+        <div class="overlay" id="overlay"><div class="win-card" id="winCard"></div></div>
+      </div>
+      <div class="msg" id="msg" aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn" id="undoBtn" type="button">↶ Скасувати хід</button>
+        <button class="btn" id="restartBtn" type="button">↻ Спочатку</button>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div class="card">
+        <h2>Рівень</h2>
+        <div class="stat-row"><span class="label">Фігура</span><span class="value" id="stPiece"></span></div>
+        <div class="stat-row"><span class="label">Твої ходи</span><span class="value" id="stMoves"></span></div>
+        <div class="stat-row"><span class="label">3 зірки за</span><span class="value gold" id="stMin"></span></div>
+        <div class="stat-row"><span class="label">Найкраще</span><span class="value" id="stBest"></span></div>
+      </div>
+      <div class="card">
+        <h2>Як ходить фігура</h2>
+        <p class="piece-how" id="pieceHow"></p>
+      </div>
+      <div class="card">
+        <h2>Правила</h2>
+        <ul class="rules">
+          <li>Тапни по фігурі — з'являться крапки. Тапни по крапці — хід.</li>
+          <li>Після ходу фігура падає, поки не стане на блок.</li>
+          <li>Дістань корону. На шипи ставати не можна.</li>
+          <li>Клітинка з фігурою змінює твою фігуру на таку саму.</li>
+          <li>Шипи й корона не заважають проїхати повз.</li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===== РІВНІ START =====
+     Умовні знаки (верхній рядок — найвищий, нижній рядок — підлога):
+       .  порожня клітинка (повітря)
+       #  блок
+       ^  шипи (програш)
+       *  корона (мета)
+       @  де стоїть фігура на початку
+       r n b k  клітинка-перетворювач: фігура стає турою / конем / слоном / королем
+     piece: R тура, N кінь, B слон, K король.
+     min: найменше число ходів (перевіряється тестом пошуком BFS). */
+  var LEVELS = [
+    { name: 'Перший спуск', piece: 'R', min: 2,
+      tip: 'Тура їде по прямій. Після ходу вона падає вниз.',
+      rows: [
+        '.......',
+        '@.....#',
+        '###...#',
+        '#####.*'
+      ] },
+    { name: 'Обережно, шипи', piece: 'R', min: 2,
+      tip: 'Зупинятися на шипах не можна, а проїхати повз них можна.',
+      rows: [
+        '........',
+        '@.......',
+        '###....#',
+        '###^^.^*'
+      ] },
+    { name: 'Кінь-альпініст', piece: 'N', min: 3,
+      tip: 'Кінь стрибає буквою «Г» і може залізти на високий блок.',
+      rows: [
+        '......*.',
+        '........',
+        '....#...',
+        '@.#.#...',
+        '########'
+      ] },
+    { name: 'Слон над стіною', piece: 'B', min: 2,
+      tip: 'Слон їде по діагоналі. Спробуй стати на стіну.',
+      rows: [
+        '.......',
+        '.......',
+        '...#...',
+        '...#...',
+        '@..#..*',
+        '#######'
+      ] },
+    { name: 'Зигзаг', piece: 'R', min: 4,
+      tip: 'Тура не вміє підніматися. Добре обирай, де зупинитися.',
+      rows: [
+        '@.........',
+        '########..',
+        '.........^',
+        '..########',
+        '^.........',
+        '########..',
+        '*.......^.',
+        '##########'
+      ] },
+    { name: 'Стовпи', piece: 'N', min: 4,
+      tip: 'Між стовпами шипи. Стрибай зі стовпа на стовп.',
+      rows: [
+        '.........',
+        '........*',
+        '......#..',
+        '....#.#..',
+        '@.#.#.#..',
+        '#^#^#^#^#'
+      ] },
+    { name: 'Дві стіни', piece: 'B', min: 4,
+      tip: 'Слон перелітає стіни по діагоналі. Дивись, де він приземлиться.',
+      rows: [
+        '....#.....',
+        '..........',
+        '.......#..',
+        '...#...#..',
+        '@..#.^^#.*',
+        '##########'
+      ] },
+    { name: 'Гора для короля', piece: 'K', min: 7,
+      tip: 'Король ходить на одну клітинку, зате може йти вгору по сходинках.',
+      rows: [
+        '.........',
+        '.........',
+        '....#....',
+        '...###...',
+        '.@#####.*',
+        '#########'
+      ] },
+    { name: 'Перетворення', piece: 'R', min: 3,
+      tip: 'Стань на клітинку з фігурою — і сам станеш такою фігурою.',
+      rows: [
+        '........',
+        '....#...',
+        '@..n#r.*',
+        '########'
+      ] },
+    { name: 'Політ і тунель', piece: 'B', min: 3,
+      tip: 'Тунелем слон не проїде, а тура проїде.',
+      rows: [
+        '..........',
+        '..........',
+        '...#......',
+        '...#...###',
+        '@..#..r..*',
+        '####^^#^##'
+      ] },
+    { name: 'Колодязь', piece: 'R', min: 4,
+      tip: 'З колодязя тура не вилізе, а кінь вистрибне.',
+      rows: [
+        '..........',
+        '..........',
+        '......#...',
+        '......#...',
+        '@.....#..*',
+        '####n#####'
+      ] },
+    { name: 'Коридор короля', piece: 'N', min: 5,
+      tip: 'У вузькому коридорі пройде лише король.',
+      rows: [
+        '.........#',
+        '.......##*',
+        '.......k.#',
+        '.@.....###',
+        '##^#^#^###'
+      ] },
+    { name: 'Гірка й тунель', piece: 'K', min: 5,
+      tip: 'Король не перестрибне яму. Знайди, хто зможе.',
+      rows: [
+        '..........',
+        '..........',
+        '...n......',
+        '..##..####',
+        '@###.r...*',
+        '####^#^#^#'
+      ] },
+    { name: 'Колодязь, камінці, тунель', piece: 'R', min: 6,
+      tip: 'Кожна фігура вміє своє. Обирай, коли яку взяти.',
+      rows: [
+        '..........',
+        '..........',
+        '..........',
+        '..........',
+        '..#....###',
+        '@.#..#..r*',
+        '#n##^^^^##'
+      ] },
+    { name: 'Усі разом', piece: 'B', min: 8,
+      tip: 'Слон, кінь, король і тура. Пройди весь шлях по черзі.',
+      rows: [
+        '########..',
+        '*..^...r##',
+        '########.k',
+        '.......###',
+        '...#.....#',
+        '...#....##',
+        '@..#....##',
+        '####^^n###'
+      ] }
+  ];
+  /* ===== РІВНІ END ===== */
+
+  /* ===== ЛОГІКА START =====
+     Координати як у шахах: x — вертикаль (0 = a), y — горизонталь (0 = нижній рядок).
+     Тут немає нічого про екран. */
+  var TRANSFORM = { r: 'R', n: 'N', b: 'B', k: 'K' };
+  var ROOK_DIRS = [[1,0],[-1,0],[0,1],[0,-1]];
+  var BISHOP_DIRS = [[1,1],[1,-1],[-1,1],[-1,-1]];
+  var KING_DIRS = ROOK_DIRS.concat(BISHOP_DIRS);
+  var KNIGHT_JUMPS = [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
+
+  function parseLevel(def){
+    var h = def.rows.length;
+    var w = def.rows[0].length;
+    var cells = [];
+    var start = null;
+    var row, x, y, ch;
+    for (y = 0; y < h; y = y + 1) {
+      cells.push([]);
+    }
+    for (row = 0; row < h; row = row + 1) {
+      y = h - 1 - row;
+      for (x = 0; x < w; x = x + 1) {
+        ch = def.rows[row].charAt(x);
+        if (ch === '@') {
+          start = { x: x, y: y, p: def.piece, status: 'play' };
+          ch = '.';
+        }
+        cells[y].push(ch);
+      }
+    }
+    return { w: w, h: h, cells: cells, start: start, min: def.min };
+  }
+
+  function isFree(L, x, y){
+    return x >= 0 && y >= 0 && x < L.w && y < L.h && L.cells[y][x] !== '#';
+  }
+
+  // Усі ходи фігури за шаховими правилами. Блок — перешкода; шипи й корона — ні.
+  function pieceMoves(L, s){
+    var res = [];
+    var dirs, i, nx, ny;
+    if (s.p === 'N') {
+      for (i = 0; i < KNIGHT_JUMPS.length; i = i + 1) {
+        nx = s.x + KNIGHT_JUMPS[i][0];
+        ny = s.y + KNIGHT_JUMPS[i][1];
+        if (isFree(L, nx, ny)) { res.push([nx, ny]); }
+      }
+      return res;
+    }
+    if (s.p === 'R') { dirs = ROOK_DIRS; }
+    else if (s.p === 'B') { dirs = BISHOP_DIRS; }
+    else { dirs = KING_DIRS; }
+    for (i = 0; i < dirs.length; i = i + 1) {
+      nx = s.x + dirs[i][0];
+      ny = s.y + dirs[i][1];
+      while (isFree(L, nx, ny)) {
+        res.push([nx, ny]);
+        if (s.p === 'K') { break; }
+        nx = nx + dirs[i][0];
+        ny = ny + dirs[i][1];
+      }
+    }
+    return res;
+  }
+
+  // Що робить клітинка, на яку фігура стала (або крізь яку впала).
+  function enterCell(L, s){
+    var ch = L.cells[s.y][s.x];
+    if (ch === '*') { s.status = 'won'; }
+    else if (ch === '^') { s.status = 'dead'; }
+    else if (TRANSFORM[ch]) { s.p = TRANSFORM[ch]; }
+  }
+
+  // Хід на клітинку (tx, ty), потім гравітація. Повертає новий стан і шлях для анімації.
+  function doMove(L, s, tx, ty){
+    var cur = { x: tx, y: ty, p: s.p, status: 'play' };
+    var path = [];
+    enterCell(L, cur);
+    path.push({ x: cur.x, y: cur.y, p: cur.p, status: cur.status });
+    while (cur.status === 'play' && cur.y > 0 && isFree(L, cur.x, cur.y - 1)) {
+      cur.y = cur.y - 1;
+      enterCell(L, cur);
+      path.push({ x: cur.x, y: cur.y, p: cur.p, status: cur.status });
+    }
+    return { state: cur, path: path };
+  }
+
+  // Пошук вшир (BFS): найменше число ходів до корони, або -1, якщо розв'язку нема.
+  function solve(L){
+    var startKey = L.start.x + ',' + L.start.y + ',' + L.start.p;
+    var seen = {};
+    var queue = [{ s: L.start, moves: [] }];
+    var head = 0;
+    var item, moves, i, res, key, next;
+    seen[startKey] = true;
+    while (head < queue.length) {
+      item = queue[head];
+      head = head + 1;
+      moves = pieceMoves(L, item.s);
+      for (i = 0; i < moves.length; i = i + 1) {
+        res = doMove(L, item.s, moves[i][0], moves[i][1]).state;
+        if (res.status === 'won') {
+          return { count: item.moves.length + 1, moves: item.moves.concat([moves[i]]) };
+        }
+        if (res.status === 'dead') { continue; }
+        key = res.x + ',' + res.y + ',' + res.p;
+        if (seen[key]) { continue; }
+        seen[key] = true;
+        next = { s: res, moves: item.moves.concat([moves[i]]) };
+        queue.push(next);
+      }
+    }
+    return null;
+  }
+
+  function starsFor(moves, min){
+    if (moves <= min) { return 3; }
+    if (moves <= min + 2) { return 2; }
+    return 1;
+  }
+  /* ===== ЛОГІКА END ===== */
+
+  /* ===== ЕКРАН ===== */
+  var STORAGE_KEY = 'chessformer_progress_v1';
+  var GLYPH = { R: '♜︎', N: '♞︎', B: '♝︎', K: '♚︎' };
+  var NAMES = { R: 'Тура', N: 'Кінь', B: 'Слон', K: 'Король' };
+  var HOW = {
+    R: 'Тура їде по прямій — вліво, вправо, вгору чи вниз — на будь-яку вільну клітинку, аж до блока.',
+    N: 'Кінь стрибає буквою «Г»: дві клітинки в один бік і одна вбік. Блоки йому не заважають.',
+    B: 'Слон їде по діагоналі на будь-яку вільну клітинку, аж до блока.',
+    K: 'Король ходить лише на одну клітинку в будь-який бік, навіть по діагоналі.'
+  };
+  var SPIKE_SVG = '<svg viewBox="0 0 40 40" class="spike"><path d="M2 38 L9 16 L16 38 Z M13 38 L20 12 L27 38 Z M24 38 L31 16 L38 38 Z"/></svg>';
+  var CROWN_SVG = '<svg viewBox="0 0 40 40" class="crown"><path class="body" d="M6 32 L5 14 L14 22 L20 9 L26 22 L35 14 L34 32 Z"/><rect class="body" x="6" y="32" width="28" height="5" rx="1.5"/><circle class="gem" cx="20" cy="26" r="2.6"/><circle class="gem" cx="5" cy="13" r="2"/><circle class="gem" cx="35" cy="13" r="2"/><circle class="gem" cx="20" cy="8" r="2"/></svg>';
+
+  var boardEl = document.getElementById('board');
+  var frameEl = document.getElementById('frame');
+  var overlayEl = document.getElementById('overlay');
+  var winCardEl = document.getElementById('winCard');
+  var msgEl = document.getElementById('msg');
+  var undoBtn = document.getElementById('undoBtn');
+  var restartBtn = document.getElementById('restartBtn');
+  var levelsEl = document.getElementById('levels');
+
+  var progress = loadProgress();
+  var levelIndex = 0;
+  var L = null;
+  var cur = null;
+  var history = [];
+  var selected = false;
+  var moveList = [];
+  var busy = false;
+  var timer = null;
+  var cellPx = 40;
+  var cellEls = [];
+  var tokenEl = null;
+
+  function loadProgress(){
+    var p = { levels: {}, last: 0 };
+    var raw, data;
+    try {
+      raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        data = JSON.parse(raw);
+        if (data && typeof data === 'object') {
+          if (data.levels && typeof data.levels === 'object') { p.levels = data.levels; }
+          if (typeof data.last === 'number') { p.last = data.last; }
+        }
+      }
+    } catch (e) {}
+    return p;
+  }
+
+  function saveProgress(){
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    } catch (e) {}
+  }
+
+  function getRec(i){
+    var r = progress.levels[i];
+    var stars = 0;
+    var moves = 0;
+    if (r && typeof r === 'object') {
+      if (typeof r.stars === 'number' && r.stars >= 0 && r.stars <= 3) { stars = Math.floor(r.stars); }
+      if (typeof r.moves === 'number' && r.moves > 0) { moves = Math.floor(r.moves); }
+    }
+    return { stars: stars, moves: moves };
+  }
+
+  function starText(n){
+    return '★★★'.slice(0, n) + '☆☆☆'.slice(0, 3 - n);
+  }
+
+  function reduceMotion(){
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  /* ---------- кнопки рівнів ---------- */
+  function buildLevelButtons(){
+    var i, b;
+    levelsEl.innerHTML = '';
+    for (i = 0; i < LEVELS.length; i = i + 1) {
+      b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'lvl-btn';
+      b.setAttribute('data-i', i);
+      b.setAttribute('aria-label', 'Рівень ' + (i + 1));
+      levelsEl.appendChild(b);
+    }
+  }
+
+  function updateLevelButtons(){
+    var btns = levelsEl.children;
+    var i, rec;
+    for (i = 0; i < btns.length; i = i + 1) {
+      rec = getRec(i);
+      btns[i].className = 'lvl-btn' + (rec.stars > 0 ? ' done' : '') + (i === levelIndex ? ' current' : '');
+      btns[i].innerHTML = '<span class="n">' + (i + 1) + '</span><span class="st">' + starText(rec.stars) + '</span>';
+    }
+  }
+
+  levelsEl.addEventListener('click', function(e){
+    var t = e.target;
+    while (t && t !== levelsEl && !t.getAttribute('data-i')) { t = t.parentNode; }
+    if (t && t !== levelsEl) { startLevel(parseInt(t.getAttribute('data-i'), 10)); }
+  });
+
+  /* ---------- дошка ---------- */
+  function buildBoard(){
+    var row, x, y, ch, cell, cls;
+    boardEl.innerHTML = '';
+    cellEls = [];
+    for (y = 0; y < L.h; y = y + 1) { cellEls.push([]); }
+    for (row = 0; row < L.h; row = row + 1) {
+      y = L.h - 1 - row;
+      for (x = 0; x < L.w; x = x + 1) {
+        ch = L.cells[y][x];
+        cell = document.createElement('div');
+        cls = 'cell ' + (((x + y) % 2 === 0) ? 'dk' : 'lt');
+        if (ch === '#') {
+          cls += ' block';
+          if (y + 1 >= L.h || L.cells[y + 1][x] !== '#') { cls += ' top'; }
+        } else {
+          cls += ' air';
+          if (ch === '^') { cls += ' spike'; cell.innerHTML = SPIKE_SVG; }
+          else if (ch === '*') { cls += ' goal'; cell.innerHTML = CROWN_SVG; }
+          else if (TRANSFORM[ch]) { cls += ' xform'; cell.innerHTML = '<span class="xf">' + GLYPH[TRANSFORM[ch]] + '</span>'; }
+        }
+        cell.className = cls;
+        cell.setAttribute('data-x', x);
+        cell.setAttribute('data-y', y);
+        boardEl.appendChild(cell);
+        cellEls[y][x] = cell;
+      }
+    }
+    tokenEl = document.createElement('div');
+    tokenEl.className = 'token';
+    boardEl.appendChild(tokenEl);
+  }
+
+  function layout(){
+    if (!L) { return; }
+    var avail = Math.min(document.documentElement.clientWidth, 760) - 28 - 16;
+    var c = Math.floor(avail / L.w);
+    if (c > 60) { c = 60; }
+    if (c < 22) { c = 22; }
+    cellPx = c;
+    boardEl.style.setProperty('--cell', c + 'px');
+    boardEl.style.width = (c * L.w) + 'px';
+    boardEl.style.height = (c * L.h) + 'px';
+    boardEl.style.gridTemplateColumns = 'repeat(' + L.w + ', ' + c + 'px)';
+    boardEl.style.gridTemplateRows = 'repeat(' + L.h + ', ' + c + 'px)';
+    tokenEl.style.width = c + 'px';
+    tokenEl.style.height = c + 'px';
+    placeToken(cur.x, cur.y, 0);
+  }
+
+  function placeToken(x, y, seconds){
+    tokenEl.style.transitionDuration = seconds + 's';
+    tokenEl.style.left = (x * cellPx) + 'px';
+    tokenEl.style.top = ((L.h - 1 - y) * cellPx) + 'px';
+  }
+
+  function setTokenPiece(p, animate){
+    tokenEl.textContent = GLYPH[p];
+    if (animate) {
+      tokenEl.className = 'token';
+      void tokenEl.offsetWidth;
+      tokenEl.className = 'token pop';
+    }
+  }
+
+  window.addEventListener('resize', layout);
+  window.addEventListener('orientationchange', layout);
+
+  /* ---------- підказки ходів ---------- */
+  function clearHints(){
+    var x, y;
+    for (y = 0; y < L.h; y = y + 1) {
+      for (x = 0; x < L.w; x = x + 1) {
+        cellEls[y][x].classList.remove('hint');
+        cellEls[y][x].classList.remove('sel');
+      }
+    }
+  }
+
+  function showHints(){
+    var i;
+    clearHints();
+    if (!selected) { return; }
+    cellEls[cur.y][cur.x].classList.add('sel');
+    for (i = 0; i < moveList.length; i = i + 1) {
+      cellEls[moveList[i][1]][moveList[i][0]].classList.add('hint');
+    }
+  }
+
+  function isLegal(x, y){
+    var i;
+    for (i = 0; i < moveList.length; i = i + 1) {
+      if (moveList[i][0] === x && moveList[i][1] === y) { return true; }
+    }
+    return false;
+  }
+
+  /* ---------- повідомлення й панель ---------- */
+  function setMsg(text, kind){
+    msgEl.textContent = text;
+    msgEl.className = 'msg' + (kind ? ' ' + kind : '');
+  }
+
+  function updateStats(){
+    var rec = getRec(levelIndex);
+    document.getElementById('stPiece').textContent = NAMES[cur.p];
+    document.getElementById('stMoves').textContent = history.length;
+    document.getElementById('stMin').textContent = L.min;
+    document.getElementById('stBest').textContent = rec.stars > 0 ? starText(rec.stars) : '—';
+    document.getElementById('pieceHow').textContent = HOW[cur.p];
+    undoBtn.disabled = busy || history.length === 0;
+  }
+
+  /* ---------- рівень ---------- */
+  function startLevel(i){
+    if (i < 0 || i >= LEVELS.length) { i = 0; }
+    if (timer) { clearTimeout(timer); timer = null; }
+    busy = false;
+    levelIndex = i;
+    L = parseLevel(LEVELS[i]);
+    cur = L.start;
+    history = [];
+    selected = false;
+    moveList = [];
+    progress.last = i;
+    saveProgress();
+    document.getElementById('levelName').textContent = 'Рівень ' + (i + 1) + ' · ' + LEVELS[i].name;
+    document.getElementById('levelTip').textContent = LEVELS[i].tip;
+    buildBoard();
+    layout();
+    setTokenPiece(cur.p, false);
+    hideWin();
+    setMsg('', '');
+    updateStats();
+    updateLevelButtons();
+  }
+
+  function onBoardClick(e){
+    var t = e.target;
+    var x, y;
+    if (busy || !cur || cur.status !== 'play') { return; }
+    while (t && t !== boardEl && t.getAttribute('data-x') === null) { t = t.parentNode; }
+    if (!t || t === boardEl) { return; }
+    x = parseInt(t.getAttribute('data-x'), 10);
+    y = parseInt(t.getAttribute('data-y'), 10);
+    if (selected && isLegal(x, y)) {
+      playMove(x, y);
+      return;
+    }
+    if (x === cur.x && y === cur.y && !selected) {
+      selected = true;
+      moveList = pieceMoves(L, cur);
+      if (moveList.length === 0) { setMsg('Ця фігура не має ходів. Скасуй хід.', 'bad'); }
+      else { setMsg('', ''); }
+    } else {
+      selected = false;
+      moveList = [];
+    }
+    showHints();
+  }
+  boardEl.addEventListener('click', onBoardClick);
+
+  function playMove(tx, ty){
+    var res = doMove(L, cur, tx, ty);
+    history.push(cur);
+    selected = false;
+    moveList = [];
+    clearHints();
+    busy = true;
+    setMsg('', '');
+    updateStats();
+    animatePath(res.path, 0, function(){
+      cur = res.state;
+      busy = false;
+      afterMove();
+    });
+  }
+
+  function animatePath(path, i, done){
+    var step, slow, wait;
+    if (i >= path.length) { done(); return; }
+    step = path[i];
+    slow = reduceMotion();
+    wait = slow ? 30 : (i === 0 ? 300 : 130);
+    placeToken(step.x, step.y, slow ? 0 : (i === 0 ? 0.28 : 0.12));
+    timer = setTimeout(function(){
+      var changed = tokenEl.textContent !== GLYPH[step.p];
+      if (changed) { setTokenPiece(step.p, true); }
+      animatePath(path, i + 1, done);
+    }, wait);
+  }
+
+  function afterMove(){
+    var stars, rec, improved;
+    updateStats();
+    if (cur.status === 'dead') {
+      tokenEl.className = 'token dead';
+      setMsg('Шипи! Це не страшно: скасуй хід і спробуй інший шлях.', 'bad');
+      return;
+    }
+    if (cur.status === 'won') {
+      stars = starsFor(history.length, L.min);
+      rec = getRec(levelIndex);
+      improved = false;
+      if (stars > rec.stars) { rec.stars = stars; improved = true; }
+      if (rec.moves === 0 || history.length < rec.moves) { rec.moves = history.length; improved = true; }
+      progress.levels[levelIndex] = rec;
+      saveProgress();
+      updateStats();
+      updateLevelButtons();
+      showWin(stars, improved);
+      return;
+    }
+    if (pieceMoves(L, cur).length === 0) {
+      setMsg('Ходів немає. Скасуй хід.', 'bad');
+    }
+  }
+
+  function undo(){
+    if (busy || history.length === 0) { return; }
+    cur = history.pop();
+    selected = false;
+    moveList = [];
+    clearHints();
+    hideWin();
+    placeToken(cur.x, cur.y, 0);
+    tokenEl.className = 'token';
+    setTokenPiece(cur.p, false);
+    setMsg('', '');
+    updateStats();
+  }
+
+  undoBtn.addEventListener('click', undo);
+  restartBtn.addEventListener('click', function(){ startLevel(levelIndex); });
+
+  /* ---------- вікно перемоги ---------- */
+  var PRAISE = {
+    3: 'Найкоротший шлях! Ти пробував різні маршрути й знайшов його.',
+    2: 'Майже найкоротший. Спробуй знайти маршрут ще коротший.',
+    1: 'Пройдено! Не здавайся: пошукай шлях з меншою кількістю ходів.'
+  };
+
+  function showWin(stars, improved){
+    var last = (levelIndex === LEVELS.length - 1);
+    var html = '<h3>' + (last && stars === 3 ? 'Усі рівні пройдено!' : 'Корона твоя!') + '</h3>';
+    html += '<div class="win-stars">' + starText(stars) + '</div>';
+    if (improved) { html += '<div class="record-badge">Новий рекорд</div>'; }
+    html += '<div class="sub">' + PRAISE[stars] + '<br>Ходів: ' + history.length + ' · на 3 зірки: ' + L.min + '</div>';
+    html += '<div class="win-actions">';
+    if (!last) { html += '<button class="btn primary" type="button" id="nextBtn">Далі →</button>'; }
+    html += '<button class="btn' + (last ? ' primary' : '') + '" type="button" id="againBtn">Ще раз</button>';
+    html += '</div>';
+    winCardEl.innerHTML = html;
+    overlayEl.classList.add('show');
+    var nextBtn = document.getElementById('nextBtn');
+    if (nextBtn) { nextBtn.addEventListener('click', function(){ startLevel(levelIndex + 1); }); }
+    document.getElementById('againBtn').addEventListener('click', function(){ startLevel(levelIndex); });
+  }
+
+  function hideWin(){
+    overlayEl.classList.remove('show');
+    winCardEl.innerHTML = '';
+  }
+
+  /* ---------- старт ---------- */
+  buildLevelButtons();
+  startLevel(progress.last < LEVELS.length ? Math.max(0, Math.floor(progress.last)) : 0);
+})();
+</script>
+</body>
+</html>
