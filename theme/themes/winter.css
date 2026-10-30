@@ -1,12 +1,12 @@
 @charset "UTF-8";
-@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Arsenal:wght@700&display=swap');
 /* Тема: зима — Миколай, Різдво, Новий рік (01.12 – 10.01). */
 html:root{
   --theme-title: "Зимові свята";
   --decor-items: "❄️ ⭐ 🎄 ❅ 🎁 🔔";
   --decor-motion: fall;
-  --theme-font: 'Lobster';
-  --theme-font-weight: 400;
+  --theme-font: 'Arsenal';
+  --theme-font-weight: 700;
 
   --bg: #0a1424;
   --bg-glow: #17335a;

@@ -1,13 +1,13 @@
 @charset "UTF-8";
-@import url('https://fonts.googleapis.com/css2?family=Ruslan+Display&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Arsenal:wght@700&display=swap');
 /* Тема: Хелловін (24.10 – 01.11). Дивись theme/README.md, як зробити нову тему з цього файлу. */
 html:root{
   /* --- Напис на плашці, малюнки декору, рух (fall — падають, rise — летять вгору, bob — гойдаються) --- */
   --theme-title: "Тиждень Хелловіну";
   --decor-items: "🎃 🦇 🍂 👻 🕸️";
   --decor-motion: bob;
-  --theme-font: 'Ruslan Display';
-  --theme-font-weight: 400;
+  --theme-font: 'Arsenal';
+  --theme-font-weight: 700;
 
   /* --- Фон і панелі --- */
   --bg: #130b1a;

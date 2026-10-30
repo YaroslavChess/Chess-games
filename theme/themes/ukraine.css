@@ -1,11 +1,11 @@
 @charset "UTF-8";
-@import url('https://fonts.googleapis.com/css2?family=Philosopher:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Arsenal:wght@700&display=swap');
 /* Тема: синьо-жовта (20.08 – 25.08 і 28.09 – 02.10). */
 html:root{
   --theme-title: "Слава Україні!";
   --decor-items: "💙 💛 🌻 🕊️ 🌾";
   --decor-motion: bob;
-  --theme-font: 'Philosopher';
+  --theme-font: 'Arsenal';
   --theme-font-weight: 700;
 
   --bg: #071a33;
