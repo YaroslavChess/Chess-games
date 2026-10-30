@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Шах, взяття, загроза</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #120f0b;
+    --bg-glow: #1c1712;
+    --panel: #1c1712;
+    --panel-2: #241d15;
+    --hairline: #3a3025;
+    --board-light: #ead9ba;
+    --board-dark: #86644a;
+    --board-dark-hi: #977252;
+    --frame: #0c0a08;
+    --text: #f1e9d8;
+    --text-dim: #b7a98e;
+    --text-faint: #7d7361;
+    --gold: #d8a94c;
+    --gold-soft: #f0cf8f;
+    --green: #2ecc71;
+    --green-soft: #a8e0bb;
+    --danger: #c96a4d;
+    --blocked-a: #443c30;
+    --blocked-b: #37312a;
+    --ink: #120f0b;
+    --on-gold: #241a08;
+    --gold-deep: #a9782c;
+    --frame-hi: #241b10;
+    --panel-hi: #2a2013;
+    --panel-hi-2: #3a2e1a;
+    --done-a: #3a4f3c;
+    --done-b: #2a3a2c;
+    --done-line: #4a6a4e;
+    --arrow-safe: #3b2f20;
+    --piece-w: #fbf5e6;
+    --piece-w-line: #241a0e;
+    --piece-b: #1b140d;
+    --piece-b-line: #e9dcc0;
+    --piece-w-a: #f1e9d8;
+    --piece-w-b: #f0cf8f;
+    --piece-b-a: #3a3025;
+    --piece-b-b: #120f0b;
+    --gold-rgb: 216, 169, 76;
+    --gold-dark-rgb: 160, 110, 30;
+    --green-rgb: 46, 204, 113;
+    --green-soft-rgb: 168, 224, 187;
+    --target-rgb: 87, 180, 122;
+    --danger-rgb: 201, 106, 77;
+    --overlay-rgb: 10, 8, 5;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-deep: 0 24px 60px -24px rgba(0,0,0,.75);
+  }
+
+  *{box-sizing:border-box;}
+  [hidden]{ display:none !important; }
+  html{ min-height:100%; background: var(--bg); }
+  body{
+    margin:0;
+    background:
+      radial-gradient(120% 90% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 24px 18px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  header.top{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .title-block h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size: clamp(1.7rem, 1.2rem + 2vw, 2.4rem);
+    letter-spacing: -0.01em;
+    margin:0;
+    color: var(--gold-soft);
+    text-wrap: balance;
+  }
+  .title-block p{
+    margin: 4px 0 0;
+    color: var(--text-dim);
+    font-size: .95rem;
+    max-width: 46ch;
+  }
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+  }
+  .card h2{
+    margin:0 0 12px;
+    font-size:.72rem;
+    text-transform: uppercase;
+    letter-spacing:.09em;
+    color: var(--text-faint);
+    font-weight:700;
+  }
+
+  .btn{
+    appearance:none;
+    border:1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-family:'Manrope', sans-serif;
+    font-weight:700;
+    font-size: .95rem;
+    cursor:pointer;
+    transition: transform .12s ease, border-color .12s ease, background .12s ease, opacity .12s ease;
+    width:100%;
+  }
+  .btn:hover:not(:disabled){ border-color: var(--gold); transform: translateY(-1px); }
+  .btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.primary{
+    background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+    color: var(--on-gold);
+    border-color: transparent;
+  }
+  .btn.ghost{ background: transparent; }
+  .btn.big{ padding: 16px 14px; font-size: 1.1rem; }
+  .btn.small{ width:auto; padding: 8px 12px; font-size:.82rem; }
+
+  /* меню */
+  .menu{ display:flex; flex-direction:column; gap:22px; }
+  .choice-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap:10px;
+  }
+  .choice{
+    appearance:none;
+    text-align:left;
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    font-family:'Manrope', sans-serif;
+    cursor:pointer;
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .choice:hover{ border-color: var(--gold); transform: translateY(-1px); }
+  .choice:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
+  .choice.on{
+    border-color: var(--gold-soft);
+    background: linear-gradient(160deg, var(--panel-hi-2), var(--panel-2));
+    box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.18);
+  }
+  .choice .num{
+    flex: 0 0 auto;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    border: 1px solid var(--hairline);
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size: .9rem;
+    color: var(--text-faint);
+  }
+  .choice.on .num{
+    background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+    color: var(--on-gold);
+    border-color: var(--gold-soft);
+  }
+  .choice .txt{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .choice .txt strong{ font-size: 1rem; }
+  .choice .txt small{ color: var(--text-dim); font-size:.8rem; line-height:1.35; }
+  .choice .txt em{
+    font-style:normal;
+    color: var(--gold-soft);
+    font-family:'JetBrains Mono', monospace;
+    font-size:.74rem;
+    margin-top:2px;
+  }
+
+  /* гра */
+  main.stage{
+    display:flex;
+    gap:26px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .board-col{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    width: min(540px, 100%);
+  }
+  .chips{ display:flex; gap:8px; }
+  .chip{
+    flex:1 1 0;
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+    min-width:0;
+  }
+  .chip .label{
+    font-size:.64rem;
+    text-transform: uppercase;
+    letter-spacing:.08em;
+    color: var(--text-faint);
+    font-weight:700;
+  }
+  .chip .value{
+    font-family:'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight:700;
+    font-size: 1.1rem;
+    color: var(--text);
+  }
+  .chip .value.gold{ color: var(--gold-soft); }
+
+  /* три кроки */
+  .steps{ display:flex; gap:6px; }
+  .stp{
+    flex:1 1 0;
+    min-width:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding: 7px 6px;
+    border-radius: 999px;
+    border: 1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text-faint);
+    font-weight:700;
+    font-size:.8rem;
+    white-space:nowrap;
+  }
+  .stp i{
+    font-style:normal;
+    flex: 0 0 auto;
+    width:20px; height:20px;
+    border-radius:50%;
+    border: 1px solid var(--hairline);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace;
+    font-size:.72rem;
+  }
+  .stp.cur{
+    background: linear-gradient(160deg, var(--panel-hi-2), var(--panel-2));
+    border-color: var(--gold-soft);
+    color: var(--gold-soft);
+    box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.18);
+  }
+  .stp.cur i{ background: linear-gradient(160deg, var(--gold), var(--gold-deep)); color: var(--on-gold); border-color: var(--gold-soft); }
+  .stp.ok{ background: linear-gradient(160deg, var(--done-a), var(--done-b)); border-color: var(--done-line); color: var(--green-soft); }
+  .stp.ok i{ background: var(--green); color: var(--ink); border-color: transparent; }
+  .stp.bad{ border-color: var(--danger); color: var(--danger); }
+  .stp.bad i{ background: var(--danger); color: var(--ink); border-color: transparent; }
+
+  .timer{
+    display:flex; align-items:center; gap:10px;
+  }
+  .timer-track{
+    flex:1;
+    height:10px;
+    border-radius:6px;
+    background: var(--panel-2);
+    border: 1px solid var(--hairline);
+    overflow:hidden;
+  }
+  .timer-bar{
+    height:100%;
+    width:100%;
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+  }
+  .timer-bar.low{ background: var(--danger); }
+  .timer-text{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:.95rem;
+    min-width: 3.4em;
+    text-align:right;
+    color: var(--gold-soft);
+  }
+
+  .board-frame{
+    position:relative;
+    padding: 10px;
+    background: linear-gradient(160deg, var(--frame-hi), var(--frame) 70%);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-deep), inset 0 0 0 1px rgba(0,0,0,.9);
+  }
+  .board-wrap{
+    position:relative;
+    width:100%;
+    height:0;
+    padding-bottom:100%; /* квадрат без aspect-ratio (Safari < 15) */
+    border-radius: var(--radius-sm);
+    overflow:hidden;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.9), 0 10px 30px -12px rgba(0,0,0,.7);
+  }
+  #board{
+    position:absolute; top:0; left:0;
+    width:100%; height:100%;
+    display:block;
+    cursor:pointer;
+    touch-action: manipulation;
+    -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #board.locked{ cursor:default; }
+  .sq-l{ fill: var(--board-light); }
+  .sq-d{ fill: var(--board-dark); }
+  .coord{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.17px;
+    font-weight:700;
+    opacity:.55;
+    pointer-events:none;
+  }
+  .coord.on-l{ fill: var(--board-dark); }
+  .coord.on-d{ fill: var(--board-light); }
+
+  .pc{
+    font-family: 'Segoe UI Symbol', 'Noto Sans Symbols 2', 'Noto Sans Symbols', 'DejaVu Sans', 'Apple Symbols', sans-serif;
+    font-size: .8px;
+    text-anchor: middle;
+    dominant-baseline: central;
+    paint-order: stroke fill;
+    stroke-linejoin: round;
+    pointer-events:none;
+  }
+  .pc.w{ fill:var(--piece-w); stroke:var(--piece-w-line); stroke-width:.05px; }
+  .pc.b{ fill:var(--piece-b); stroke:var(--piece-b-line); stroke-width:.03px; }
+
+  .hl{ pointer-events:none; }
+  .hl.sel{ fill: rgba(var(--gold-rgb),.38); stroke: var(--gold-soft); stroke-width:.06px; }
+  .hl.ok{ fill: rgba(var(--green-rgb),.28); stroke: var(--green); stroke-width:.06px; }
+  .hl.bad{ fill: rgba(var(--danger-rgb),.30); stroke: var(--danger); stroke-width:.06px; }
+  .hl.miss{ fill: rgba(var(--gold-rgb),.10); stroke: var(--danger); stroke-width:.06px; stroke-dasharray:.14 .1; }
+
+  .badge-bg{ stroke: var(--frame); stroke-width:.02px; }
+  .badge-bg.ok{ fill: var(--green); }
+  .badge-bg.bad{ fill: var(--danger); }
+  .badge-bg.miss{ fill: var(--gold); }
+  .badge-tx{
+    font-family:'Manrope', sans-serif;
+    font-size:.24px;
+    font-weight:800;
+    text-anchor:middle;
+    dominant-baseline:central;
+    fill:var(--ink);
+    pointer-events:none;
+  }
+  .arrow{ pointer-events:none; }
+  .arrow.ok{ stroke: var(--green); fill: var(--green); }
+  .arrow.miss{ stroke: var(--danger); fill: var(--danger); }
+  .arrow.safe{ stroke: var(--arrow-safe); fill: var(--arrow-safe); }
+  .arrow line{ stroke-width:.1px; stroke-linecap:round; opacity:.9; }
+  .arrow.safe line{ stroke-dasharray:.16 .14; stroke-linecap:butt; opacity:.8; }
+  .arrow polygon{ stroke:none; opacity:.95; }
+
+  /* результат раунду */
+  .overlay{
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(var(--overlay-rgb),.78);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    z-index:10;
+    border-radius: var(--radius-lg);
+    padding: 14px;
+  }
+  .complete-card{
+    background: var(--panel);
+    border: 1px solid var(--gold);
+    border-radius: var(--radius-md);
+    padding: 20px 20px 18px;
+    text-align:center;
+    width: min(340px, 100%);
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,.8);
+  }
+  .complete-card .cup{ font-size: 2rem; }
+  .complete-card h3{
+    font-family:'Fraunces', serif;
+    font-size: 1.4rem;
+    margin: 6px 0 2px;
+    color: var(--gold-soft);
+  }
+  .complete-card .sub{ color: var(--text-dim); font-size:.9rem; margin-bottom: 14px; min-height:1.2em; }
+  .complete-stats{
+    display:flex;
+    justify-content:center;
+    gap: 18px;
+    margin-bottom: 16px;
+  }
+  .complete-stats div{ text-align:center; }
+  .complete-stats .n{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size: 1.3rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .complete-stats .l{ color: var(--text-faint); font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; }
+  .complete-actions{ display:flex; flex-direction:column; gap:8px; }
+
+  /* права панель */
+  .panel{
+    width: min(340px, 100%);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    flex: 1 1 280px;
+  }
+  .task{ font-size:1.02rem; line-height:1.45; margin:0; }
+  .task b{ color: var(--gold-soft); }
+  .rule{ margin:8px 0 0; color: var(--text-dim); font-size:.86rem; line-height:1.45; }
+  .tip{ margin:8px 0 0; color: var(--danger); font-size:.86rem; min-height:1.2em; }
+  .actions{ display:flex; flex-direction:column; gap:8px; }
+
+  .feedback h3{
+    margin:0 0 4px;
+    font-family:'Fraunces', serif;
+    font-size:1.25rem;
+  }
+  .feedback h3.good{ color: var(--green-soft); }
+  .feedback h3.badc{ color: var(--danger); }
+  .feedback .found{ color: var(--text-dim); font-size:.88rem; }
+  .feedback ul{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .feedback li{
+    display:flex; gap:9px; align-items:flex-start;
+    font-size:.92rem; line-height:1.4; color: var(--text);
+  }
+  .feedback li .mk{
+    flex:0 0 auto;
+    width:20px; height:20px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:.8rem; color:var(--ink);
+    margin-top:1px;
+  }
+  .feedback li.ok .mk{ background: var(--green); }
+  .feedback li.bad .mk{ background: var(--danger); }
+  .feedback li.miss .mk{ background: var(--gold); }
+  .feedback .legend{ margin:10px 0 0; color: var(--text-faint); font-size:.78rem; line-height:1.4; }
+
+  footer.hint{
+    text-align:center;
+    color: var(--text-faint);
+    font-size: .8rem;
+    max-width: 60ch;
+    margin: 4px auto 0;
+    line-height:1.5;
+  }
+  .nolib{
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  @media (max-width: 520px){
+    .wrap{ padding: 16px 14px 40px; }
+    .choice-grid{ grid-template-columns: 1fr; }
+    .board-frame{ padding: 7px; }
+    .stp{ font-size:.74rem; padding: 6px 4px; gap:4px; }
+    .stp i{ width:18px; height:18px; }
+  }
+</style>
+<script src="../theme/theme.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="title-block">
+      <h1>Шах, взяття, загроза</h1>
+      <p>Перед кожним ходом перевір усе по черзі.</p>
+    </div>
+    <button class="btn ghost small" id="btnMenu" type="button" hidden>‹ Меню</button>
+  </header>
+
+  <section class="card nolib" id="noLib" hidden>
+    Не вдалося завантажити шаховий рушій (chess.js). Перевір інтернет і онови сторінку.
+  </section>
+
+  <section class="card menu" id="menu">
+    <div>
+      <h2>1. Рівень</h2>
+      <div class="choice-grid" id="levelList"></div>
+    </div>
+    <div>
+      <h2>2. Звідки дивимось</h2>
+      <div class="choice-grid" id="modeList"></div>
+    </div>
+    <button class="btn primary big" id="btnStart" type="button">Почати раунд (8 позицій)</button>
+  </section>
+
+  <main class="stage" id="game" hidden>
+    <div class="board-col">
+      <div class="chips">
+        <div class="chip"><span class="label">Позиція</span><span class="value" id="stPos">1/8</span></div>
+        <div class="chip"><span class="label">Очки</span><span class="value gold" id="stScore">0</span></div>
+        <div class="chip"><span class="label">Серія</span><span class="value" id="stStreak">0</span></div>
+      </div>
+      <div class="steps" id="steps"></div>
+      <div class="timer" id="timerRow" hidden>
+        <div class="timer-track"><div class="timer-bar" id="timerBar"></div></div>
+        <div class="timer-text" id="timerText">30 с</div>
+      </div>
+      <div class="board-frame">
+        <div class="board-wrap">
+          <svg id="board" viewBox="0 0 8 8" role="img" aria-label="Шахова дошка"></svg>
+        </div>
+        <div class="overlay" id="result" hidden>
+          <div class="complete-card">
+            <div class="cup" id="resCup">🏁</div>
+            <h3 id="resTitle">Раунд завершено</h3>
+            <div class="sub" id="resSub"></div>
+            <div class="complete-stats">
+              <div><div class="n" id="resScore">0</div><div class="l">очок</div></div>
+              <div><div class="n" id="resPerfect">0/0</div><div class="l">чисто</div></div>
+              <div><div class="n" id="resStreak">0</div><div class="l">серія</div></div>
+            </div>
+            <div class="complete-actions">
+              <button class="btn primary big" id="btnAgain" type="button">Ще раз</button>
+              <button class="btn" id="btnToMenu" type="button">Меню</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="card">
+        <h2 id="stepTitle">Крок</h2>
+        <p class="task" id="task"></p>
+        <p class="rule" id="rule"></p>
+        <p class="tip" id="tip" aria-live="polite"></p>
+      </div>
+      <div class="actions" id="actions">
+        <button class="btn primary big" id="btnCheck" type="button" disabled>Перевірити</button>
+        <button class="btn big" id="btnNone" type="button">Нічого немає</button>
+      </div>
+      <div class="actions" id="nextRow" hidden>
+        <button class="btn primary big" id="btnNext" type="button">Далі →</button>
+      </div>
+      <div class="card feedback" id="feedback" hidden></div>
+    </div>
+  </main>
+
+  <footer class="hint">
+    За чистий крок — 10 очок, а за кожен наступний поспіль +1 (максимум +5). Помилка скидає серію.
+    На рівні 4 на кожен крок є 30 секунд. Рекорди зберігаються на цьому пристрої.
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+<script>
+'use strict';
+
+// ===== ЛОГІКА (без DOM; саме цей шматок перевіряють тести) =====
+
+var FILES = 'abcdefgh';
+var VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
+var NAME_NOM = { p: 'пішак', n: 'кінь', b: 'слон', r: 'тура', q: 'ферзь', k: 'король' };
+var NAME_ACC = { p: 'пішака', n: 'коня', b: 'слона', r: 'туру', q: 'ферзя', k: 'короля' };
+
+var MIN_PLIES = 8;    // партія до позиції: від 8 до 25 ходів (півходів: білі + чорні)
+var MAX_PLIES = 25;
+var NONE_CHANCE = 0.25;   // на рівні 1: як часто в позиції шахів немає
+
+// Кроки: check — шахи, capture — взяття, threat — загрози.
+// side: чиї фігури тапає гравець (me — свої, opp — суперника).
+var STEP_INFO = {
+  check:   { name: 'Шахи',    none: 'Шахів немає',  side: 'me' },
+  capture: { name: 'Взяття',  none: 'Брати нічого', side: 'opp' },
+  threat:  { name: 'Загрози', none: 'Загроз немає', side: 'me' }
+};
+
+var LEVELS = [
+  { id: 1, name: 'Шахи',          desc: 'Лише шахи: якою фігурою можна дати шах?',          steps: ['check'],                    timer: 0 },
+  { id: 2, name: 'Шахи й взяття', desc: 'Спочатку шахи, потім — що можна взяти.',           steps: ['check', 'capture'],         timer: 0 },
+  { id: 3, name: 'Усі три',       desc: 'Шахи, взяття й загрози по черзі.',                 steps: ['check', 'capture', 'threat'], timer: 0 },
+  { id: 4, name: 'Бліц',          desc: 'Усі три кроки, на кожен — 30 секунд.',             steps: ['check', 'capture', 'threat'], timer: 30 }
+];
+
+function rand(n) { return Math.floor(Math.random() * n); }
+
+function squareName(file, rank) { return FILES.charAt(file) + String(rank + 1); }
+
+function capFirst(s) { return s.charAt(0).toUpperCase() + s.substring(1); }
+
+function otherColor(c) { return c === 'w' ? 'b' : 'w'; }
+
+// FEN з іншою стороною, що ходить. Взяття на проході тоді неможливе — прибираємо його.
+function fenWithTurn(fen, color) {
+  var parts = fen.split(' ');
+  if (parts[1] !== color) {
+    parts[1] = color;
+    parts[3] = '-';
+  }
+  return parts.join(' ');
+}
+
+// FEN -> { 'e4': { type, color } }
+function fenToBoard(fen) {
+  var board = {};
+  var rows = fen.split(' ')[0].split('/');
+  var i, j, ch, file, rank, lower;
+  for (i = 0; i < 8; i = i + 1) {
+    rank = 7 - i;
+    file = 0;
+    for (j = 0; j < rows[i].length; j = j + 1) {
+      ch = rows[i].charAt(j);
+      if (ch >= '1' && ch <= '8') {
+        file = file + Number(ch);
+      } else {
+        lower = ch.toLowerCase();
+        board[squareName(file, rank)] = { type: lower, color: (ch === lower ? 'b' : 'w') };
+        file = file + 1;
+      }
+    }
+  }
+  return board;
+}
+
+// Клітинка фігури, яку б’є хід. При взятті на проході це не клітинка, куди йде пішак.
+function victimSquare(m) {
+  if (m.flags.indexOf('e') >= 0) { return m.to.charAt(0) + m.from.charAt(1); }
+  return m.to;
+}
+
+function byValue(a, b) { return VALUE[a.piece] - VALUE[b.piece]; }
+
+function answerOf(info) {
+  var out = [];
+  var sq;
+  for (sq in info) {
+    if (info[sq].yes) { out.push(sq); }
+  }
+  out.sort();
+  return out;
+}
+
+// Кожна analyze... повертає { info, answer }:
+//   info[клітинка] — опис кожної фігури, яку можна тапнути на цьому кроці:
+//     { sq, type, yes: чи правильно її тапнути, arrow: { from, to } або null, ... }
+//   answer — відсортований список клітинок, які треба тапнути.
+
+// Крок 1. Свої фігури, якими можна дати шах (fen: ходить me).
+// Хід вважається шахом, якщо chess.js дописав до нього «+» або «#». Шах відкриттям теж рахується
+// (йде та фігура, що відкрила лінію). Рокіровку пропускаємо: шах дає тура, а її хід є і без рокіровки.
+function analyzeChecks(fen, me) {
+  var g = new Chess(fen);
+  var board = fenToBoard(fen);
+  var moves = g.moves({ verbose: true });
+  var info = {};
+  var sq, i, m, e;
+  for (sq in board) {
+    if (board[sq].color === me) {
+      info[sq] = { sq: sq, type: board[sq].type, yes: false, arrow: null, san: '' };
+    }
+  }
+  for (i = 0; i < moves.length; i = i + 1) {
+    m = moves[i];
+    if (m.flags.indexOf('k') >= 0 || m.flags.indexOf('q') >= 0) { continue; }
+    if (m.san.indexOf('+') < 0 && m.san.indexOf('#') < 0) { continue; }
+    e = info[m.from];
+    if (!e.yes) {
+      e.yes = true;
+      e.arrow = { from: m.from, to: m.to };
+      e.san = m.san;
+    }
+  }
+  return { info: info, answer: answerOf(info) };
+}
+
+// Крок 2. Фігури суперника, які можна взяти законним ходом (fen: ходить me).
+// Зв’язана фігура не б’є, короля не беруть. Показуємо найдешевшу фігуру, що б’є.
+function analyzeCaptures(fen, me) {
+  var g = new Chess(fen);
+  var board = fenToBoard(fen);
+  var moves = g.moves({ verbose: true });
+  var info = {};
+  var sq, i, m, vs, e;
+  for (sq in board) {
+    if (board[sq].color !== me) {
+      info[sq] = { sq: sq, type: board[sq].type, yes: false, arrow: null, from: null, piece: null, ep: false };
+    }
+  }
+  for (i = 0; i < moves.length; i = i + 1) {
+    m = moves[i];
+    if (!m.captured) { continue; }
+    vs = victimSquare(m);
+    e = info[vs];
+    if (!e.yes || VALUE[m.piece] < VALUE[e.piece]) {
+      e.yes = true;
+      e.from = m.from;
+      e.piece = m.piece;
+      e.ep = (m.flags.indexOf('e') >= 0);
+      e.arrow = { from: m.from, to: vs };
+    }
+  }
+  return { info: info, answer: answerOf(info) };
+}
+
+// Крок 3. Свої фігури, які суперник може взяти вигідно (fen: ходить суперник, тобто не me).
+// Вигідно, якщо хід-взяття законний і:
+//   • фігуру нема кому відбити законним ходом (вона без захисту), або
+//   • її б’є дешевша фігура (пішак 1, кінь і слон 3, тура 5, ферзь 9) — навіть якщо відіб’ють.
+// Рівний обмін не рахуємо. Захисник, який зв’язаний, не захищає.
+function analyzeThreats(fen, me) {
+  var g = new Chess(fen);
+  var board = fenToBoard(fen);
+  var moves = g.moves({ verbose: true });
+  var info = {};
+  var by = {};
+  var sq, i, k, d, m, vs, list, replies, r, rec, dup, victim, ent;
+  var free, cheap, pick, pickFree, pickCheap, first, firstRec;
+
+  for (sq in board) {
+    if (board[sq].color === me) {
+      info[sq] = { sq: sq, type: board[sq].type, yes: false, reason: '', arrow: null, attacker: null, recapture: null };
+    }
+  }
+  for (i = 0; i < moves.length; i = i + 1) {
+    m = moves[i];
+    if (!m.captured) { continue; }
+    vs = victimSquare(m);
+    list = by[vs] || [];
+    dup = false;
+    for (k = 0; k < list.length; k = k + 1) {
+      if (list[k].from === m.from) { dup = true; }   // взяття з перетворенням дає 4 ходи — лишаємо один
+    }
+    if (!dup) { list.push(m); }
+    by[vs] = list;
+  }
+
+  for (sq in info) {
+    list = by[sq];
+    if (!list) { continue; }
+    ent = info[sq];
+    victim = ent.type;
+    list.sort(byValue);
+    pickFree = null;
+    pickCheap = null;
+    first = null;
+    firstRec = null;
+    for (i = 0; i < list.length; i = i + 1) {
+      m = list[i];
+      g.move({ from: m.from, to: m.to, promotion: m.promotion });
+      replies = g.moves({ verbose: true });
+      g.undo();
+      rec = [];
+      for (k = 0; k < replies.length; k = k + 1) {
+        r = replies[k];
+        if (r.to !== m.to || !r.captured) { continue; }
+        dup = false;
+        for (d = 0; d < rec.length; d = d + 1) {
+          if (rec[d].from === r.from) { dup = true; }
+        }
+        if (!dup) { rec.push(r); }
+      }
+      rec.sort(byValue);
+      free = (rec.length === 0);
+      cheap = (VALUE[m.piece] < VALUE[victim]);
+      pick = {
+        attacker: { from: m.from, piece: m.piece },
+        recapture: (rec.length > 0 ? { from: rec[0].from, piece: rec[0].piece } : null)
+      };
+      if (free && !pickFree) { pickFree = pick; }
+      if (cheap && !pickCheap) { pickCheap = pick; }
+      if (i === 0) { first = pick.attacker; firstRec = pick.recapture; }
+    }
+    if (pickFree) {
+      ent.yes = true; ent.reason = 'free';
+      ent.attacker = pickFree.attacker; ent.recapture = null;
+    } else if (pickCheap) {
+      ent.yes = true; ent.reason = 'cheaper';
+      ent.attacker = pickCheap.attacker; ent.recapture = pickCheap.recapture;
+    } else {
+      ent.attacker = first; ent.recapture = firstRec;   // б’ють, але відіб’ють, і обмін не вигідний
+    }
+    ent.arrow = { from: ent.attacker.from, to: sq };
+  }
+  return { info: info, answer: answerOf(info) };
+}
+
+// Випадкова партія рівно з plies півходів; null — якщо партія скінчилась раніше.
+function randomGame(plies) {
+  var g = new Chess();
+  var i, moves;
+  for (i = 0; i < plies; i = i + 1) {
+    moves = g.moves();
+    if (moves.length === 0) { return null; }
+    g.move(moves[rand(moves.length)]);
+  }
+  return g;
+}
+
+// Позиція годиться, якщо немає мату, пату й нічиєї, а королі обох сторін не під шахом
+// (тоді позицію можна розглядати за будь-якої сторони, що ходить).
+// Повертає { w: FEN, коли ходять білі, b: FEN, коли ходять чорні } або null.
+function positionFens(game) {
+  var fen = game.fen();
+  var turn = game.turn();
+  var swapped;
+  var out = {};
+  if (game.game_over() || game.in_check()) { return null; }
+  swapped = new Chess(fenWithTurn(fen, otherColor(turn)));
+  if (swapped.game_over() || swapped.in_check()) { return null; }
+  out[turn] = fen;
+  out[otherColor(turn)] = fenWithTurn(fen, otherColor(turn));
+  return out;
+}
+
+// Повний розбір позиції. me — за кого грає гравець: ходить сам (звичайний режим)
+// або сидить на місці суперника (режим «Очима суперника»).
+function buildPosition(fens, turn, plies, levelId, mode) {
+  var cfg = LEVELS[levelId - 1];
+  var me = (mode === 'eyes' ? otherColor(turn) : turn);
+  var opp = otherColor(me);
+  var an = {};
+  var i, key;
+  for (i = 0; i < cfg.steps.length; i = i + 1) {
+    key = cfg.steps[i];
+    if (key === 'check') { an.check = analyzeChecks(fens[me], me); }
+    if (key === 'capture') { an.capture = analyzeCaptures(fens[me], me); }
+    if (key === 'threat') { an.threat = analyzeThreats(fens[opp], me); }
+  }
+  return { fen: fens[me], turn: turn, plies: plies, me: me, opp: opp, steps: cfg.steps, an: an, board: fenToBoard(fens[me]) };
+}
+
+// Скільки кроків позиції мають непорожню відповідь
+function filledSteps(pos) {
+  var n = 0;
+  var i;
+  for (i = 0; i < pos.steps.length; i = i + 1) {
+    if (pos.an[pos.steps[i]].answer.length > 0) { n = n + 1; }
+  }
+  return n;
+}
+
+// Створює позицію для раунду. Випадкових партій багато, тож добираємо цікаву:
+// рівень 1 — або є шахи, або (час від часу) їх немає; рівень 2 — є що-небудь; рівні 3–4 — хоч два кроки не порожні.
+function generatePosition(levelId, mode) {
+  var cfg = LEVELS[levelId - 1];
+  var wantNone = (cfg.steps.length === 1 && Math.random() < NONE_CHANCE);
+  var tries = 0;
+  var plies, game, fens, pos, n, need, ok;
+
+  while (true) {
+    tries = tries + 1;
+    plies = MIN_PLIES + rand(MAX_PLIES - MIN_PLIES + 1);
+    game = randomGame(plies);
+    if (!game) { continue; }
+    fens = positionFens(game);
+    if (!fens) { continue; }
+    pos = buildPosition(fens, game.turn(), plies, levelId, mode);
+    n = filledSteps(pos);
+    need = (cfg.steps.length >= 3 && tries <= 150) ? 2 : 1;
+    if (tries > 400) {
+      ok = true;   // запасний варіант (майже ніколи): будь-яка правильна позиція
+    } else if (cfg.steps.length === 1) {
+      ok = wantNone ? (n === 0) : (n >= 1);
+    } else {
+      ok = (n >= need);
+    }
+    if (ok) { return pos; }
+  }
+}
+
+function sameSet(a, b) {
+  var i, map = {};
+  if (a.length !== b.length) { return false; }
+  for (i = 0; i < a.length; i = i + 1) { map[a[i]] = true; }
+  for (i = 0; i < b.length; i = i + 1) {
+    if (!map[b[i]]) { return false; }
+  }
+  return true;
+}
+
+// Очки за чистий крок: 10, а за кожен наступний поспіль +1 (максимум +5)
+function stepPoints(streak) { return 10 + Math.min(streak - 1, 5); }
+
+// Пояснення для дитини: одна фраза про одну фігуру
+function explain(stepKey, ent) {
+  var who = capFirst(NAME_NOM[ent.type]) + ' ' + ent.sq;
+  var a, rc;
+  if (stepKey === 'check') {
+    if (ent.yes) { return who + ' дає шах: ' + ent.arrow.from + ' → ' + ent.arrow.to + '.'; }
+    return who + ': шаху цією фігурою дати не можна.';
+  }
+  if (stepKey === 'capture') {
+    if (ent.yes) {
+      return capFirst(NAME_NOM[ent.piece]) + ' ' + ent.from + ' може взяти ' + NAME_ACC[ent.type] + ' ' + ent.sq +
+        (ent.ep ? ' (на проході).' : '.');
+    }
+    if (ent.type === 'k') { return who + ': короля брати не можна.'; }
+    return who + ': цю фігуру взяти не можна. Її ніхто не б’є, або той, хто б’є, зв’язаний.';
+  }
+  // threat
+  if (ent.type === 'k') { return who + ': короля не можна з’їсти, тут шукаємо інше.'; }
+  if (!ent.attacker) { return who + ': загрози немає, цю фігуру ніхто не атакує.'; }
+  a = NAME_NOM[ent.attacker.piece] + ' ' + ent.attacker.from;
+  if (ent.yes && ent.reason === 'free') {
+    return who + ' під загрозою: ' + a + ' бере ' + NAME_ACC[ent.type] + ', а відбити нічим.';
+  }
+  if (ent.yes) {
+    return who + ' під загрозою: ' + a + ' бере ' + NAME_ACC[ent.type] + '. Відберуть, але обмін вигідний суперникові: ' +
+      VALUE[ent.attacker.piece] + ' за ' + VALUE[ent.type] + '.';
+  }
+  rc = ent.recapture;
+  return who + ': загрози немає, ' + a + ' може взяти, але ' + NAME_NOM[rc.piece] + ' ' + rc.from + ' відбере, і обмін невигідний.';
+}
+
+// ===== КІНЕЦЬ ЛОГІКИ =====
+
+
+// ===== ІНТЕРФЕЙС =====
+
+var ROUND_LEN = 8;
+var STORE_KEY = 'cct-v1';
+var GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+var SVG_NS = 'http://www.w3.org/2000/svg';
+
+var MODES = [
+  { id: 'play', name: 'Звичайний',        desc: 'Ходиш ти. Перевіряєш, що можеш ти і чим тобі загрожують.' },
+  { id: 'eyes', name: 'Очима суперника',  desc: 'Сідаєш на його місце: дошка повертається, ходить він.' }
+];
+
+var PRAISE_OK = [
+  'Усе знайдено — ти перевірив кожну фігуру!',
+  'Чисто! Ти пройшов по всіх фігурах.',
+  'Усе правильно — уважна перевірка спрацювала.',
+  'Без помилок: ти не поспішав і перевірив усе.'
+];
+var PRAISE_NONE = [
+  'Правильно: тут нічого немає. Це теж треба вміти — перевірити й переконатися.',
+  'Так, порожньо. Ти перевірив усе й не вигадав зайвого.'
+];
+var ENCOURAGE = [
+  'Не здавайся — подивись на стрілки й спробуй у наступній позиції.',
+  'Помилки показують, де шукати далі. Перевіряй по черзі.',
+  'Нічого страшного: головне, що ти шукав. Стрілки покажуть, де було.'
+];
+
+var store = { level: 1, mode: 'play', records: {} };
+
+var state = {
+  level: 1,
+  mode: 'play',
+  pos: null,         // поточна позиція
+  posIndex: 0,       // номер поточної позиції (з нуля)
+  stepIndex: 0,      // номер поточного кроку в позиції (з нуля)
+  results: [],       // як пройдено кроки поточної позиції: 'ok', 'bad' або null
+  score: 0,
+  streak: 0,
+  bestStreak: 0,
+  perfect: 0,        // скільки кроків пройдено чисто
+  stepsDone: 0,      // скільки кроків пройдено всього
+  selected: {},
+  answered: false,
+  lastOk: false,
+  lastTimeout: false,
+  lastPoints: 0,
+  timerId: null,
+  deadline: 0
+};
+
+function byId(id) { return document.getElementById(id); }
+
+function pick(list) { return list[rand(list.length)]; }
+
+function currentStep() { return state.pos.steps[state.stepIndex]; }
+
+// ---- localStorage (кожен доступ у try/catch) ----
+
+function loadStore() {
+  var raw, data;
+  try {
+    raw = window.localStorage.getItem(STORE_KEY);
+    if (raw) {
+      data = JSON.parse(raw);
+      if (data && typeof data === 'object') {
+        if (data.level >= 1 && data.level <= LEVELS.length) { store.level = data.level; }
+        if (data.mode === 'play' || data.mode === 'eyes') { store.mode = data.mode; }
+        if (data.records && typeof data.records === 'object') { store.records = data.records; }
+      }
+    }
+  } catch (e) {
+    // сховище недоступне — граємо без нього
+  }
+}
+
+function saveStore() {
+  try {
+    window.localStorage.setItem(STORE_KEY, JSON.stringify(store));
+  } catch (e) {
+    // нічого страшного: рекорд просто не збережеться
+  }
+}
+
+function recordFor(levelId) {
+  var r = store.records[String(levelId)];
+  if (r && typeof r.score === 'number') { return r; }
+  return null;
+}
+
+// ---- меню ----
+
+function buildMenu() {
+  var levelList = byId('levelList');
+  var modeList = byId('modeList');
+  var i, btn, rec, recText;
+
+  levelList.innerHTML = '';
+  for (i = 0; i < LEVELS.length; i = i + 1) {
+    rec = recordFor(LEVELS[i].id);
+    recText = rec ? ('Рекорд: ' + rec.score + ' очок · серія ' + (rec.streak || 0)) : 'Рекорду ще немає';
+    btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'choice' + (LEVELS[i].id === store.level ? ' on' : '');
+    btn.setAttribute('data-level', String(LEVELS[i].id));
+    btn.innerHTML =
+      '<span class="num">' + LEVELS[i].id + '</span>' +
+      '<span class="txt"><strong>' + LEVELS[i].name + '</strong><small>' + LEVELS[i].desc + '</small><em>' + recText + '</em></span>';
+    levelList.appendChild(btn);
+  }
+
+  modeList.innerHTML = '';
+  for (i = 0; i < MODES.length; i = i + 1) {
+    btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'choice' + (MODES[i].id === store.mode ? ' on' : '');
+    btn.setAttribute('data-mode', MODES[i].id);
+    btn.innerHTML =
+      '<span class="txt"><strong>' + MODES[i].name + '</strong><small>' + MODES[i].desc + '</small></span>';
+    modeList.appendChild(btn);
+  }
+}
+
+function onMenuClick(e) {
+  var el = e.target;
+  var lv, md;
+  while (el && el !== e.currentTarget && !el.getAttribute('data-level') && !el.getAttribute('data-mode')) {
+    el = el.parentNode;
+  }
+  if (!el || el === e.currentTarget) { return; }
+  lv = el.getAttribute('data-level');
+  md = el.getAttribute('data-mode');
+  if (lv) { store.level = Number(lv); }
+  if (md) { store.mode = md; }
+  saveStore();
+  buildMenu();
+}
+
+function showMenu() {
+  stopTimer();
+  byId('menu').hidden = false;
+  byId('game').hidden = true;
+  byId('btnMenu').hidden = true;
+  buildMenu();
+}
+
+// ---- раунд ----
+
+function startRound() {
+  state.level = store.level;
+  state.mode = store.mode;
+  state.posIndex = 0;
+  state.score = 0;
+  state.streak = 0;
+  state.bestStreak = 0;
+  state.perfect = 0;
+  state.stepsDone = 0;
+  byId('menu').hidden = true;
+  byId('game').hidden = false;
+  byId('btnMenu').hidden = false;
+  byId('result').hidden = true;
+  byId('timerRow').hidden = (LEVELS[state.level - 1].timer === 0);
+  nextPosition();
+}
+
+function nextPosition() {
+  var pos = generatePosition(state.level, state.mode);
+  pos.flip = (pos.me === 'b');   // переворот — лише при відображенні
+  state.pos = pos;
+  state.stepIndex = 0;
+  state.results = [];
+  startStep();
+}
+
+function startStep() {
+  state.selected = {};
+  state.answered = false;
+  state.lastOk = false;
+  state.lastTimeout = false;
+  byId('tip').textContent = '';
+  startTimer();
+  renderAll();
+  keepBoardInView();
+}
+
+function keepBoardInView() {
+  var top = byId('game').getBoundingClientRect().top;
+  if (top < 0) { window.scrollBy(0, top - 8); }
+}
+
+function selectedList() {
+  var out = [];
+  var sq;
+  for (sq in state.selected) {
+    if (state.selected[sq]) { out.push(sq); }
+  }
+  out.sort();
+  return out;
+}
+
+function submitAnswer(timeout) {
+  var ok, points;
+  if (state.answered) { return; }
+  ok = !timeout && sameSet(selectedList(), state.pos.an[currentStep()].answer);
+  points = 0;
+  if (ok) {
+    state.streak = state.streak + 1;
+    if (state.streak > state.bestStreak) { state.bestStreak = state.streak; }
+    points = stepPoints(state.streak);
+    state.score = state.score + points;
+    state.perfect = state.perfect + 1;
+  } else {
+    state.streak = 0;
+  }
+  state.stepsDone = state.stepsDone + 1;
+  state.results[state.stepIndex] = ok ? 'ok' : 'bad';
+  state.answered = true;
+  state.lastOk = ok;
+  state.lastTimeout = !!timeout;
+  state.lastPoints = points;
+  stopTimer();
+  renderAll();
+  byId('btnNext').scrollIntoView({ block: 'nearest' });
+}
+
+function onNext() {
+  if (!state.answered) { return; }
+  if (state.stepIndex < state.pos.steps.length - 1) {
+    state.stepIndex = state.stepIndex + 1;
+    startStep();
+  } else if (state.posIndex + 1 >= ROUND_LEN) {
+    finishRound();
+  } else {
+    state.posIndex = state.posIndex + 1;
+    nextPosition();
+  }
+}
+
+function finishRound() {
+  var old = recordFor(state.level);
+  var isNew = (!old || state.score > old.score) && state.score > 0;
+  var best = {
+    score: Math.max(state.score, old ? old.score : 0),
+    streak: Math.max(state.bestStreak, old && old.streak ? old.streak : 0)
+  };
+  var title, sub;
+  store.records[String(state.level)] = best;
+  saveStore();
+
+  if (isNew) {
+    title = 'Новий рекорд!';
+    sub = 'Старання окупилися: найкращий результат на рівні ' + state.level + '.';
+  } else if (state.perfect === state.stepsDone) {
+    title = 'Без жодної помилки!';
+    sub = 'Ти перевіряв усе по черзі.';
+  } else if (state.perfect >= state.stepsDone * 0.7) {
+    title = 'Дуже добре!';
+    sub = 'Звичка працює. Рекорд рівня: ' + best.score + ' очок.';
+  } else {
+    title = 'Раунд завершено';
+    sub = 'Не здавайся: з кожним разом легше. Рекорд рівня: ' + best.score + ' очок.';
+  }
+  byId('resCup').textContent = isNew ? '🏆' : '🏁';
+  byId('resTitle').textContent = title;
+  byId('resSub').textContent = sub;
+  byId('resScore').textContent = String(state.score);
+  byId('resPerfect').textContent = state.perfect + '/' + state.stepsDone;
+  byId('resStreak').textContent = String(state.bestStreak);
+  byId('result').hidden = false;
+  byId('btnAgain').focus();
+}
+
+// ---- таймер (лише рівень 4; свої 30 секунд на кожен крок) ----
+
+function stopTimer() {
+  if (state.timerId) {
+    window.clearInterval(state.timerId);
+    state.timerId = null;
+  }
+}
+
+function startTimer() {
+  var secs = LEVELS[state.level - 1].timer;
+  stopTimer();
+  if (!secs) { return; }
+  state.deadline = Date.now() + secs * 1000;
+  drawTimer(secs, secs);
+  state.timerId = window.setInterval(function () {
+    var left = (state.deadline - Date.now()) / 1000;
+    if (left <= 0) {
+      drawTimer(0, secs);
+      submitAnswer(true);
+    } else {
+      drawTimer(left, secs);
+    }
+  }, 200);
+}
+
+function drawTimer(left, total) {
+  var bar = byId('timerBar');
+  bar.style.width = Math.max(0, left / total * 100) + '%';
+  bar.className = 'timer-bar' + (left <= 5 ? ' low' : '');
+  byId('timerText').textContent = Math.ceil(left) + ' с';
+}
+
+// ---- малювання дошки (SVG 8×8, 1 клітинка = 1 одиниця) ----
+
+function svgEl(name, attrs) {
+  var el = document.createElementNS(SVG_NS, name);
+  var k;
+  for (k in attrs) { el.setAttribute(k, String(attrs[k])); }
+  return el;
+}
+
+// клітинка -> положення на екрані (з переворотом для чорних)
+function toXY(name, flip) {
+  var file = FILES.indexOf(name.charAt(0));
+  var rank = Number(name.charAt(1)) - 1;
+  return { x: (flip ? 7 - file : file), y: (flip ? rank : 7 - rank) };
+}
+
+function fromXY(x, y, flip) {
+  var file = flip ? 7 - x : x;
+  var rank = flip ? y : 7 - y;
+  return squareName(file, rank);
+}
+
+function drawArrow(svg, from, to, cls, flip) {
+  var a = toXY(from, flip);
+  var b = toXY(to, flip);
+  var ax = a.x + 0.5, ay = a.y + 0.5, bx = b.x + 0.5, by = b.y + 0.5;
+  var dx = bx - ax, dy = by - ay;
+  var len = Math.sqrt(dx * dx + dy * dy);
+  var ux = dx / len, uy = dy / len;
+  var headLen = 0.34, headHalf = 0.17;
+  var sx = ax + ux * 0.2, sy = ay + uy * 0.2;            // початок трохи від центру фігури
+  var tx = bx - ux * 0.12, ty = by - uy * 0.12;          // вістря стрілки
+  var lx = tx - ux * headLen, ly = ty - uy * headLen;    // де лінія переходить у наконечник
+  var g = svgEl('g', { 'class': 'arrow ' + cls });
+  g.appendChild(svgEl('line', { x1: sx, y1: sy, x2: lx, y2: ly }));
+  g.appendChild(svgEl('polygon', {
+    points: tx + ',' + ty + ' ' +
+      (lx - uy * headHalf) + ',' + (ly + ux * headHalf) + ' ' +
+      (lx + uy * headHalf) + ',' + (ly - ux * headHalf)
+  }));
+  svg.appendChild(g);
+}
+
+function drawBadge(svg, name, kind, text, flip) {
+  var p = toXY(name, flip);
+  svg.appendChild(svgEl('circle', { cx: p.x + 0.82, cy: p.y + 0.18, r: 0.17, 'class': 'badge-bg ' + kind }));
+  var t = svgEl('text', { x: p.x + 0.82, y: p.y + 0.19, 'class': 'badge-tx' });
+  t.textContent = text;
+  svg.appendChild(t);
+}
+
+function renderBoard() {
+  var svg = byId('board');
+  var pos = state.pos;
+  var an = pos.an[currentStep()];
+  var flip = pos.flip;
+  var sel = state.selected;
+  var yes = {};
+  var x, y, name, dark, t, p, sq, cls, i, ent;
+
+  while (svg.firstChild) { svg.removeChild(svg.firstChild); }
+  svg.setAttribute('class', state.answered ? 'locked' : '');
+
+  // клітинки та координати
+  for (y = 0; y < 8; y = y + 1) {
+    for (x = 0; x < 8; x = x + 1) {
+      name = fromXY(x, y, flip);
+      dark = ((FILES.indexOf(name.charAt(0)) + Number(name.charAt(1))) % 2 === 1);
+      svg.appendChild(svgEl('rect', { x: x, y: y, width: 1, height: 1, 'class': dark ? 'sq-d' : 'sq-l' }));
+      if (y === 7) {
+        t = svgEl('text', { x: x + 0.07, y: y + 0.9, 'class': 'coord ' + (dark ? 'on-d' : 'on-l') });
+        t.textContent = name.charAt(0);
+        svg.appendChild(t);
+      }
+      if (x === 0) {
+        t = svgEl('text', { x: x + 0.07, y: y + 0.2, 'class': 'coord ' + (dark ? 'on-d' : 'on-l') });
+        t.textContent = name.charAt(1);
+        svg.appendChild(t);
+      }
+    }
+  }
+
+  // підсвітка вибраного, а після відповіді — що знайдено, що зайве, що пропущено
+  for (i = 0; i < an.answer.length; i = i + 1) { yes[an.answer[i]] = true; }
+  for (sq in pos.board) {
+    cls = '';
+    if (!state.answered) {
+      if (sel[sq]) { cls = 'sel'; }
+    } else if (sel[sq] && yes[sq]) { cls = 'ok'; }
+    else if (sel[sq]) { cls = 'bad'; }
+    else if (yes[sq]) { cls = 'miss'; }
+    if (cls) {
+      p = toXY(sq, flip);
+      svg.appendChild(svgEl('rect', { x: p.x + 0.04, y: p.y + 0.04, width: 0.92, height: 0.92, rx: 0.08, 'class': 'hl ' + cls }));
+    }
+  }
+
+  // фігури
+  for (sq in pos.board) {
+    p = toXY(sq, flip);
+    t = svgEl('text', { x: p.x + 0.5, y: p.y + 0.55, 'class': 'pc ' + pos.board[sq].color });
+    t.textContent = GLYPH[pos.board[sq].type] + '︎';   // FE0E: не робити з пішака емодзі
+    svg.appendChild(t);
+  }
+
+  if (!state.answered) { return; }
+
+  // стрілки: зелена — знайдено, червона — пропущено, сіра пунктирна — вибрав зайве, але ця фігура під боєм
+  for (sq in an.info) {
+    ent = an.info[sq];
+    if (!ent.arrow) { continue; }
+    if (ent.yes) {
+      drawArrow(svg, ent.arrow.from, ent.arrow.to, sel[sq] ? 'ok' : 'miss', flip);
+    } else if (sel[sq]) {
+      drawArrow(svg, ent.arrow.from, ent.arrow.to, 'safe', flip);
+    }
+  }
+  // позначки поверх
+  for (sq in pos.board) {
+    if (sel[sq] && yes[sq]) { drawBadge(svg, sq, 'ok', '✓', flip); }
+    else if (sel[sq]) { drawBadge(svg, sq, 'bad', '✗', flip); }
+    else if (yes[sq]) { drawBadge(svg, sq, 'miss', '!', flip); }
+  }
+}
+
+function onBoardClick(e) {
+  var svg = byId('board');
+  var rect = svg.getBoundingClientRect();
+  var pos = state.pos;
+  var stepKey, side, x, y, name, piece, tip;
+  if (!pos || state.answered || rect.width === 0) { return; }
+  x = Math.floor((e.clientX - rect.left) / rect.width * 8);
+  y = Math.floor((e.clientY - rect.top) / rect.height * 8);
+  if (x < 0 || x > 7 || y < 0 || y > 7) { return; }
+  name = fromXY(x, y, pos.flip);
+  piece = pos.board[name];
+  tip = byId('tip');
+  if (!piece) { tip.textContent = ''; return; }
+  stepKey = currentStep();
+  side = (STEP_INFO[stepKey].side === 'me' ? pos.me : pos.opp);
+  if (piece.color !== side) {
+    tip.textContent = (STEP_INFO[stepKey].side === 'me')
+      ? 'Це фігура суперника. На цьому кроці тапай свої фігури.'
+      : 'Це твоя фігура. На цьому кроці тапай фігури суперника.';
+    return;
+  }
+  tip.textContent = '';
+  if (state.selected[name]) { delete state.selected[name]; }
+  else { state.selected[name] = true; }
+  renderAll();
+}
+
+// ---- текст і кнопки ----
+
+var STEP_TASK = {
+  check:   'Тапни <b>всі свої фігури</b>, якими можна дати шах.',
+  capture: 'Тапни <b>всі фігури суперника</b>, які можна взяти.',
+  threat:  'Тапни <b>свої фігури</b>, які суперник може взяти вигідно.'
+};
+var STEP_RULE = {
+  check:   'Шах — хід, після якого король суперника під ударом. Шах відкриттям теж рахується: тапай ту фігуру, що йде. Якщо шахів немає — кнопка «Шахів немає».',
+  capture: 'Беремо тільки законними ходами: зв’язана фігура не б’є, короля не беруть. Якщо брати нічого — кнопка «Брати нічого».',
+  threat:  'Вигідно для суперника = фігура без захисту, або її бере дешевша фігура (пішак 1, кінь і слон 3, тура 5, ферзь 9). Рівний обмін не рахуємо. Якщо загроз немає — кнопка «Загроз немає».'
+};
+
+function renderSteps() {
+  var box = byId('steps');
+  var steps = state.pos.steps;
+  var i, cls, html;
+  html = '';
+  for (i = 0; i < steps.length; i = i + 1) {
+    cls = 'stp';
+    if (state.results[i] === 'ok') { cls = cls + ' ok'; }
+    else if (state.results[i] === 'bad') { cls = cls + ' bad'; }
+    else if (i === state.stepIndex) { cls = cls + ' cur'; }
+    html = html + '<span class="' + cls + '"><i>' + (i + 1) + '</i>' + STEP_INFO[steps[i]].name + '</span>';
+  }
+  box.innerHTML = html;
+  box.hidden = (steps.length === 1);
+}
+
+function nextLabel() {
+  var steps = state.pos.steps;
+  if (state.stepIndex < steps.length - 1) { return 'Далі: ' + STEP_INFO[steps[state.stepIndex + 1]].name + ' →'; }
+  if (state.posIndex + 1 >= ROUND_LEN) { return 'Результат →'; }
+  return 'Наступна позиція →';
+}
+
+function renderFeedback() {
+  var box = byId('feedback');
+  var pos = state.pos;
+  var stepKey = currentStep();
+  var an = pos.an[stepKey];
+  var sel = state.selected;
+  var yes = {};
+  var items = [];
+  var i, sq, found, title, cls, html, lines, extra;
+
+  if (!state.answered) { box.hidden = true; return; }
+  for (i = 0; i < an.answer.length; i = i + 1) { yes[an.answer[i]] = true; }
+
+  found = 0;
+  for (i = 0; i < an.answer.length; i = i + 1) {
+    if (sel[an.answer[i]]) { found = found + 1; }
+  }
+
+  if (state.lastOk) {
+    title = (an.answer.length === 0 ? pick(PRAISE_NONE) : pick(PRAISE_OK)) + ' +' + state.lastPoints;
+    cls = 'good';
+  } else if (state.lastTimeout) {
+    title = 'Час вийшов. Перевіряй по черзі — і вистачить часу.';
+    cls = 'badc';
+  } else {
+    title = pick(ENCOURAGE);
+    cls = 'badc';
+  }
+
+  // спочатку знайдені й пропущені, потім зайві
+  for (i = 0; i < an.answer.length; i = i + 1) {
+    sq = an.answer[i];
+    items.push({ kind: sel[sq] ? 'ok' : 'miss', mark: sel[sq] ? '✓' : '!', text: explain(stepKey, an.info[sq]) });
+  }
+  for (sq in sel) {
+    if (sel[sq] && !yes[sq]) {
+      items.push({ kind: 'bad', mark: '✗', text: explain(stepKey, an.info[sq]) });
+    }
+  }
+  if (an.answer.length === 0 && items.length === 0) {
+    items.push({ kind: 'ok', mark: '✓', text: 'Тут ' + (stepKey === 'check' ? 'шахів' : (stepKey === 'capture' ? 'взять' : 'загроз')) + ' немає.' });
+  } else if (an.answer.length === 0 && state.lastTimeout) {
+    items.unshift({ kind: 'ok', mark: '✓', text: 'Тут ' + (stepKey === 'check' ? 'шахів' : (stepKey === 'capture' ? 'взять' : 'загроз')) + ' не було.' });
+  }
+
+  lines = '';
+  for (i = 0; i < items.length; i = i + 1) {
+    lines = lines + '<li class="' + items[i].kind + '"><span class="mk">' + items[i].mark + '</span><span>' +
+      items[i].text + '</span></li>';
+  }
+  html = '<h3 class="' + cls + '">' + title + '</h3>';
+  if (an.answer.length > 0) {
+    html = html + '<div class="found">Знайдено ' + found + ' з ' + an.answer.length + '.</div>';
+  }
+  html = html + '<ul>' + lines + '</ul>';
+  extra = (stepKey === 'threat') ? ', пунктир — б’ють, але вигоди немає' : '';
+  html = html + '<p class="legend">Зелена стрілка — знайдено, червона — пропущено' + extra + '.</p>';
+  box.innerHTML = html;
+  box.hidden = false;
+}
+
+function renderAll() {
+  var cfg = LEVELS[state.level - 1];
+  var pos = state.pos;
+  var stepKey = currentStep();
+  var info = STEP_INFO[stepKey];
+  var n = selectedList().length;
+  var intro;
+
+  byId('stPos').textContent = (state.posIndex + 1) + '/' + ROUND_LEN;
+  byId('stScore').textContent = String(state.score);
+  byId('stStreak').textContent = String(state.streak);
+
+  if (state.mode === 'eyes') {
+    intro = 'Очима суперника: ходять <b>' + (pos.me === 'w' ? 'білі' : 'чорні') + '</b>, ти — за них.';
+  } else {
+    intro = 'Ти граєш <b>' + (pos.me === 'w' ? 'білими' : 'чорними') + '</b> і ходиш.';
+  }
+  byId('stepTitle').textContent = 'Крок ' + (state.stepIndex + 1) + '/' + cfg.steps.length + ' · ' + info.name;
+  byId('task').innerHTML = intro + ' ' + STEP_TASK[stepKey];
+  byId('rule').textContent = STEP_RULE[stepKey];
+
+  byId('btnCheck').textContent = n > 0 ? ('Перевірити (' + n + ')') : 'Перевірити';
+  byId('btnCheck').disabled = (n === 0);
+  byId('btnNone').textContent = info.none;
+  byId('actions').hidden = state.answered;
+  byId('nextRow').hidden = !state.answered;
+  byId('btnNext').textContent = nextLabel();
+
+  renderSteps();
+  renderBoard();
+  renderFeedback();
+}
+
+// ---- запуск ----
+
+function init() {
+  loadStore();
+  if (typeof Chess === 'undefined') {
+    byId('noLib').hidden = false;
+    byId('menu').hidden = true;
+    return;
+  }
+  buildMenu();
+  byId('levelList').addEventListener('click', onMenuClick);
+  byId('modeList').addEventListener('click', onMenuClick);
+  byId('btnStart').addEventListener('click', startRound);
+  byId('btnMenu').addEventListener('click', showMenu);
+  byId('btnToMenu').addEventListener('click', showMenu);
+  byId('btnAgain').addEventListener('click', startRound);
+  byId('board').addEventListener('click', onBoardClick);
+  byId('btnCheck').addEventListener('click', function () { submitAnswer(false); });
+  byId('btnNone').addEventListener('click', function () {
+    state.selected = {};
+    submitAnswer(false);
+  });
+  byId('btnNext').addEventListener('click', onNext);
+}
+
+init();
+</script>
+</body>
+</html>
