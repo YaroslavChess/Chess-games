@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Урок</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #120f0b;
+    --bg-glow: #1c1712;
+    --panel: #1c1712;
+    --panel-2: #241d15;
+    --hairline: #3a3025;
+    --board-light: #ead9ba;
+    --board-dark: #86644a;
+    --board-dark-hi: #977252;
+    --frame: #0c0a08;
+    --text: #f1e9d8;
+    --text-dim: #b7a98e;
+    --text-faint: #7d7361;
+    --gold: #d8a94c;
+    --gold-soft: #f0cf8f;
+    --green: #2ecc71;
+    --green-soft: #a8e0bb;
+    --blocked-a: #443c30;
+    --blocked-b: #37312a;
+    --danger: #c96a4d;
+    --ink: #120f0b;
+    --on-gold: #241a08;
+    --gold-deep: #a9782c;
+    --frame-hi: #241b10;
+    --panel-hi: #2a2013;
+    --panel-hi-2: #3a2e1a;
+    --done-a: #3a4f3c;
+    --done-b: #2a3a2c;
+    --done-line: #4a6a4e;
+    --arrow-safe: #3b2f20;
+    --piece-w: #fbf5e6;
+    --piece-w-line: #241a0e;
+    --piece-b: #1b140d;
+    --piece-b-line: #e9dcc0;
+    --piece-w-a: #f1e9d8;
+    --piece-w-b: #f0cf8f;
+    --piece-b-a: #3a3025;
+    --piece-b-b: #120f0b;
+    --gold-rgb: 216, 169, 76;
+    --gold-dark-rgb: 160, 110, 30;
+    --green-rgb: 46, 204, 113;
+    --green-soft-rgb: 168, 224, 187;
+    --target-rgb: 87, 180, 122;
+    --danger-rgb: 201, 106, 77;
+    --overlay-rgb: 10, 8, 5;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-deep: 0 24px 60px -24px rgba(0,0,0,.75);
+  }
+
+  *{box-sizing:border-box;}
+  [hidden]{ display:none !important; }
+  body{
+    background:
+      radial-gradient(120% 90% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    min-height: 100%;
+    margin: 0;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 24px 18px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  header.top{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .title-block{ min-width:0; }
+  .title-block h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size: clamp(1.6rem, 1.2rem + 2vw, 2.3rem);
+    letter-spacing: -0.01em;
+    margin:0;
+    color: var(--gold-soft);
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+  .title-block p{ margin: 4px 0 0; color: var(--text-dim); font-size: .95rem; max-width: 52ch; }
+  .title-badge{ font-size: 2.1rem; line-height:1; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+  .title-row{ display:flex; align-items:center; gap:12px; }
+
+  /* картки й кнопки */
+  .card{ background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 18px; }
+  .card h2{ margin:0 0 12px; font-size:.78rem; text-transform: uppercase; letter-spacing:.09em; color: var(--text-faint); font-weight:700; }
+  .card p{ margin:0 0 10px; color: var(--text-dim); line-height:1.5; }
+  .card p:last-child{ margin-bottom:0; }
+  .narrow{ width: min(620px, 100%); margin: 0 auto; display:flex; flex-direction:column; gap:16px; }
+
+  .btn{
+    appearance:none;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text);
+    padding: 13px 18px;
+    border-radius: var(--radius-sm);
+    font-family:'Manrope', sans-serif;
+    font-weight:700;
+    font-size: 1.02rem;
+    cursor:pointer;
+    text-decoration:none;
+    transition: transform .12s ease, border-color .12s ease, background .12s ease, opacity .12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:hover:not(:disabled){ border-color: var(--gold); transform: translateY(-1px); }
+  .btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
+  .btn:disabled{ opacity:.35; cursor:default; }
+  .btn.primary{ background: linear-gradient(160deg, var(--gold), var(--gold-deep)); color: var(--on-gold); border-color: transparent; }
+  .btn.ghost{ background: transparent; }
+  .btn.wide{ width:100%; }
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .btn-row .btn{ flex: 1 1 140px; }
+
+  /* конструктор */
+  .field{ display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+  .field label{ font-weight:700; color: var(--text); font-size: 1rem; }
+  .field .note{ color: var(--text-faint); font-size:.85rem; }
+  .input{
+    width:100%;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-family:'Manrope', sans-serif;
+    font-size: 16px;
+  }
+  .input:focus{ outline: 2px solid var(--gold-soft); outline-offset: 1px; }
+  textarea.input{ min-height: 120px; resize: vertical; font-family:'JetBrains Mono', monospace; font-size: 14px; line-height:1.5; }
+  .link-out{ font-family:'JetBrains Mono', monospace; font-size: 13px; color: var(--gold-soft); }
+  .msg{ min-height: 1.4em; font-size:.95rem; color: var(--text-dim); margin: 0 0 12px; }
+  .msg.bad{ color: var(--danger); }
+  .msg.good{ color: var(--green-soft); }
+  .help li{ margin-bottom: 8px; color: var(--text-dim); line-height:1.5; }
+  .help code{ font-family:'JetBrains Mono', monospace; font-size:.85em; color: var(--gold-soft); overflow-wrap:anywhere; }
+  .help ul{ margin:0; padding-left: 20px; }
+
+  .review-card{ border-color: var(--gold); display:flex; flex-direction:column; gap:10px; }
+  .review-card p{ margin:0; }
+
+  /* завантаження й помилка */
+  .loading{ text-align:center; padding: 60px 10px; color: var(--text-dim); font-size: 1.1rem; }
+  .loading .spin{ display:block; font-size: 3rem; margin-bottom: 14px; animation: bob 1.2s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-10px); } }
+  .error-card{ border-color: var(--danger); }
+  .error-card .lead{ font-family:'Fraunces', Georgia, serif; font-weight:700; font-size:1.35rem; color: var(--danger); margin:0 0 8px; }
+  .error-card .hint{ font-size:.9rem; color: var(--text-faint); }
+  .error-card .hint code{ font-family:'JetBrains Mono', monospace; color: var(--gold-soft); }
+
+  /* список розділів */
+  .ch-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .ch-list li{ display:flex; align-items:center; gap:12px; padding: 10px 12px; background: var(--panel-2); border:1px solid var(--hairline); border-radius: var(--radius-sm); }
+  .ch-list .num{ font-family:'JetBrains Mono', monospace; font-weight:700; color: var(--text-faint); min-width: 1.6em; }
+  .ch-list .t{ flex:1; min-width:0; overflow-wrap:anywhere; }
+  .ch-list .chip{ font-size:.75rem; font-weight:800; color: var(--on-gold); background: var(--gold-soft); border-radius: 999px; padding: 2px 9px; white-space:nowrap; }
+  .ch-list .st{ color: var(--gold); letter-spacing:.08em; white-space:nowrap; }
+  .ch-list .st .off{ color: var(--hairline); }
+  .teacher-note{ font-size:.85rem; color: var(--text-faint); line-height:1.5; }
+
+  /* прогрес розділів */
+  .progress{ display:flex; gap:7px; flex-wrap:wrap; }
+  .pg-btn{
+    flex: 0 0 auto;
+    min-width: 40px; height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--hairline);
+    background: var(--panel-2);
+    color: var(--text-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size: .9rem;
+    cursor:pointer;
+    padding: 0 10px;
+  }
+  .pg-btn:focus-visible{ outline: 2px solid var(--gold-soft); outline-offset:2px; }
+  .pg-btn.done{ background: linear-gradient(160deg, var(--done-a), var(--done-b)); color: var(--green-soft); border-color: var(--done-line); }
+  .pg-btn.current{ background: linear-gradient(160deg, var(--gold), var(--gold-deep)); color: var(--on-gold); border-color: var(--gold-soft); box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.18); }
+
+  .ch-head{ display:flex; flex-direction:column; gap:2px; }
+  .ch-title{ font-family:'Fraunces', Georgia, serif; font-weight:600; font-size: 1.35rem; color: var(--text); margin:0; overflow-wrap:anywhere; }
+  .ch-sub{ color: var(--text-faint); font-size:.85rem; }
+
+  /* гра */
+  .play{ display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap; justify-content:center; }
+  .board-col{ display:flex; flex-direction:column; align-items:center; gap:10px; width: min(520px, 100%); }
+  .side{ width: min(400px, 100%); display:flex; flex-direction:column; gap:12px; }
+  .task-line{ display:flex; align-items:center; gap:10px; font-weight:700; color: var(--text-dim); min-height: 1.5em; }
+  .side-chip{ width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--hairline); flex: 0 0 auto; }
+  .side-chip.w{ background: var(--text); }
+  .side-chip.b{ background: var(--frame); border-color: var(--text-faint); }
+
+  .board-frame{
+    position:relative;
+    width: min(520px, 88vw);
+    padding: 22px 22px 30px 30px;
+    background: linear-gradient(160deg, var(--frame-hi), var(--frame) 70%);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-deep), inset 0 0 0 1px rgba(0,0,0,1);
+    touch-action: pan-y;
+  }
+  .board-wrap{
+    position:relative;
+    width:100%;
+    height:0;
+    padding-bottom:100%;
+    border-radius: var(--radius-sm);
+    overflow:hidden;
+    box-shadow: 0 0 0 1px rgba(0,0,0,1), 0 10px 30px -12px rgba(0,0,0,.7);
+  }
+  .board{
+    display:grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    position:absolute; top:0; right:0; bottom:0; left:0;
+    width:100%; height:100%;
+  }
+  .sq{ position:relative; border:none; padding:0; margin:0; font: inherit; cursor: pointer; display:block; -webkit-tap-highlight-color: transparent; }
+  .sq.light{ background: var(--board-light); }
+  .sq.dark{ background: var(--board-dark); }
+  .sq:focus-visible{ outline: 3px solid var(--gold-soft); outline-offset:-3px; z-index:3; }
+  .sq.last::before{ content:""; position:absolute; top:0; right:0; bottom:0; left:0; background: rgba(var(--gold-rgb),.38); }
+  .sq.check::before{ content:""; position:absolute; top:0; right:0; bottom:0; left:0; background: radial-gradient(circle, rgba(var(--danger-rgb),.95) 0%, rgba(var(--danger-rgb),.55) 45%, rgba(var(--danger-rgb),0) 75%); }
+  .sq.sel{ box-shadow: inset 0 0 0 100px rgba(var(--gold-rgb),.5); }
+  .sq.wrong::before{ content:""; position:absolute; top:0; right:0; bottom:0; left:0; background: rgba(var(--danger-rgb),.55); box-shadow: inset 0 0 0 3px var(--danger); }
+  .sq.dot::after{
+    content:""; position:absolute; left:50%; top:50%;
+    width:26%; height:26%;
+    transform: translate(-50%,-50%);
+    border-radius:50%;
+    background: rgba(var(--gold-rgb),.6);
+    box-shadow: 0 0 0 2px rgba(var(--gold-rgb),.25);
+  }
+  .sq.dot.cap::after{ width:86%; height:86%; background: transparent; box-shadow: inset 0 0 0 4px rgba(var(--gold-rgb),.7); }
+  .sq.dot.light::after{ background-color: rgba(var(--gold-dark-rgb),.5); }
+  .sq.dot.cap.light::after{ background-color: transparent; }
+
+  .pieces, .glyphs{ position:absolute; top:0; right:0; bottom:0; left:0; pointer-events:none; }
+  .pieces{ z-index:2; }
+  .glyphs{ z-index:5; }
+  .piece{
+    position:absolute;
+    width:12.5%; height:12.5%;
+    display:flex; align-items:center; justify-content:center;
+    line-height:1;
+    font-family:'DejaVu Sans','Segoe UI Symbol','Noto Sans Symbols 2','Apple Symbols','Arial Unicode MS',sans-serif;
+    transition: left .3s cubic-bezier(.31,1.2,.56,1), top .3s cubic-bezier(.31,1.2,.56,1), opacity .25s ease, transform .25s ease;
+    user-select:none;
+  }
+  .piece.w{ color: var(--text); -webkit-text-stroke: 1px var(--frame); text-shadow: 0 2px 3px rgba(0,0,0,.45); }
+  .piece.b{ color: var(--frame); -webkit-text-stroke: 1px var(--text-faint); text-shadow: 0 2px 3px rgba(0,0,0,.35); }
+  .piece.gone{ opacity:0; transform: scale(.4); }
+
+  .glyph{ position:absolute; width:12.5%; height:12.5%; }
+  .glyph span{
+    position:absolute; top:-2%; right:-2%;
+    min-width: 1.7em; height: 1.7em; padding: 0 .3em;
+    border-radius: 999px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace; font-weight:700;
+    box-shadow: 0 2px 6px rgba(0,0,0,.5);
+  }
+  .glyph.good span{ background: var(--green); color: var(--ink); }
+  .glyph.bad span{ background: var(--danger); color: var(--text); }
+  .glyph.int span{ background: var(--gold); color: var(--on-gold); }
+
+  /* стрілки й кола з Lichess: G — зелений, R — червоний, Y — жовтий, B — світлий */
+  .shapes{ position:absolute; top:0; right:0; bottom:0; left:0; width:100%; height:100%; pointer-events:none; z-index:4; }
+  .shp{ opacity:.82; }
+  .shp line{ stroke-width:.17; stroke-linecap: round; }
+  .shp circle{ fill:none; stroke-width:.075; }
+  .shp-G line, .shp-G circle{ stroke: var(--green); }
+  .shp-G polygon{ fill: var(--green); }
+  .shp-R line, .shp-R circle{ stroke: var(--danger); }
+  .shp-R polygon{ fill: var(--danger); }
+  .shp-Y line, .shp-Y circle{ stroke: var(--gold); }
+  .shp-Y polygon{ fill: var(--gold); }
+  .shp-B line, .shp-B circle{ stroke: var(--text); }
+  .shp-B polygon{ fill: var(--text); }
+  .shapes{ filter: drop-shadow(0 0 1px rgba(0,0,0,.6)); }
+
+  .ranks, .files{ position:absolute; display:flex; color: var(--text-faint); font-family:'JetBrains Mono', monospace; font-size: 11px; font-weight:700; }
+  .files{ left:30px; right:22px; bottom:9px; justify-content:space-around; }
+  .ranks{ top:22px; bottom:30px; left:10px; flex-direction:column; justify-content:space-around; }
+
+  /* бульбашка з коментарем */
+  .bubble{
+    position:relative;
+    background: var(--panel-hi);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    min-height: 92px;
+  }
+  .bubble::before{
+    content:""; position:absolute; top:-9px; left:34px;
+    width:16px; height:16px;
+    background: var(--panel-hi);
+    border-left: 1px solid var(--hairline);
+    border-top: 1px solid var(--hairline);
+    transform: rotate(45deg);
+  }
+  .b-move{ font-family:'JetBrains Mono', monospace; font-weight:700; color: var(--gold-soft); font-size: 1rem; margin-bottom: 6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .b-move .fig{ font-family:'DejaVu Sans','Segoe UI Symbol','Noto Sans Symbols 2',sans-serif; }
+  .var-chip{ font-family:'Manrope', sans-serif; font-size:.72rem; font-weight:800; color: var(--text-dim); border: 1px solid var(--hairline); border-radius: 999px; padding: 1px 8px; }
+  .b-text{ font-size: 1.22rem; line-height: 1.5; font-weight:600; color: var(--text); white-space: pre-line; overflow-wrap:anywhere; }
+  .b-note{ margin-top: 8px; font-size:.92rem; color: var(--text-faint); }
+  .quiz{ margin-top: 12px; display:flex; flex-direction:column; gap:8px; }
+  .quiz-q{ font-family:'Fraunces', Georgia, serif; font-weight:700; font-size: 1.25rem; color: var(--gold-soft); }
+  .quiz-opt{ justify-content:flex-start; text-align:left; font-size: 1.05rem; width:100%; }
+  .quiz-opt.yes{ border-color: var(--green); background: rgba(var(--green-rgb),.18); color: var(--green-soft); opacity:1; }
+  .quiz-opt.no{ border-color: var(--danger); color: var(--danger); text-decoration: line-through; }
+  .feedback{ margin-top: 10px; font-size: 1.08rem; font-weight:700; white-space: pre-line; }
+  .feedback.good{ color: var(--green-soft); }
+  .feedback.bad{ color: var(--danger); }
+  .feedback .stars{ display:block; font-size: 1.8rem; color: var(--gold); letter-spacing:.1em; }
+  .stars .off{ color: var(--hairline); }
+
+  .nav-row{ display:flex; gap:10px; }
+  .nav-row .btn{ flex:1; font-size: 1.6rem; padding: 8px 10px; min-height: 56px; }
+  .side .btn.wide{ min-height: 52px; }
+
+  /* підсумок */
+  .end-card{ text-align:center; display:flex; flex-direction:column; gap:12px; border-color: var(--gold); }
+  .end-card h2{ font-family:'Fraunces', Georgia, serif; font-size: 1.8rem; text-transform:none; letter-spacing:0; color: var(--gold-soft); margin:0; font-weight:700; }
+  .big-stars{ font-size: 2.6rem; letter-spacing:.12em; color: var(--gold); line-height:1.1; }
+  .score-big{ font-family:'JetBrains Mono', monospace; font-weight:700; font-size: 1.2rem; color: var(--text); }
+  .end-card .sub{ color: var(--text-dim); }
+
+  .confetti{ position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; overflow:hidden; z-index:50; }
+  .cf{ position:absolute; top:-20px; width:9px; height:14px; border-radius:2px; animation-name: cf-fall; animation-timing-function: linear; animation-fill-mode: forwards; }
+  .cf.c0{ background: var(--gold); }
+  .cf.c1{ background: var(--green); }
+  .cf.c2{ background: var(--danger); }
+  .cf.c3{ background: var(--gold-soft); }
+  .cf.c4{ background: var(--text); }
+  @keyframes cf-fall{
+    0%{ transform: translate(0, 0) rotate(0deg); }
+    100%{ transform: translate(var(--dx, 0px), 110vh) rotate(var(--rot, 540deg)); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .piece{ transition:none; }
+    .loading .spin{ animation:none; }
+    .confetti{ display:none; }
+  }
+
+  @media (min-width: 980px){
+    .bubble::before{ display:none; }
+  }
+
+  @media (max-width: 560px){
+    .wrap{ padding: 18px 14px 40px; gap: 14px; }
+    .board-frame{ padding: 16px 16px 24px 24px; }
+    .files{ left:24px; right:16px; }
+    .ranks{ top:16px; bottom:24px; }
+    .b-text{ font-size: 1.12rem; }
+  }
+</style>
+<script src="../theme/theme.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="title-block">
+      <div class="title-row">
+        <span class="title-badge" aria-hidden="true">&#9815;&#65038;</span>
+        <h1 id="title">Урок</h1>
+      </div>
+      <p id="subtitle"></p>
+    </div>
+  </header>
+
+  <!-- Конструктор посилання (сторінка без параметрів) -->
+  <section id="screenBuilder" class="narrow" hidden>
+    <div id="builderReview"></div>
+    <div class="card">
+      <div class="field">
+        <label for="srcInput">Встав посилання на студію, розділ або задачі Lichess</label>
+        <textarea id="srcInput" class="input" spellcheck="false" autocomplete="off"
+          placeholder="https://lichess.org/study/abcd1234&#10;&#10;або задачі, по одній на рядок:&#10;https://lichess.org/training/K69di"></textarea>
+        <span class="note">Задачі — по одній на рядок.</span>
+      </div>
+      <div class="field">
+        <label for="nameInput">Ім’я учня (необов’язково)</label>
+        <input id="nameInput" class="input" type="text" maxlength="60" autocomplete="off" placeholder="Наприклад, Оля">
+        <span class="note">З ім’ям результат уроку потрапить у таблицю тренера.</span>
+      </div>
+      <p class="msg" id="builderMsg" aria-live="polite"></p>
+      <div id="linkBox" hidden>
+        <div class="field">
+          <label for="linkOut">Готове посилання</label>
+          <input id="linkOut" class="input link-out" type="text" readonly>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="copyBtn" type="button">Скопіювати</button>
+          <a class="btn" id="openLink" href="#" target="_blank" rel="noopener">Відкрити</a>
+        </div>
+      </div>
+    </div>
+    <div class="card help">
+      <h2>Як підготувати урок</h2>
+      <ul>
+        <li>Студія на Lichess: доступ «Публічна» або «За посиланням».</li>
+        <li>Кожен розділ — окремий екран. Коментарі, стрілки, підсвітки й варіанти — як у студії.</li>
+        <li>Розділ «Інтерактивний урок» або з назвою «Задача…» — учень ходить сам.</li>
+        <li>Питання «Навіщо?» — коментар до ходу:<br><code>? Навіщо цей хід? | Захистити пішака | *Атакувати ферзя | Розвинути коня</code><br>Правильну відповідь познач зірочкою *.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="screenLoading" class="loading" aria-live="polite">
+    <span class="spin" aria-hidden="true">&#9822;&#65038;</span>
+    <span id="loadingText">Завантаження…</span>
+  </section>
+
+  <section id="screenError" class="narrow" hidden>
+    <div class="card error-card">
+      <p class="lead">Урок не завантажився</p>
+      <p id="errText"></p>
+      <div class="btn-row"><button class="btn primary" id="retryBtn" type="button">Спробувати ще</button></div>
+      <p class="hint" id="errHint" hidden>Для тренера: якщо Lichess не відповідає, збережи PGN студії у файл
+        <code>lessons/назва.pgn</code> у репозиторії й дай учню посилання з <code>?pgn=назва</code>.</p>
+    </div>
+  </section>
+
+  <!-- Головний екран уроку -->
+  <section id="screenIntro" class="narrow" hidden>
+    <div id="introReview"></div>
+    <div class="card">
+      <h2 id="introCount">Розділи</h2>
+      <ol class="ch-list" id="introList"></ol>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" id="startBtn" type="button">Почати</button>
+      <button class="btn" id="mixBtn" type="button">Перемішати задачі</button>
+    </div>
+    <p class="teacher-note" id="introNotes" hidden></p>
+  </section>
+
+  <!-- Плеєр -->
+  <section id="screenPlay" hidden>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <nav class="progress" id="progress" aria-label="Розділи уроку"></nav>
+      <div class="ch-head">
+        <h2 class="ch-title" id="chTitle"></h2>
+        <span class="ch-sub" id="chSub"></span>
+      </div>
+      <main class="play">
+        <div class="board-col" id="boardCol">
+          <div class="task-line" id="taskLine"><span class="side-chip w" id="sideChip" hidden></span><span id="taskText"></span></div>
+          <div class="board-frame">
+            <div class="board-wrap">
+              <div class="board" id="board" role="grid" aria-label="Шахова дошка"></div>
+              <div class="pieces" id="pieces" aria-hidden="true"></div>
+              <svg class="shapes" id="shapes" viewBox="0 0 8 8" aria-hidden="true"></svg>
+              <div class="glyphs" id="glyphs" aria-hidden="true"></div>
+            </div>
+            <div class="ranks" id="ranks"></div>
+            <div class="files" id="files"></div>
+          </div>
+        </div>
+        <div class="side">
+          <div class="bubble" id="bubble" aria-live="polite">
+            <div class="b-move" id="bMove"></div>
+            <div class="b-text" id="bText"></div>
+            <div class="b-note" id="bNote" hidden></div>
+            <div class="quiz" id="quiz" hidden></div>
+            <div class="feedback" id="feedback" hidden></div>
+          </div>
+          <div class="nav-row" id="navRow">
+            <button class="btn" id="prevBtn" type="button" aria-label="Хід назад">&larr;</button>
+            <button class="btn" id="nextBtn" type="button" aria-label="Хід вперед">&rarr;</button>
+          </div>
+          <button class="btn wide" id="altBtn" type="button" hidden>Інший варіант</button>
+          <button class="btn primary wide" id="chapterNextBtn" type="button" hidden>Далі &rarr;</button>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- Підсумок -->
+  <section id="screenEnd" class="narrow" hidden>
+    <div class="card end-card">
+      <h2 id="endTitle">Урок пройдено!</h2>
+      <div class="big-stars" id="endStars"></div>
+      <div class="score-big" id="endScore"></div>
+      <div class="sub" id="endSub"></div>
+    </div>
+    <div class="card">
+      <h2>Розділи</h2>
+      <ol class="ch-list" id="endList"></ol>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" id="againBtn" type="button">Пройти ще раз</button>
+      <button class="btn" id="homeBtn" type="button">На головну</button>
+    </div>
+  </section>
+</div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+<script>
+/* LESSON:START */
+// ---------- Розбір уроку: PGN, задачі Lichess, посилання ----------
+// Тут немає малювання — лише дані. Кожен хід перевіряє chess.js (глобальний Chess).
+// Координати — з боку білих (a1 внизу ліворуч).
+//
+// Урок = { title, chapters: [розділ], errors: [текст для тренера] }
+// Розділ = { title, root, puzzle, player, flip, scored, errors }
+//   root — дерево ходів. Вузол = { fen, san, from, to, color, comment, arrows, circles,
+//   nags, question, parent, children }. children[0] — головна лінія, решта — варіанти.
+
+var START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+var FILES = 'abcdefgh';
+var GLYPH_NAG = { '!': 1, '?': 2, '!!': 3, '??': 4, '!?': 5, '?!': 6 };
+var NAG_GLYPH = { 1: '!', 2: '?', 3: '!!', 4: '??', 5: '!?', 6: '?!' };
+var FIGURINE = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' };
+var REVIEW_DAYS = [1, 3, 7];
+
+// ----- Токени PGN -----
+function tokenizePgn(text) {
+  var out = [], i = 0, n, c, j, inQ;
+  text = String(text || '');
+  n = text.length;
+  while (i < n) {
+    c = text.charAt(i);
+    if (/\s/.test(c) || c === '\ufeff') { i++; continue; }
+    if (c === '{') {
+      j = text.indexOf('}', i + 1);
+      if (j < 0) { j = n; }
+      out.push({ t: 'comment', v: text.substring(i + 1, j) });
+      i = j + 1;
+      continue;
+    }
+    if (c === ';') {
+      j = text.indexOf('\n', i);
+      if (j < 0) { j = n; }
+      out.push({ t: 'comment', v: text.substring(i + 1, j) });
+      i = j;
+      continue;
+    }
+    if (c === '%' && (i === 0 || text.charAt(i - 1) === '\n')) {
+      j = text.indexOf('\n', i);
+      i = (j < 0) ? n : j;
+      continue;
+    }
+    if (c === '[') {
+      j = i + 1;
+      inQ = false;
+      while (j < n) {
+        if (inQ && text.charAt(j) === '\\') { j += 2; continue; }
+        if (text.charAt(j) === '"') { inQ = !inQ; }
+        else if (text.charAt(j) === ']' && !inQ) { break; }
+        j++;
+      }
+      out.push({ t: 'tag', v: text.substring(i, j + 1) });
+      i = j + 1;
+      continue;
+    }
+    if (c === '(' || c === ')') { out.push({ t: c }); i++; continue; }
+    if (c === '$') {
+      j = i + 1;
+      while (j < n && /[0-9]/.test(text.charAt(j))) { j++; }
+      out.push({ t: 'nag', v: parseInt(text.substring(i + 1, j), 10) || 0 });
+      i = j;
+      continue;
+    }
+    j = i;
+    while (j < n && !/[\s{}();\[\]$]/.test(text.charAt(j))) { j++; }
+    if (j === i) { i++; continue; } // зайвий символ — пропускаємо
+    addWordTokens(out, text.substring(i, j));
+    i = j;
+  }
+  return out;
+}
+
+// Слово з PGN: результат, номер ходу, хід зі знаком (!, ?, !!, ??, !?, ?!).
+function addWordTokens(out, word) {
+  var m;
+  if (word === '1-0' || word === '0-1' || word === '1/2-1/2' || word === '*') {
+    out.push({ t: 'result', v: word });
+    return;
+  }
+  m = /^\d+\.+(.*)$/.exec(word);
+  if (m) { word = m[1]; }
+  if (word === '' || /^\d+$/.test(word) || /^\.+$/.test(word)) { return; }
+  m = /^(.*?)([!?]{1,2})$/.exec(word);
+  if (m) {
+    if (m[1]) { out.push({ t: 'move', v: m[1] }); }
+    if (GLYPH_NAG[m[2]]) { out.push({ t: 'nag', v: GLYPH_NAG[m[2]] }); }
+    return;
+  }
+  out.push({ t: 'move', v: word });
+}
+
+// Ділить токени на партії (розділи): теги + ходи до результату.
+function splitGames(tokens) {
+  var games = [], g = null, i, tk, m;
+  for (i = 0; i < tokens.length; i++) {
+    tk = tokens[i];
+    if (tk.t === 'tag') {
+      if (!g || g.ended || g.moves.length) { g = { tags: {}, moves: [], ended: false }; games.push(g); }
+      m = /^\[\s*([A-Za-z0-9_]+)\s+"((?:[^"\\]|\\.)*)"\s*\]$/.exec(tk.v);
+      if (m) { g.tags[m[1]] = m[2].replace(/\\(["\\])/g, '$1'); }
+      continue;
+    }
+    if (!g || g.ended) { g = { tags: {}, moves: [], ended: false }; games.push(g); }
+    if (tk.t === 'result') { g.ended = true; continue; }
+    g.moves.push(tk);
+  }
+  var out = [];
+  for (i = 0; i < games.length; i++) {
+    for (m in games[i].tags) { if (games[i].tags.hasOwnProperty(m)) { out.push(games[i]); break; } }
+    if (out[out.length - 1] !== games[i] && games[i].moves.length) { out.push(games[i]); }
+  }
+  return out;
+}
+
+// Коментар: текст, стрілки [%cal Ge2e4], підсвітки [%csl Rd5], питання «Навіщо?».
+function parseComment(raw) {
+  var res = { text: '', arrows: [], circles: [], question: null };
+  var text = String(raw || '').replace(/\[%(\w+)\s*([^\]]*)\]/g, function (all, cmd, args) {
+    var list = args.split(','), i, s, m;
+    for (i = 0; i < list.length; i++) {
+      s = list[i].replace(/\s+/g, '');
+      if (cmd === 'cal') {
+        m = /^([GRYB])([a-h][1-8])([a-h][1-8])$/.exec(s);
+        if (m && m[2] !== m[3]) { res.arrows.push({ c: m[1], from: m[2], to: m[3] }); }
+      } else if (cmd === 'csl') {
+        m = /^([GRYB])([a-h][1-8])$/.exec(s);
+        if (m) { res.circles.push({ c: m[1], sq: m[2] }); }
+      }
+    }
+    return ' ';
+  });
+  text = text.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/^\s+|\s+$/g, '');
+  res.question = parseQuestion(text);
+  if (!res.question) { res.text = text; }
+  return res;
+}
+
+// «? Навіщо цей хід? | Захистити пішака | *Атакувати ферзя» -> питання з варіантами.
+function parseQuestion(text) {
+  var parts, q, opts = [], i, s, okCount = 0;
+  if (text.charAt(0) !== '?' || text.indexOf('|') < 0) { return null; }
+  parts = text.substring(1).split('|');
+  q = parts[0].replace(/^\s+|\s+$/g, '');
+  for (i = 1; i < parts.length; i++) {
+    s = parts[i].replace(/^\s+|\s+$/g, '');
+    if (!s) { continue; }
+    if (s.charAt(0) === '*') {
+      s = s.substring(1).replace(/^\s+/, '');
+      opts.push({ text: s, ok: true });
+      okCount++;
+    } else {
+      opts.push({ text: s, ok: false });
+    }
+  }
+  if (!q || opts.length < 2 || okCount < 1) { return null; }
+  return { q: q, options: opts };
+}
+
+function addComment(target, c) {
+  if (c.text) { target.comment = target.comment ? target.comment + '\n' + c.text : c.text; }
+  target.arrows = target.arrows.concat(c.arrows);
+  target.circles = target.circles.concat(c.circles);
+  if (c.question) { target.question = c.question; }
+}
+
+var nodeSeq = 0;
+function makeRoot(chess) {
+  return {
+    id: ++nodeSeq, parent: null, children: [], fen: chess.fen(), san: '',
+    check: chess.in_check(), comment: '', arrows: [], circles: [], nags: [], question: null
+  };
+}
+
+// Новий хід після вузла parent. chess — позиція вже ПІСЛЯ ходу m.
+function addChild(parent, chess, m) {
+  var node = {
+    id: ++nodeSeq, parent: parent, children: [], fen: chess.fen(),
+    san: m.san, from: m.from, to: m.to, color: m.color, flags: m.flags, promotion: m.promotion || '',
+    moveNo: parseInt(parent.fen.split(' ')[5], 10) || 1,
+    check: chess.in_check(), mate: chess.in_checkmate(),
+    comment: '', arrows: [], circles: [], nags: [], question: null
+  };
+  parent.children.push(node);
+  return node;
+}
+
+function cleanSan(san) {
+  return String(san).replace(/^0-0-0/, 'O-O-O').replace(/^0-0/, 'O-O').replace(/e\.p\.$/, '');
+}
+
+function uciToMove(u) {
+  u = String(u || '');
+  return { from: u.substring(0, 2), to: u.substring(2, 4), promotion: u.length > 4 ? u.charAt(4) : undefined };
+}
+
+function moveNoText(node) {
+  var parts = node.fen.split(' ');
+  return parts[5] + (parts[1] === 'w' ? '. ' : '... ');
+}
+
+// Дерево ходів одного розділу. Неможливий хід — помилка, решта цього варіанту пропускається.
+function buildTree(game) {
+  var chess = new Chess(), fen = game.tags.FEN, tokens = game.moves;
+  var res = { root: null, errors: [] };
+  if (fen && !chess.load(fen)) {
+    res.errors.push('неправильна позиція FEN: ' + fen);
+    return res;
+  }
+  var root = makeRoot(chess);
+  var cur = root, prev = null, stack = [], pending = null, dead = 0, i, tk, m, node, top, c;
+  res.root = root;
+  for (i = 0; i < tokens.length; i++) {
+    tk = tokens[i];
+    if (dead) {
+      if (tk.t === '(') { dead++; }
+      else if (tk.t === ')') {
+        if (dead > 1) { dead--; }
+        else if (stack.length) { top = stack.pop(); cur = top.cur; prev = top.prev; dead = 0; }
+      }
+      continue;
+    }
+    if (tk.t === '(') {
+      stack.push({ cur: cur, prev: prev });
+      if (prev && prev.parent) { cur = prev.parent; }
+      prev = null;
+      pending = null;
+    } else if (tk.t === ')') {
+      top = stack.pop();
+      if (top) { cur = top.cur; prev = top.prev; }
+      pending = null;
+    } else if (tk.t === 'comment') {
+      c = parseComment(tk.v);
+      if (prev) { addComment(prev, c); }
+      else if (cur === root && !stack.length) { addComment(root, c); }
+      else {
+        if (!pending) { pending = { comment: '', arrows: [], circles: [], question: null }; }
+        addComment(pending, c);
+      }
+    } else if (tk.t === 'nag') {
+      if (prev && NAG_GLYPH[tk.v]) { prev.nags.push(tk.v); }
+    } else if (tk.t === 'move') {
+      chess.load(cur.fen);
+      m = chess.move(cleanSan(tk.v), { sloppy: true });
+      if (!m) {
+        res.errors.push('хід ' + moveNoText(cur) + tk.v + ' неможливий, далі цей варіант пропущено');
+        dead = 1;
+        continue;
+      }
+      node = addChild(cur, chess, m);
+      if (pending) {
+        addComment(node, { text: pending.comment, arrows: pending.arrows, circles: pending.circles, question: pending.question });
+        pending = null;
+      }
+      cur = node;
+      prev = node;
+    }
+  }
+  return res;
+}
+
+function hasQuestion(node) {
+  var i;
+  if (node.question) { return true; }
+  for (i = 0; i < node.children.length; i++) { if (hasQuestion(node.children[i])) { return true; } }
+  return false;
+}
+
+// orient — 'w', 'b' або null (немає тегу Orientation).
+function makeChapter(title, root, orient, gamebook) {
+  var turn = root.fen.split(' ')[1];
+  var puzzle = (gamebook || /^\s*задача/i.test(title)) && root.children.length > 0;
+  var player = orient || turn;
+  return {
+    title: title, root: root, puzzle: puzzle, player: player,
+    flip: (puzzle ? player : (orient || 'w')) === 'b',
+    scored: puzzle || hasQuestion(root), errors: []
+  };
+}
+
+function cleanTag(v) {
+  v = String(v || '').replace(/^\s+|\s+$/g, '');
+  return (v === '?' || v === '-') ? '' : v;
+}
+
+function orientOf(tag) {
+  tag = String(tag || '').toLowerCase();
+  return tag === 'black' ? 'b' : (tag === 'white' ? 'w' : null);
+}
+
+// Увесь PGN (студія, розділ або файл) -> урок.
+function parseLesson(text) {
+  var games = splitGames(tokenizePgn(text));
+  var lesson = { title: '', chapters: [], errors: [] }, i, j, g, t, ev, cut, title, tree, ch;
+  for (i = 0; i < games.length; i++) {
+    g = games[i];
+    t = g.tags;
+    ev = cleanTag(t.Event);
+    cut = ev.indexOf(': ');
+    title = cleanTag(t.ChapterName) || (cut > 0 ? ev.substring(cut + 2) : ev) || ('Розділ ' + (i + 1));
+    if (!lesson.title) { lesson.title = cleanTag(t.StudyName) || (cut > 0 ? ev.substring(0, cut) : ''); }
+    tree = buildTree(g);
+    if (!tree.root) {
+      lesson.errors.push('«' + title + '»: ' + tree.errors.join('; '));
+      continue;
+    }
+    ch = makeChapter(title, tree.root, orientOf(t.Orientation), String(t.ChapterMode || '').toLowerCase() === 'gamebook');
+    ch.errors = tree.errors;
+    for (j = 0; j < tree.errors.length; j++) { lesson.errors.push('«' + title + '»: ' + tree.errors[j]); }
+    lesson.chapters.push(ch);
+  }
+  return lesson;
+}
+
+// Відповідь https://lichess.org/api/puzzle/<id> -> розділ-задача.
+// Позиція — партія до initialPly (включно з останнім ходом суперника), розв'язок — solution.
+function puzzleToChapter(data, n) {
+  var game = data && data.game, pz = data && data.puzzle;
+  if (!game || !pz || !pz.solution || !pz.solution.length) { return null; }
+  var words = String(game.pgn || '').split(/\s+/), moves = [], i, j, k, w;
+  for (i = 0; i < words.length; i++) {
+    w = words[i].replace(/^\d+\.+/, '');
+    if (w && !/^(1-0|0-1|1\/2-1\/2|\*)$/.test(w)) { moves.push(w); }
+  }
+  var ip = parseInt(pz.initialPly, 10), counts = [ip + 1, ip, moves.length];
+  var chess = new Chess(), found = false, last = null, m, ok;
+  for (k = 0; k < counts.length && !found; k++) {
+    if (!(counts[k] >= 0) || counts[k] > moves.length) { continue; }
+    chess.reset();
+    last = null;
+    ok = true;
+    for (j = 0; j < counts[k]; j++) {
+      last = chess.move(cleanSan(moves[j]), { sloppy: true });
+      if (!last) { ok = false; break; }
+    }
+    if (ok && chess.move(uciToMove(pz.solution[0]))) { chess.undo(); found = true; }
+  }
+  if (!found) { return null; }
+  var root = makeRoot(chess), cur = root;
+  if (last) { root.lastFrom = last.from; root.lastTo = last.to; }
+  for (j = 0; j < pz.solution.length; j++) {
+    m = chess.move(uciToMove(pz.solution[j]));
+    if (!m) { break; }
+    cur = addChild(cur, chess, m);
+  }
+  var ch = makeChapter('Задача ' + n, root, null, true);
+  ch.puzzleId = String(pz.id || '');
+  return ch;
+}
+
+// ----- Конструктор: що вставив тренер -----
+// Повертає { study, ch, puzzles: [], pgn, error, empty }.
+function parseSourceInput(text) {
+  var words = String(text || '').split(/[\s,]+/), res = { study: '', ch: '', puzzles: [], pgn: '', error: '', empty: true };
+  var i, w, m, bad = [];
+  for (i = 0; i < words.length; i++) {
+    w = words[i];
+    if (!w) { continue; }
+    res.empty = false;
+    m = /lichess\.org\/study\/(?:embed\/)?([A-Za-z0-9]{8})(?:\/([A-Za-z0-9]{8}))?/.exec(w);
+    if (m) {
+      if (res.study && res.study !== m[1]) { res.error = 'Тут дві різні студії. Встав одну.'; return res; }
+      if (res.study && res.ch !== (m[2] || '')) { res.ch = ''; } else { res.ch = m[2] || ''; }
+      res.study = m[1];
+      continue;
+    }
+    m = /lichess\.org\/training\/(?:[A-Za-z0-9_-]+\/)*([A-Za-z0-9]{5})(?![A-Za-z0-9])/.exec(w) || /^([A-Za-z0-9]{5})$/.exec(w);
+    if (m) {
+      if (res.puzzles.indexOf(m[1]) < 0) { res.puzzles.push(m[1]); }
+      continue;
+    }
+    m = /^(?:lessons\/)?([A-Za-z0-9_-]+)\.pgn$/.exec(w);
+    if (m) { res.pgn = m[1]; continue; }
+    bad.push(w);
+  }
+  if (bad.length) { res.error = 'Не розумію: ' + bad.slice(0, 3).join(' ') + '. Встав посилання з lichess.org.'; return res; }
+  if ((res.study ? 1 : 0) + (res.puzzles.length ? 1 : 0) + (res.pgn ? 1 : 0) > 1) {
+    res.error = 'Встав щось одне: студію, розділ або задачі.';
+  }
+  return res;
+}
+
+function buildQuery(src, student) {
+  var q = '';
+  if (src.study) { q = 'study=' + src.study + (src.ch ? '&ch=' + src.ch : ''); }
+  else if (src.puzzles.length) { q = 'puzzles=' + src.puzzles.join(','); }
+  else if (src.pgn) { q = 'pgn=' + encodeURIComponent(src.pgn); }
+  student = String(student || '').replace(/^\s+|\s+$/g, '');
+  if (q && student) { q += '&s=' + encodeURIComponent(student.substring(0, 60)); }
+  return q;
+}
+
+// ----- Допоміжне для показу -----
+function fenPos(fen) {
+  var rows = String(fen).split(' ')[0].split('/'), pos = {}, r, i, f, c;
+  for (r = 0; r < 8 && r < rows.length; r++) {
+    f = 0;
+    for (i = 0; i < rows[r].length; i++) {
+      c = rows[r].charAt(i);
+      if (/[1-8]/.test(c)) { f += parseInt(c, 10); }
+      else {
+        pos[FILES.charAt(f) + (8 - r)] = { type: c.toLowerCase(), color: (c === c.toUpperCase()) ? 'w' : 'b' };
+        f++;
+      }
+    }
+  }
+  return pos;
+}
+
+function turnOf(node) { return node.fen.split(' ')[1]; }
+
+function isMainline(node) {
+  while (node.parent) {
+    if (node.parent.children[0] !== node) { return false; }
+    node = node.parent;
+  }
+  return true;
+}
+
+// Кінець варіанту -> куди повернутись у головну лінію (хід, який замінив варіант).
+function returnPoint(node) {
+  var n = node;
+  while (n.parent) {
+    if (n.parent.children[0] !== n) { return n.parent.children[0]; }
+    n = n.parent;
+  }
+  return null;
+}
+
+function figurine(san) {
+  return String(san).replace(/[KQRBN]/g, function (ch) { return FIGURINE[ch]; });
+}
+
+function glyphsOf(node) {
+  var s = '', i;
+  for (i = 0; i < node.nags.length; i++) { if (NAG_GLYPH[node.nags[i]]) { s += NAG_GLYPH[node.nags[i]]; } }
+  return s;
+}
+
+function moveLabel(node) {
+  return node.moveNo + (node.color === 'w' ? '. ' : '... ') + figurine(node.san) + glyphsOf(node);
+}
+
+function starsFor(mistakes) {
+  if (mistakes <= 0) { return 3; }
+  if (mistakes === 1) { return 2; }
+  return 1;
+}
+
+// ----- Повторення задач з помилками: через 1, 3 і 7 днів -----
+function dayNumber(date) {
+  return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
+}
+
+function reviewDue(item, today) {
+  return item.stage < REVIEW_DAYS.length && today >= item.day + REVIEW_DAYS[item.stage];
+}
+
+// Після повторення: без помилок — наступний етап, з помилками — усе спочатку.
+// Повертає false, коли задачу вже не треба повторювати.
+function reviewAfter(item, mistakes, today) {
+  if (mistakes > 0) { item.day = today; item.stage = 0; }
+  else { item.stage++; }
+  return item.stage < REVIEW_DAYS.length;
+}
+
+function mainlineUci(root) {
+  var out = [], n = root.children[0];
+  while (n) { out.push(n.from + n.to + (n.promotion || '')); n = n.children[0]; }
+  return out;
+}
+
+function chapterToItem(ch, lessonTitle, today) {
+  var line = [], n = ch.root.children[0];
+  while (n) {
+    line.push({ u: n.from + n.to + (n.promotion || ''), c: n.comment || '' });
+    n = n.children[0];
+  }
+  return {
+    key: ch.root.fen + '|' + mainlineUci(ch.root).join(' '),
+    title: ch.title, lesson: lessonTitle || '', fen: ch.root.fen, rc: ch.root.comment || '',
+    player: ch.player, flip: !!ch.flip, line: line, day: today, stage: 0
+  };
+}
+
+function itemToChapter(it) {
+  var chess = new Chess(), root, cur, i, m;
+  if (!it || typeof it.fen !== 'string' || !it.line || !it.line.length || !chess.load(it.fen)) { return null; }
+  root = makeRoot(chess);
+  root.comment = String(it.rc || '');
+  cur = root;
+  for (i = 0; i < it.line.length; i++) {
+    m = chess.move(uciToMove(it.line[i].u));
+    if (!m) { break; }
+    cur = addChild(cur, chess, m);
+    cur.comment = String(it.line[i].c || '');
+  }
+  if (!root.children.length) { return null; }
+  return {
+    title: String(it.title || 'Задача'), root: root, puzzle: true, player: it.player === 'b' ? 'b' : 'w',
+    flip: !!it.flip, scored: true, errors: [], reviewKey: it.key
+  };
+}
+/* LESSON:END */
+</script>
+
+<script>
+// ---------- Інтерфейс ----------
+// Адреса Google Apps Script (та сама, що в english/unit2, див. english/SETUP.md).
+// Порожньо — результати не надсилаються. Надсилаються лише з ?s=<ім'я> у посиланні.
+var SHEET_URL = '';
+
+var LICHESS = 'https://lichess.org';
+var REVIEW_KEY = 'lesson-review-v1';
+var REPLY_MS = 500;      // суперник відповідає за 0.5 с
+var MAX_TRIES = 3;       // спроб на хід, потім показуємо правильний
+var PIECE_GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+var NAME_NOM = { k: 'король', q: 'ферзь', r: 'тура', b: 'слон', n: 'кінь', p: 'пішак' };
+
+var params = readParams();
+var app = {
+  loaded: null,      // урок, завантажений за посиланням
+  lesson: null,      // урок, що зараз грається (може бути «Повторення»)
+  kind: 'lesson',    // 'lesson' | 'mix' | 'review'
+  order: [], pos: 0, results: [], sent: false, newReview: 0,
+  chapter: null, node: null, flip: false,
+  mistakes: 0, tries: 0, solved: true, busy: false,
+  selected: null, legalTo: {}, feedback: null, hint: null,
+  qState: {}, afterQuiz: null, animating: false
+};
+var timers = [];
+var pieceEls = {};
+
+function byId(id) { return document.getElementById(id); }
+var dom = {
+  title: byId('title'), subtitle: byId('subtitle'),
+  screens: ['screenBuilder', 'screenLoading', 'screenError', 'screenIntro', 'screenPlay', 'screenEnd'],
+  builderReview: byId('builderReview'), srcInput: byId('srcInput'), nameInput: byId('nameInput'),
+  builderMsg: byId('builderMsg'), linkBox: byId('linkBox'), linkOut: byId('linkOut'),
+  copyBtn: byId('copyBtn'), openLink: byId('openLink'),
+  loadingText: byId('loadingText'), errText: byId('errText'), errHint: byId('errHint'), retryBtn: byId('retryBtn'),
+  introReview: byId('introReview'), introCount: byId('introCount'), introList: byId('introList'),
+  introNotes: byId('introNotes'), startBtn: byId('startBtn'), mixBtn: byId('mixBtn'),
+  progress: byId('progress'), chTitle: byId('chTitle'), chSub: byId('chSub'),
+  boardCol: byId('boardCol'), taskLine: byId('taskLine'), sideChip: byId('sideChip'), taskText: byId('taskText'),
+  board: byId('board'), pieces: byId('pieces'), shapes: byId('shapes'), glyphs: byId('glyphs'),
+  files: byId('files'), ranks: byId('ranks'),
+  bMove: byId('bMove'), bText: byId('bText'), bNote: byId('bNote'), quiz: byId('quiz'), feedback: byId('feedback'),
+  navRow: byId('navRow'), prevBtn: byId('prevBtn'), nextBtn: byId('nextBtn'), altBtn: byId('altBtn'),
+  chapterNextBtn: byId('chapterNextBtn'),
+  endTitle: byId('endTitle'), endStars: byId('endStars'), endScore: byId('endScore'), endSub: byId('endSub'),
+  endList: byId('endList'), againBtn: byId('againBtn'), homeBtn: byId('homeBtn'), confetti: byId('confetti')
+};
+
+function readParams() {
+  var o = { study: '', ch: '', puzzles: '', pgn: '', s: '' }, u;
+  try {
+    u = new URLSearchParams(location.search);
+    o.study = (u.get('study') || '').replace(/^\s+|\s+$/g, '');
+    o.ch = (u.get('ch') || '').replace(/^\s+|\s+$/g, '');
+    o.puzzles = (u.get('puzzles') || '').replace(/^\s+|\s+$/g, '');
+    o.pgn = (u.get('pgn') || '').replace(/^\s+|\s+$/g, '');
+    o.s = (u.get('s') || '').replace(/^\s+|\s+$/g, '').substring(0, 60);
+  } catch (e) {}
+  return o;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+function clearTimers() { while (timers.length) { clearTimeout(timers.pop()); } }
+function shuffle(arr) {
+  var a = arr.slice(), i, j, t;
+  for (i = a.length - 1; i > 0; i--) {
+    j = Math.floor(Math.random() * (i + 1));
+    t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function starsHtml(n) {
+  var s = '', i;
+  for (i = 0; i < 3; i++) { s += (i < n) ? '★' : '<span class="off">★</span>'; }
+  return s;
+}
+function today() { return dayNumber(new Date()); }
+
+function show(name) {
+  var i;
+  for (i = 0; i < dom.screens.length; i++) { byId(dom.screens[i]).hidden = (dom.screens[i] !== name); }
+  window.scrollTo(0, 0);
+}
+
+function setHeader(title, sub) {
+  dom.title.textContent = title;
+  dom.subtitle.textContent = sub || '';
+  document.title = (title === 'Урок') ? 'Урок' : title + ' — урок';
+}
+
+// ----- Збереження: задачі для повторення -----
+function loadReview() {
+  try {
+    var o = JSON.parse(localStorage.getItem(REVIEW_KEY) || 'null'), list = [], i, it;
+    if (o && o.items && o.items.length) {
+      for (i = 0; i < o.items.length; i++) {
+        it = o.items[i];
+        if (it && typeof it.key === 'string' && typeof it.fen === 'string' && it.line && it.line.length &&
+            typeof it.day === 'number' && typeof it.stage === 'number') { list.push(it); }
+      }
+    }
+    return { items: list };
+  } catch (e) {
+    return { items: [] };
+  }
+}
+function saveReview(store) {
+  try { localStorage.setItem(REVIEW_KEY, JSON.stringify(store)); } catch (e) {}
+}
+function dueItems() {
+  var items = loadReview().items, out = [], t = today(), i;
+  for (i = 0; i < items.length; i++) { if (reviewDue(items[i], t)) { out.push(items[i]); } }
+  return out;
+}
+
+// Задача розв'язана: оновити список повторення.
+function noteReview(ch, mistakes) {
+  var store = loadReview(), i, found = -1, item;
+  if (app.kind === 'review') {
+    for (i = 0; i < store.items.length; i++) { if (store.items[i].key === ch.reviewKey) { found = i; } }
+    if (found >= 0 && !reviewAfter(store.items[found], mistakes, today())) { store.items.splice(found, 1); }
+    saveReview(store);
+    return;
+  }
+  if (mistakes <= 0) { return; }
+  item = chapterToItem(ch, app.lesson.title, today());
+  for (i = 0; i < store.items.length; i++) { if (store.items[i].key === item.key) { found = i; } }
+  if (found >= 0) { store.items[found].day = item.day; store.items[found].stage = 0; }
+  else { store.items.push(item); }
+  if (store.items.length > 60) { store.items = store.items.slice(store.items.length - 60); }
+  saveReview(store);
+  app.newReview++;
+}
+
+function renderReviewCard(box) {
+  var n = dueItems().length;
+  box.innerHTML = '';
+  if (!n) { return; }
+  box.innerHTML = '<div class="card review-card"><p>Час повторити задачі, де були помилки. Так вони запам’ятаються.</p>' +
+    '<button class="btn primary wide" type="button">Повтори задачі (' + n + ')</button></div>';
+  box.getElementsByTagName('button')[0].addEventListener('click', startReview);
+}
+
+// ----- Конструктор -----
+function pageUrl() { return location.href.split(/[?#]/)[0]; }
+
+function showBuilder() {
+  show('screenBuilder');
+  setHeader('Урок', 'Тема тижня зі студії Lichess — гарною сторінкою для учня.');
+  renderReviewCard(dom.builderReview);
+  updateBuilder();
+}
+
+function updateBuilder() {
+  var src = parseSourceInput(dom.srcInput.value), q, link, what;
+  dom.copyBtn.textContent = 'Скопіювати';
+  if (src.empty) {
+    dom.builderMsg.className = 'msg';
+    dom.builderMsg.textContent = '';
+    dom.linkBox.hidden = true;
+    return;
+  }
+  if (src.error) {
+    dom.builderMsg.className = 'msg bad';
+    dom.builderMsg.textContent = src.error;
+    dom.linkBox.hidden = true;
+    return;
+  }
+  q = buildQuery(src, dom.nameInput.value);
+  link = pageUrl() + '?' + q;
+  if (src.study) { what = src.ch ? 'Один розділ студії.' : 'Уся студія.'; }
+  else if (src.puzzles.length) { what = 'Задач: ' + src.puzzles.length + '.'; }
+  else { what = 'Файл lessons/' + src.pgn + '.pgn.'; }
+  dom.builderMsg.className = 'msg good';
+  dom.builderMsg.textContent = what + ' Посилання готове.';
+  dom.linkOut.value = link;
+  dom.openLink.href = link;
+  dom.linkBox.hidden = false;
+}
+
+function copyLink() {
+  var link = dom.linkOut.value;
+  function done() { dom.copyBtn.textContent = 'Скопійовано ✓'; }
+  function fallback() {
+    try {
+      dom.linkOut.focus();
+      dom.linkOut.select();
+      if (document.execCommand('copy')) { done(); return; }
+    } catch (e) {}
+    dom.copyBtn.textContent = 'Виділи й скопіюй вручну';
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(done, fallback);
+      return;
+    }
+  } catch (e) {}
+  fallback();
+}
+
+// ----- Завантаження уроку -----
+function fetchText(url) {
+  if (typeof fetch !== 'function') { return Promise.reject({ status: 0 }); }
+  return fetch(url).then(function (r) {
+    if (!r.ok) { throw { status: r.status }; }
+    return r.text();
+  }, function () {
+    throw { status: 0 };
+  });
+}
+
+function sourceKind() {
+  if (params.study || params.puzzles) { return 'lichess'; }
+  if (params.pgn) { return 'file'; }
+  return '';
+}
+
+function loadLesson() {
+  var p, ids, i;
+  show('screenLoading');
+  setHeader('Урок', '');
+  if (params.study) {
+    if (!/^[A-Za-z0-9]{4,16}$/.test(params.study) || (params.ch && !/^[A-Za-z0-9]{4,16}$/.test(params.ch))) {
+      showError({ kind: 'link' });
+      return;
+    }
+    dom.loadingText.textContent = 'Завантажую урок з Lichess…';
+    p = fetchText(LICHESS + '/api/study/' + params.study + (params.ch ? '/' + params.ch : '') +
+      '.pgn?orientation=true&clocks=false').then(parseLesson);
+  } else if (params.puzzles) {
+    ids = [];
+    var parts = params.puzzles.split(/[\s,]+/);
+    for (i = 0; i < parts.length; i++) { if (/^[A-Za-z0-9]{5}$/.test(parts[i]) && ids.indexOf(parts[i]) < 0) { ids.push(parts[i]); } }
+    if (!ids.length) { showError({ kind: 'link' }); return; }
+    dom.loadingText.textContent = 'Завантажую задачі з Lichess…';
+    p = loadPuzzles(ids);
+  } else {
+    if (!/^[A-Za-z0-9_-]+$/.test(params.pgn)) { showError({ kind: 'link' }); return; }
+    dom.loadingText.textContent = 'Завантажую урок…';
+    p = fetchText('../lessons/' + params.pgn + '.pgn').then(parseLesson);
+  }
+  p.then(function (lesson) {
+    if (!lesson.chapters.length) { throw { kind: 'empty', errors: lesson.errors }; }
+    if (!lesson.title) { lesson.title = params.pgn ? params.pgn : 'Урок'; }
+    app.loaded = lesson;
+    app.lesson = lesson;
+    showIntro();
+  }).then(null, function (err) {
+    if (err && err.stack) { try { console.error(err); } catch (e) {} }
+    showError(err || {});
+  });
+}
+
+// Задачі вантажимо по одній, щоб не впертися в ліміт Lichess.
+function loadPuzzles(ids) {
+  var lesson = { title: 'Задачі Lichess', chapters: [], errors: [] }, chain = Promise.resolve(), i;
+  for (i = 0; i < ids.length; i++) { chain = chain.then(puzzleStep(ids[i], lesson)); }
+  return chain.then(function () { return lesson; });
+}
+function puzzleStep(id, lesson) {
+  return function () {
+    dom.loadingText.textContent = 'Завантажую задачі з Lichess… ' + (lesson.chapters.length + lesson.errors.length + 1);
+    return fetchText(LICHESS + '/api/puzzle/' + id).then(function (text) {
+      var data = null, ch;
+      try { data = JSON.parse(text); } catch (e) {}
+      ch = data ? puzzleToChapter(data, lesson.chapters.length + 1) : null;
+      if (ch) { lesson.chapters.push(ch); } else { lesson.errors.push('задачу ' + id + ' не вдалося прочитати'); }
+    }, function (err) {
+      if (err && err.status === 404) { lesson.errors.push('задачу ' + id + ' не знайдено'); return; }
+      throw err;
+    });
+  };
+}
+
+function showError(err) {
+  var kind = sourceKind(), s = err.status, msg;
+  show('screenError');
+  setHeader('Урок', '');
+  if (err.kind === 'engine') {
+    msg = 'Не вдалося завантажити шаховий рушій. Перевір інтернет і натисни «Спробувати ще».';
+  } else if (err.kind === 'link') {
+    msg = 'У посиланні помилка. Попроси тренера надіслати його ще раз.';
+  } else if (err.kind === 'empty') {
+    msg = 'У цьому уроці немає жодного розділу, який вдалося прочитати.' +
+      (err.errors && err.errors.length ? ' (' + err.errors.join('; ') + ')' : '');
+  } else if (kind === 'file') {
+    msg = (s === 404) ? 'Файл уроку lessons/' + params.pgn + '.pgn не знайдено.' :
+      (s === 0 ? 'Немає зв’язку. Перевір інтернет.' : 'Не вдалося прочитати урок' + (s ? ' (код ' + s + ').' : '.'));
+  } else if (s === 404 || s === 403 || s === 401) {
+    msg = 'Lichess не віддав цей урок. Перевір посилання. Якщо студія приватна — тренер має відкрити до неї доступ («Публічна» або «За посиланням»).';
+  } else if (s === 429) {
+    msg = 'Lichess просить трохи зачекати: забагато запитів. Спробуй ще через хвилину.';
+  } else if (s === 0) {
+    msg = 'Немає зв’язку з Lichess. Перевір інтернет і спробуй ще.';
+  } else if (s) {
+    msg = 'Lichess відповів помилкою (код ' + s + '). Спробуй ще трохи згодом.';
+  } else {
+    msg = 'Не вдалося прочитати урок. Спробуй ще або попроси тренера перевірити студію.';
+  }
+  dom.errText.textContent = msg;
+  dom.errHint.hidden = (kind !== 'lichess');
+}
+
+// ----- Головний екран уроку -----
+function showIntro() {
+  var l = app.lesson, i, ch, html = '', puzzles = 0;
+  clearTimers();
+  show('screenIntro');
+  for (i = 0; i < l.chapters.length; i++) {
+    ch = l.chapters[i];
+    if (ch.puzzle) { puzzles++; }
+    html += '<li><span class="num">' + (i + 1) + '</span><span class="t">' + esc(ch.title) + '</span>' +
+      (ch.puzzle ? '<span class="chip">задача</span>' : (ch.scored ? '<span class="chip">питання</span>' : '')) + '</li>';
+  }
+  setHeader(l.title, l.chapters.length + ' ' + plural(l.chapters.length, 'розділ', 'розділи', 'розділів') +
+    (puzzles ? ' · задач: ' + puzzles : ''));
+  dom.introCount.textContent = 'Розділи';
+  dom.introList.innerHTML = html;
+  dom.mixBtn.hidden = puzzles < 2;
+  dom.introNotes.hidden = !l.errors.length;
+  dom.introNotes.textContent = l.errors.length ? 'Для тренера: ' + l.errors.join('; ') + '.' : '';
+  renderReviewCard(dom.introReview);
+}
+
+function plural(n, one, few, many) {
+  var a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) { return one; }
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) { return few; }
+  return many;
+}
+
+function startRun(kind) {
+  var ord = [], i;
+  app.kind = kind;
+  for (i = 0; i < app.lesson.chapters.length; i++) {
+    if (kind !== 'mix' || app.lesson.chapters[i].puzzle) { ord.push(i); }
+  }
+  if (kind === 'mix') { ord = shuffle(ord); }
+  app.order = ord;
+  app.results = [];
+  app.sent = false;
+  app.newReview = 0;
+  show('screenPlay');
+  setHeader(app.lesson.title, kind === 'mix' ? 'Мікс: задачі навмання' : (kind === 'review' ? 'Задачі з помилками' : ''));
+  openChapter(0);
+}
+
+function startReview() {
+  var items = dueItems(), chapters = [], i, ch;
+  for (i = 0; i < items.length; i++) {
+    ch = itemToChapter(items[i]);
+    if (ch) { chapters.push(ch); }
+  }
+  if (!chapters.length) { return; }
+  app.lesson = { title: 'Повторення', chapters: chapters, errors: [] };
+  startRun('review');
+}
+
+function goHome() {
+  clearTimers();
+  if (app.loaded) { app.lesson = app.loaded; showIntro(); }
+  else { showBuilder(); }
+}
+
+// ----- Дошка -----
+function displayCol(f) { return app.flip ? 7 - f : f; }
+function displayRow(r) { return app.flip ? r : 7 - r; }
+function sqFile(s) { return FILES.indexOf(s.charAt(0)); }
+function sqRank(s) { return parseInt(s.charAt(1), 10) - 1; }
+
+function buildSquares() {
+  var row, col, f, r, btn, c;
+  dom.board.innerHTML = '';
+  for (row = 0; row < 8; row++) {
+    for (col = 0; col < 8; col++) {
+      f = app.flip ? 7 - col : col;
+      r = app.flip ? row : 7 - row;
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sq ' + (((f + r) % 2 === 0) ? 'dark' : 'light');
+      btn.setAttribute('data-sq', FILES.charAt(f) + (r + 1));
+      dom.board.appendChild(btn);
+    }
+  }
+  dom.files.innerHTML = '';
+  dom.ranks.innerHTML = '';
+  for (col = 0; col < 8; col++) {
+    c = document.createElement('span');
+    c.textContent = FILES.charAt(app.flip ? 7 - col : col);
+    dom.files.appendChild(c);
+  }
+  for (row = 0; row < 8; row++) {
+    c = document.createElement('span');
+    c.textContent = String(app.flip ? row + 1 : 8 - row);
+    dom.ranks.appendChild(c);
+  }
+}
+
+function squareEl(sq) { return dom.board.querySelector('[data-sq="' + sq + '"]'); }
+
+function placePieceEl(el, sq) {
+  el.style.left = (displayCol(sqFile(sq)) * 12.5) + '%';
+  el.style.top = (displayRow(sqRank(sq)) * 12.5) + '%';
+}
+
+function pieceLabel(p) {
+  var white = (p.color === 'w');
+  var adj = (p.type === 'r') ? (white ? 'біла' : 'чорна') : (white ? 'білий' : 'чорний');
+  return adj + ' ' + NAME_NOM[p.type];
+}
+
+function renderPieces(pos) {
+  var sq, p, el, sqs, i, s;
+  dom.pieces.innerHTML = '';
+  pieceEls = {};
+  for (sq in pos) {
+    if (pos.hasOwnProperty(sq)) {
+      p = pos[sq];
+      el = document.createElement('div');
+      el.className = 'piece ' + p.color;
+      el.textContent = PIECE_GLYPH[p.type] + '︎';
+      placePieceEl(el, sq);
+      dom.pieces.appendChild(el);
+      pieceEls[sq] = el;
+    }
+  }
+  sqs = dom.board.children;
+  for (i = 0; i < sqs.length; i++) {
+    s = sqs[i].getAttribute('data-sq');
+    sqs[i].setAttribute('aria-label', pos[s] ? (s + ', ' + pieceLabel(pos[s])) : s);
+  }
+}
+
+function fitPieces() {
+  var w = dom.board.clientWidth;
+  if (w) {
+    dom.pieces.style.fontSize = Math.floor(w / 8 * 0.84) + 'px';
+    dom.glyphs.style.fontSize = Math.max(10, Math.floor(w / 8 * 0.24)) + 'px';
+  }
+}
+
+function movePieceEl(from, to) {
+  var el = pieceEls[from], target = pieceEls[to];
+  if (!el) { return; }
+  if (target && target !== el) {
+    target.className += ' gone';
+    (function (t) { later(function () { if (t.parentNode) { t.parentNode.removeChild(t); } }, 300); })(target);
+  }
+  delete pieceEls[from];
+  pieceEls[to] = el;
+  placePieceEl(el, to);
+}
+
+// Плавний хід; після анімації дошка перемальовується з FEN (рокіровка, взяття на проході, перетворення).
+function animateMove(n) {
+  var rank = n.from.charAt(1), ep;
+  if (n.flags && n.flags.indexOf('e') >= 0) {
+    ep = n.to.charAt(0) + n.from.charAt(1);
+    if (pieceEls[ep]) { pieceEls[ep].className += ' gone'; }
+  }
+  movePieceEl(n.from, n.to);
+  if (n.flags && n.flags.indexOf('k') >= 0) { movePieceEl('h' + rank, 'f' + rank); }
+  if (n.flags && n.flags.indexOf('q') >= 0) { movePieceEl('a' + rank, 'd' + rank); }
+  app.animating = true;
+  later(function () {
+    app.animating = false;
+    if (app.node === n) { renderPieces(fenPos(n.fen)); }
+  }, 330);
+}
+
+function svgEl(name) { return document.createElementNS('http://www.w3.org/2000/svg', name); }
+function center(sq) { return { x: displayCol(sqFile(sq)) + 0.5, y: displayRow(sqRank(sq)) + 0.5 }; }
+
+function drawArrow(a) {
+  var p = center(a.from), q = center(a.to);
+  var dx = q.x - p.x, dy = q.y - p.y, len = Math.sqrt(dx * dx + dy * dy);
+  var ux = dx / len, uy = dy / len;
+  var tipx = q.x - ux * 0.12, tipy = q.y - uy * 0.12;
+  var bx = tipx - ux * 0.42, by = tipy - uy * 0.42;
+  var px = -uy * 0.24, py = ux * 0.24;
+  var g = svgEl('g'), line = svgEl('line'), head = svgEl('polygon');
+  g.setAttribute('class', 'shp shp-' + a.c);
+  line.setAttribute('x1', p.x); line.setAttribute('y1', p.y);
+  line.setAttribute('x2', bx); line.setAttribute('y2', by);
+  head.setAttribute('points', tipx + ',' + tipy + ' ' + (bx + px) + ',' + (by + py) + ' ' + (bx - px) + ',' + (by - py));
+  g.appendChild(line);
+  g.appendChild(head);
+  dom.shapes.appendChild(g);
+}
+
+function drawCircle(c) {
+  var p = center(c.sq), g = svgEl('g'), circle = svgEl('circle');
+  g.setAttribute('class', 'shp shp-' + c.c);
+  circle.setAttribute('cx', p.x); circle.setAttribute('cy', p.y); circle.setAttribute('r', 0.44);
+  g.appendChild(circle);
+  dom.shapes.appendChild(g);
+}
+
+function findKing(pos, color) {
+  var s;
+  for (s in pos) { if (pos.hasOwnProperty(s) && pos[s].type === 'k' && pos[s].color === color) { return s; } }
+  return null;
+}
+
+function clearMarks() {
+  var els = dom.board.children, i;
+  for (i = 0; i < els.length; i++) {
+    els[i].className = els[i].className.replace(/ (last|check|sel|dot|cap|wrong)/g, '');
+  }
+}
+
+// Підсвітки: останній хід, шах, стрілки й кола з коментаря, знак біля ходу.
+function renderMarks() {
+  var n = app.node, from = n.from || n.lastFrom, to = n.to || n.lastTo, k, i, el, nag, cls, g;
+  clearMarks();
+  if (from && to) {
+    squareEl(from).className += ' last';
+    squareEl(to).className += ' last';
+  }
+  if (n.check) {
+    k = findKing(fenPos(n.fen), turnOf(n));
+    if (k) { squareEl(k).className += ' check'; }
+  }
+  while (dom.shapes.firstChild) { dom.shapes.removeChild(dom.shapes.firstChild); }
+  for (i = 0; i < n.arrows.length; i++) { drawArrow(n.arrows[i]); }
+  for (i = 0; i < n.circles.length; i++) { drawCircle(n.circles[i]); }
+  if (app.hint) { drawArrow(app.hint); }
+  dom.glyphs.innerHTML = '';
+  g = glyphsOf(n);
+  if (n.to && g) {
+    nag = n.nags[0];
+    cls = (nag === 1 || nag === 3) ? 'good' : ((nag === 2 || nag === 4) ? 'bad' : 'int');
+    el = document.createElement('div');
+    el.className = 'glyph ' + cls;
+    el.style.left = (displayCol(sqFile(n.to)) * 12.5) + '%';
+    el.style.top = (displayRow(sqRank(n.to)) * 12.5) + '%';
+    el.innerHTML = '<span>' + esc(g) + '</span>';
+    dom.glyphs.appendChild(el);
+  }
+}
+
+// ----- Показ вузла -----
+function goNode(n, animate) {
+  var prev = app.node;
+  app.node = n;
+  app.selected = null;
+  app.legalTo = {};
+  app.hint = null;
+  if (animate && n.parent && n.from && !app.animating) {
+    if (prev !== n.parent) {
+      renderPieces(fenPos(n.parent.fen));
+      void dom.pieces.offsetWidth; // щоб спрацювала анімація
+    }
+    animateMove(n);
+  } else {
+    renderPieces(fenPos(n.fen));
+  }
+  renderMarks();
+  renderBubble();
+  renderControls();
+}
+
+function quizPending(n) {
+  return !!(n.question && !(app.qState[n.id] && app.qState[n.id].done));
+}
+
+function canNavigate() {
+  return !!app.chapter && !app.busy && (!app.chapter.puzzle || app.solved);
+}
+
+function renderBubble() {
+  var n = app.node, ch = app.chapter, text = n.comment, note = '', fb = app.feedback, st, html, i, o, cls;
+  if (n.parent) {
+    dom.bMove.innerHTML = '<span class="fig">' + esc(moveLabel(n)) + '</span>' + (isMainline(n) ? '' : '<span class="var-chip">варіант</span>');
+  } else {
+    dom.bMove.innerHTML = ch.puzzle ? '' : 'Початкова позиція';
+  }
+  if (!text && !n.question) {
+    if (!n.parent) {
+      text = ch.puzzle ? 'Знайди найкращий хід!' : 'Натискай →, щоб дивитися ходи.';
+    } else if (ch.puzzle && !app.solved && turnOf(n) === ch.player && !fb) {
+      text = 'Твій хід.';
+    }
+  }
+  dom.bText.textContent = text || '';
+  dom.bText.hidden = !text;
+
+  if (canNavigate()) {
+    if (!n.children.length && n.parent && !isMainline(n)) { note = 'Кінець варіанту. Натисни →, щоб повернутися до партії.'; }
+    else if (n.children.length > 1) { note = 'Після наступного ходу буде кнопка «Інший варіант».'; }
+  }
+  dom.bNote.textContent = note;
+  dom.bNote.hidden = !note;
+
+  if (n.question) {
+    st = app.qState[n.id] || { wrong: {}, done: false, right: -1 };
+    html = '<div class="quiz-q">' + esc(n.question.q) + '</div>';
+    for (i = 0; i < n.question.options.length; i++) {
+      o = n.question.options[i];
+      cls = 'btn quiz-opt';
+      if (st.wrong[i]) { cls += ' no'; }
+      if (st.done && o.ok) { cls += ' yes'; }
+      html += '<button type="button" class="' + cls + '" data-opt="' + i + '"' +
+        ((st.done || st.wrong[i]) ? ' disabled' : '') + '>' + esc(o.text) + '</button>';
+    }
+    dom.quiz.innerHTML = html;
+    dom.quiz.hidden = false;
+  } else {
+    dom.quiz.innerHTML = '';
+    dom.quiz.hidden = true;
+  }
+
+  if (fb) {
+    dom.feedback.className = 'feedback ' + (fb.cls || '');
+    dom.feedback.innerHTML = (fb.stars ? '<span class="stars">' + starsHtml(fb.stars) + '</span>' : '') + esc(fb.text);
+    dom.feedback.hidden = false;
+  } else {
+    dom.feedback.hidden = true;
+  }
+}
+
+function renderControls() {
+  var n = app.node, ch = app.chapter, nav = canNavigate(), sib = n.parent ? n.parent.children : [], k, last;
+  dom.navRow.hidden = ch.puzzle && !app.solved;
+  dom.prevBtn.disabled = !nav || !n.parent;
+  dom.nextBtn.disabled = !nav || quizPending(n) || (!n.children.length && !returnPoint(n));
+  dom.altBtn.hidden = !nav || sib.length < 2;
+  if (sib.length > 1) {
+    k = sib.indexOf(n);
+    dom.altBtn.textContent = 'Інший варіант (' + (k + 1) + ' з ' + sib.length + ')';
+  }
+  last = (app.pos === app.order.length - 1);
+  dom.chapterNextBtn.hidden = !app.results[app.pos];
+  dom.chapterNextBtn.innerHTML = last ? 'Підсумок уроку &rarr;' : 'Далі &rarr;';
+  if (ch.puzzle && !app.solved) {
+    dom.sideChip.hidden = false;
+    dom.sideChip.className = 'side-chip ' + ch.player;
+    dom.taskText.textContent = 'Ти граєш ' + (ch.player === 'w' ? 'білими' : 'чорними');
+  } else {
+    dom.sideChip.hidden = true;
+    dom.taskText.textContent = ch.puzzle ? 'Розв’язано! Можна переглянути ходи.' : '';
+  }
+  dom.taskLine.hidden = !dom.taskText.textContent;
+}
+
+function renderProgress() {
+  var html = '', i, cls, r;
+  for (i = 0; i < app.order.length; i++) {
+    r = app.results[i];
+    cls = 'pg-btn' + (i === app.pos ? ' current' : (r ? ' done' : ''));
+    html += '<button type="button" class="' + cls + '" data-pos="' + i + '" aria-label="Розділ ' + (i + 1) + '">' + (i + 1) + '</button>';
+  }
+  dom.progress.innerHTML = html;
+}
+
+function chapterTitle(pos) {
+  var ch = app.lesson.chapters[app.order[pos]];
+  return app.kind === 'mix' ? 'Задача ' + (pos + 1) : ch.title;
+}
+
+// ----- Розділ -----
+function openChapter(pos) {
+  var ch = app.lesson.chapters[app.order[pos]];
+  clearTimers();
+  app.animating = false;
+  app.pos = pos;
+  app.chapter = ch;
+  app.mistakes = 0;
+  app.tries = 0;
+  app.solved = !ch.puzzle;
+  app.busy = false;
+  app.qState = {};
+  app.afterQuiz = null;
+  app.feedback = null;
+  app.flip = ch.flip;
+  app.node = null;
+  buildSquares();
+  fitPieces();
+  renderProgress();
+  dom.chTitle.textContent = chapterTitle(pos);
+  dom.chSub.textContent = (app.kind === 'mix' ? 'Задача ' : 'Розділ ') + (pos + 1) + ' з ' + app.order.length;
+  goNode(ch.root, false);
+  if (ch.puzzle) { continuePuzzle(); } else { afterArrive(); }
+}
+
+function afterArrive() {
+  var n = app.node;
+  if (quizPending(n)) { return; }
+  if (!app.chapter.puzzle && !n.children.length && isMainline(n)) { finishChapter(); }
+}
+
+function finishChapter() {
+  var ch = app.chapter, r = app.results[app.pos];
+  if (!r) {
+    r = { mistakes: app.mistakes, stars: ch.scored ? starsFor(app.mistakes) : 0, scored: ch.scored };
+    app.results[app.pos] = r;
+    if (ch.puzzle) { noteReview(ch, app.mistakes); }
+    if (!ch.puzzle && ch.scored) {
+      app.feedback = { cls: 'good', stars: r.stars, text: app.mistakes ? 'Розділ пройдено. Помилки теж вчать!' : 'Усі відповіді правильні!' };
+    }
+  }
+  renderProgress();
+  renderBubble();
+  renderControls();
+}
+
+function goNext() {
+  var n = app.node, back;
+  if (!canNavigate() || quizPending(n)) { return; }
+  app.feedback = null;
+  if (n.children.length) { goNode(n.children[0], true); afterArrive(); return; }
+  back = returnPoint(n);
+  if (back) { goNode(back, false); afterArrive(); }
+}
+
+function goPrev() {
+  if (!canNavigate() || !app.node.parent) { return; }
+  app.feedback = null;
+  goNode(app.node.parent, false);
+  afterArrive();
+}
+
+function goAlt() {
+  var n = app.node, sib;
+  if (!canNavigate() || !n.parent || n.parent.children.length < 2) { return; }
+  sib = n.parent.children;
+  app.feedback = null;
+  goNode(sib[(sib.indexOf(n) + 1) % sib.length], true);
+  afterArrive();
+}
+
+function nextChapter() {
+  if (app.pos + 1 < app.order.length) { openChapter(app.pos + 1); }
+  else { showEnd(); }
+}
+
+// ----- Питання «Навіщо?» -----
+function answerQuiz(i) {
+  var n = app.node, q = n.question, st, f;
+  if (!q || !q.options[i]) { return; }
+  st = app.qState[n.id] || (app.qState[n.id] = { wrong: {}, count: 0, done: false });
+  if (st.done || st.wrong[i]) { return; }
+  if (q.options[i].ok) {
+    st.done = true;
+    app.feedback = { cls: 'good', text: 'Так! Саме для цього.' };
+  } else {
+    st.wrong[i] = true;
+    st.count++;
+    app.mistakes++;
+    if (st.count >= MAX_TRIES) {
+      st.done = true;
+      app.feedback = { cls: 'bad', text: 'Правильна відповідь — зелена. Запам’ятай її.' };
+    } else {
+      app.feedback = { cls: 'bad', text: 'Не зовсім. Подумай ще.' };
+    }
+  }
+  renderBubble();
+  renderControls();
+  if (st.done) {
+    f = app.afterQuiz;
+    app.afterQuiz = null;
+    if (f) { app.busy = true; later(function () { app.busy = false; f(); }, 700); }
+    else { afterArrive(); }
+  }
+}
+
+// ----- Задача: учень ходить сам -----
+// Вирішує, що далі: питання, хід суперника, хід учня чи кінець.
+function continuePuzzle() {
+  var n = app.node, ch = app.chapter;
+  if (app.solved) { return; }
+  if (quizPending(n)) { app.afterQuiz = continuePuzzle; renderControls(); return; }
+  if (!n.children.length) { solvePuzzle(); return; }
+  if (turnOf(n) !== ch.player) {
+    app.busy = true;
+    renderControls();
+    later(function () {
+      app.busy = false;
+      goNode(n.children[0], true);
+      continuePuzzle();
+    }, REPLY_MS);
+    return;
+  }
+  app.busy = false;
+  renderBubble();
+  renderControls();
+}
+
+function onBoardClick(e) {
+  var t = e.target, sq, chess, piece, n = app.node;
+  while (t && t !== dom.board && !(t.getAttribute && t.getAttribute('data-sq'))) { t = t.parentNode; }
+  if (!t || t === dom.board || !app.chapter) { return; }
+  if (!app.chapter.puzzle || app.solved || app.busy || quizPending(n) || turnOf(n) !== app.chapter.player) { return; }
+  sq = t.getAttribute('data-sq');
+  if (app.selected && app.legalTo[sq]) { tryMove(app.selected, sq); return; }
+  if (app.selected === sq) { deselect(); return; }
+  chess = new Chess(n.fen);
+  piece = chess.get(sq);
+  if (piece && piece.color === app.chapter.player && chess.moves({ square: sq }).length) { selectSquare(chess, sq); }
+  else { deselect(); }
+}
+
+function selectSquare(chess, sq) {
+  var ms = chess.moves({ square: sq, verbose: true }), i;
+  deselect();
+  app.selected = sq;
+  squareEl(sq).className += ' sel';
+  for (i = 0; i < ms.length; i++) {
+    app.legalTo[ms[i].to] = true;
+    squareEl(ms[i].to).className += ' dot' + (ms[i].captured ? ' cap' : '');
+  }
+}
+
+function deselect() {
+  var els = dom.board.children, i;
+  for (i = 0; i < els.length; i++) { els[i].className = els[i].className.replace(/ (sel|dot|cap)/g, ''); }
+  app.selected = null;
+  app.legalTo = {};
+}
+
+function sameMove(node, m) {
+  return node.from === m.from && node.to === m.to && (node.promotion || '') === (m.promotion || '');
+}
+
+function tryMove(from, to) {
+  var n = app.node, exp = n.children[0], chess = new Chess(n.fen), promo = 'q', m, i, node = null;
+  if (exp && exp.from === from && exp.to === to && exp.promotion) { promo = exp.promotion; }
+  m = chess.move({ from: from, to: to, promotion: promo });
+  deselect();
+  if (!m) { return; }
+  if (exp && sameMove(exp, m)) {
+    rightMove(exp);
+  } else if (chess.in_checkmate()) {
+    for (i = 0; i < n.children.length; i++) { if (sameMove(n.children[i], m)) { node = n.children[i]; } }
+    rightMove(node || addChild(n, chess, m));
+  } else {
+    wrongMove(n, m, chess);
+  }
+}
+
+function rightMove(node) {
+  var words = ['Так!', 'Точно!', 'Правильно!', 'Саме так!'];
+  app.tries = 0;
+  app.feedback = { cls: 'good', text: words[Math.floor(Math.random() * words.length)] };
+  goNode(node, true);
+  continuePuzzle();
+}
+
+function wrongMove(n, m, after) {
+  var exp = n.children[0], note = '', i, left;
+  app.mistakes++;
+  app.tries++;
+  // Якщо тренер розібрав цей хід варіантом — покажемо його коментар.
+  for (i = 1; i < n.children.length; i++) { if (sameMove(n.children[i], m) && n.children[i].comment) { note = n.children[i].comment; } }
+  app.busy = true;
+  renderPieces(fenPos(after.fen()));
+  squareEl(m.to).className += ' wrong';
+  if (app.tries >= MAX_TRIES) {
+    app.feedback = { cls: 'bad', text: (note ? note + '\n' : '') + 'Правильний хід — ' + figurine(exp.san) + '. Подивись, чому він сильний.' };
+  } else {
+    left = MAX_TRIES - app.tries;
+    app.feedback = { cls: 'bad', text: 'Не те, спробуй ще.' + (note ? '\n' + note : '') + '\n(ще ' + left + ' ' + plural(left, 'спроба', 'спроби', 'спроб') + ')' };
+  }
+  renderBubble();
+  renderControls();
+  later(function () {
+    renderPieces(fenPos(n.fen));
+    renderMarks();
+    if (app.tries >= MAX_TRIES) {
+      app.hint = { c: 'G', from: exp.from, to: exp.to };
+      renderMarks();
+      later(function () {
+        app.busy = false;
+        app.tries = 0;
+        goNode(exp, true);
+        continuePuzzle();
+      }, 1200);
+    } else {
+      app.busy = false;
+      renderControls();
+    }
+  }, 700);
+}
+
+function solvePuzzle() {
+  var m = app.mistakes, text;
+  app.solved = true;
+  app.busy = false;
+  if (m === 0) { text = 'Розв’язано з першої спроби. Уважний розрахунок!'; }
+  else if (m === 1) { text = 'Одна помилка — і все одно знайдено! Ця задача повернеться для повторення.'; }
+  else { text = 'Задачу доведено до кінця — не здаватися теж треба вміти. Повторимо її згодом.'; }
+  if (app.kind === 'review') {
+    text = m === 0 ? 'Тепер без помилок — повторення працює!' : 'Ще не ідеально — повторимо цю задачу ще раз.';
+  }
+  app.feedback = { cls: 'good', stars: starsFor(m), text: text };
+  finishChapter();
+}
+
+// ----- Кінець уроку -----
+function showEnd() {
+  var total = 0, max = 0, mistakes = 0, rows = '', details = [], i, ch, r, title, overall, sub;
+  clearTimers();
+  show('screenEnd');
+  for (i = 0; i < app.order.length; i++) {
+    ch = app.lesson.chapters[app.order[i]];
+    r = app.results[i];
+    title = chapterTitle(i);
+    if (ch.scored) { max += 3; if (r) { total += r.stars; } }
+    if (r) { mistakes += r.mistakes; }
+    rows += '<li><span class="num">' + (i + 1) + '</span><span class="t">' + esc(title) + '</span><span class="st">' +
+      (ch.scored ? starsHtml(r ? r.stars : 0) : (r ? '✓' : '–')) + '</span></li>';
+    details.push(title + ': ' + (r ? (ch.scored ? r.stars + '★, помилок ' + r.mistakes : 'переглянуто') : 'пропущено'));
+  }
+  overall = max ? Math.round(total / max * 3) : 3;
+  dom.endTitle.textContent = app.kind === 'review' ? 'Повторення завершено!' : 'Урок пройдено!';
+  dom.endStars.innerHTML = starsHtml(overall);
+  dom.endScore.textContent = max ? (total + ' з ' + max + ' ★') : '';
+  sub = mistakes === 0 ? 'Жодної помилки — кожен хід перевірено уважно.' : 'Урок доведено до кінця. Помилки — теж тренування.';
+  if (app.newReview) {
+    sub += ' Задачі з помилками (' + app.newReview + ') з’являться для повторення завтра.';
+  }
+  dom.endSub.textContent = sub;
+  dom.endList.innerHTML = rows;
+  dom.againBtn.hidden = (app.kind === 'review');
+  setHeader(app.lesson.title, '');
+  confetti();
+  sendResult({
+    kind: 'lesson',
+    ts: new Date().toISOString(),
+    student: params.s,
+    lesson: app.lesson.title,
+    mode: app.kind === 'mix' ? 'мікс' : (app.kind === 'review' ? 'повторення' : 'урок'),
+    stars: total,
+    maxStars: max,
+    mistakes: mistakes,
+    details: details.join('\n'),
+    link: pageUrl() + '?' + lessonQuery()
+  });
+}
+
+function lessonQuery() {
+  if (params.study) { return 'study=' + params.study + (params.ch ? '&ch=' + params.ch : ''); }
+  if (params.puzzles) { return 'puzzles=' + params.puzzles; }
+  if (params.pgn) { return 'pgn=' + params.pgn; }
+  return '';
+}
+
+// Результат іде в таблицю тренера лише з ?s=<ім'я> у посиланні. Помилки тут не заважають уроку.
+function sendResult(data) {
+  try {
+    if (!SHEET_URL || !params.s || app.sent) { return; }
+    app.sent = true;
+    fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify(data),
+      keepalive: true
+    }).then(null, function () {});
+  } catch (e) {}
+}
+
+function confetti() {
+  var i, el;
+  try { if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; } } catch (e) {}
+  dom.confetti.innerHTML = '';
+  for (i = 0; i < 80; i++) {
+    el = document.createElement('i');
+    el.className = 'cf c' + (i % 5);
+    el.style.left = (Math.random() * 100) + '%';
+    el.style.animationDelay = (Math.random() * 0.9) + 's';
+    el.style.animationDuration = (2.2 + Math.random() * 1.8) + 's';
+    el.style.setProperty('--dx', Math.round(Math.random() * 160 - 80) + 'px');
+    el.style.setProperty('--rot', Math.round(Math.random() * 900 - 450) + 'deg');
+    dom.confetti.appendChild(el);
+  }
+  later(function () { dom.confetti.innerHTML = ''; }, 5000);
+}
+
+// ----- Події -----
+dom.srcInput.addEventListener('input', updateBuilder);
+dom.nameInput.addEventListener('input', updateBuilder);
+dom.copyBtn.addEventListener('click', copyLink);
+dom.retryBtn.addEventListener('click', function () {
+  if (typeof Chess === 'undefined') { location.reload(); } else { loadLesson(); }
+});
+dom.startBtn.addEventListener('click', function () { startRun('lesson'); });
+dom.mixBtn.addEventListener('click', function () { startRun('mix'); });
+dom.againBtn.addEventListener('click', function () { startRun(app.kind); });
+dom.homeBtn.addEventListener('click', goHome);
+dom.prevBtn.addEventListener('click', goPrev);
+dom.nextBtn.addEventListener('click', goNext);
+dom.altBtn.addEventListener('click', goAlt);
+dom.chapterNextBtn.addEventListener('click', nextChapter);
+dom.board.addEventListener('click', onBoardClick);
+dom.quiz.addEventListener('click', function (e) {
+  var t = e.target;
+  while (t && t !== dom.quiz && !(t.getAttribute && t.getAttribute('data-opt'))) { t = t.parentNode; }
+  if (t && t !== dom.quiz) { answerQuiz(parseInt(t.getAttribute('data-opt'), 10)); }
+});
+dom.progress.addEventListener('click', function (e) {
+  var t = e.target;
+  while (t && t !== dom.progress && !(t.getAttribute && t.getAttribute('data-pos'))) { t = t.parentNode; }
+  if (t && t !== dom.progress) { openChapter(parseInt(t.getAttribute('data-pos'), 10)); }
+});
+document.addEventListener('keydown', function (e) {
+  var tag = (e.target && e.target.tagName) || '';
+  if (byId('screenPlay').hidden || tag === 'INPUT' || tag === 'TEXTAREA') { return; }
+  if (e.key === 'ArrowLeft') { goPrev(); e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { goNext(); e.preventDefault(); }
+});
+(function () {
+  var sx = 0, sy = 0, on = false;
+  dom.boardCol.addEventListener('touchstart', function (e) {
+    if (e.touches.length !== 1) { on = false; return; }
+    on = true;
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+  }, { passive: true });
+  dom.boardCol.addEventListener('touchend', function (e) {
+    var t = e.changedTouches[0], dx, dy;
+    if (!on || !t) { return; }
+    on = false;
+    dx = t.clientX - sx;
+    dy = t.clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) { goNext(); } else { goPrev(); }
+    }
+  }, { passive: true });
+})();
+window.addEventListener('resize', fitPieces);
+
+// ----- Старт -----
+if (typeof Chess === 'undefined') {
+  showError({ kind: 'engine' });
+} else if (params.study || params.puzzles || params.pgn) {
+  loadLesson();
+} else {
+  showBuilder();
+}
+</script>
+</body>
+</html>
