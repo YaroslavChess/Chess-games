@@ -378,6 +378,8 @@
   .rule-extra{ margin:12px 0 0; color: var(--text-dim); font-size:.86rem; line-height:1.45; }
   .rule-extra + .rule-extra{ margin-top:8px; }
 
+  .nolib{ border-color: var(--danger); color: var(--danger); }
+
   footer.hint{
     text-align:center;
     color: var(--text-faint);
@@ -412,7 +414,11 @@
     </div>
   </header>
 
-  <section>
+  <section class="card nolib" id="noLib" hidden>
+    Не вдалося завантажити шаховий рушій (chess.js). Перевір інтернет і онови сторінку.
+  </section>
+
+  <section id="levelBox">
     <div class="levels" id="levels"></div>
     <p class="level-note" id="levelNote"></p>
   </section>
@@ -473,6 +479,7 @@
   </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
 <script>
 'use strict';
 
@@ -695,11 +702,11 @@ function shuffle(list) {
 }
 
 // Де може стояти білий король: за 3 і більше ходи від усього шляху пішака (від його клітинки до 8-го ряду)
-// і від чорного короля. Спершу в нижній частині дошки. Список у випадковому порядку.
+// і від чорного короля. Найдальші від пішака й чорного короля — першими (серед рівних порядок випадковий):
+// чим він далі, тим менше шансів, що він утрутиться в гонку.
 function whiteKingSpots(pf, pr, bf, br) {
   var all = [];
-  var low = [];
-  var f, r, k, near;
+  var f, r, k, near, far;
   for (f = 0; f < 8; f = f + 1) {
     for (r = 1; r <= 8; r = r + 1) {
       near = dist(f, r, bf, br) < 3;
@@ -707,12 +714,15 @@ function whiteKingSpots(pf, pr, bf, br) {
         if (dist(f, r, pf, k) < 3) { near = true; }
       }
       if (!near) {
-        all.push(nameOf(f, r));
-        if (r <= 3) { low.push(nameOf(f, r)); }
+        far = Math.min(dist(f, r, pf, pr), dist(f, r, bf, br));
+        all.push({ sq: nameOf(f, r), far: far });
       }
     }
   }
-  return shuffle(low.length > 0 ? low : all);
+  shuffle(all);
+  all.sort(function (x, y) { return y.far - x.far; });
+  for (k = 0; k < all.length; k = k + 1) { all[k] = all[k].sq; }
+  return all;
 }
 
 function otherTurn(turn) { return turn === 'w' ? 'b' : 'w'; }
@@ -738,44 +748,153 @@ function turnMatters(pf, pr, bf, br, turn, caught) {
   return other !== null && other !== caught;
 }
 
-// Збирає позицію з усім потрібним для гри. null — якщо підходящого білого короля немає
-// (з ним відповідь має лишитись тією самою, що й без нього: він «далеко й не допоможе»).
-function buildPuzzle(pf, pr, bf, br, turn) {
+// ---- Повна перевірка на chess.js: білий король теж ходить ----
+// Перебір вище вважає білого короля нерухомим, а в шахах він може підійти й «плечем» не пустити
+// чорного короля або захистити пішака. Тут грає справжній chess.js: білі ходять і пішаком, і королем.
+// Питання: чи беруть чорні пішака примусово не більше ніж за maxPlies півходів, хоч би як грали білі?
+// «Так» означає, що відповідь «спіймає» правильна й за повними правилами (доказ скінченний).
+// «Ні» може означати й «не вдалося довести за ліміт» — така позиція просто не береться в гру.
+// Пішак, що став ферзем, — перемога білих. budget.left — скільки вузлів пошуку ще можна витратити.
+var PROOF_SLACK = 4;      // запас півходів понад довжину основної лінії гонки
+var PROOF_NODES = 4000;   // ліміт вузлів пошуку на одну нову позицію
+
+function fenOf(pawn, wk, bk, turn) {
+  var rows = [];
+  var r, f, name, ch, row, empty;
+  for (r = 8; r >= 1; r = r - 1) {
+    row = '';
+    empty = 0;
+    for (f = 0; f < 8; f = f + 1) {
+      name = nameOf(f, r);
+      ch = '';
+      if (name === pawn) { ch = 'P'; }
+      else if (name === wk) { ch = 'K'; }
+      else if (name === bk) { ch = 'k'; }
+      if (ch === '') {
+        empty = empty + 1;
+      } else {
+        if (empty > 0) { row = row + String(empty); empty = 0; }
+        row = row + ch;
+      }
+    }
+    if (empty > 0) { row = row + String(empty); }
+    rows.push(row);
+  }
+  return rows.join('/') + ' ' + turn + ' - - 0 1';
+}
+
+function nameDist(a, b) { return dist(fileOf(a), rankOf(a), fileOf(b), rankOf(b)); }
+
+function blackForcesCapture(pawn, wk, bk, turn, maxPlies, budget) {
+  var game = new Chess(fenOf(pawn, wk, bk, turn));
+  var memo = {};
+
+  // pos: клітинки { p: пішак, w: білий король, k: чорний король }; left — скільки півходів ще є
+  function wins(pos, turnNow, left) {
+    var key = pos.p + pos.w + pos.k + turnNow + left;
+    var moves = [];
+    var all, i, m, res;
+    if (memo[key] !== undefined) { return memo[key]; }
+    if (left <= 0 || budget.left <= 0) { return false; }
+    budget.left = budget.left - 1;
+    all = game.moves({ verbose: true });
+
+    if (turnNow === 'b') {
+      for (i = 0; i < all.length; i = i + 1) {
+        if (all[i].captured) { memo[key] = true; return true; }
+      }
+      if (left === 1) { memo[key] = false; return false; }
+      all.sort(function (x, y) { return nameDist(x.to, pos.p) - nameDist(y.to, pos.p); });   // ближче до пішака — першими
+      res = false;
+      for (i = 0; i < all.length && !res; i = i + 1) {
+        game.move(all[i]);
+        if (wins({ p: pos.p, w: pos.w, k: all[i].to }, 'w', left - 1)) { res = true; }
+        game.undo();
+      }
+      memo[key] = res;
+      return res;
+    }
+
+    // Хід білих: чорним треба виграти проти кожного ходу (і королем, і пішаком).
+    for (i = 0; i < all.length; i = i + 1) {
+      m = all[i];
+      if (m.piece === 'p' && m.promotion) {
+        if (m.promotion === 'q') { memo[key] = false; return false; }   // пішак став ферзем
+        continue;                                                       // інші перетворення не рахуємо
+      }
+      moves.push(m);
+    }
+    if (moves.length === 0) { memo[key] = false; return false; }
+    // королем до чорного короля — першими: такі ходи найімовірніше рятують пішака
+    moves.sort(function (x, y) {
+      var dx = (x.piece === 'k') ? nameDist(x.to, pos.k) : 99;
+      var dy = (y.piece === 'k') ? nameDist(y.to, pos.k) : 99;
+      return dx - dy;
+    });
+    res = true;
+    for (i = 0; i < moves.length && res; i = i + 1) {
+      m = moves[i];
+      game.move(m);
+      if (!wins({ p: (m.piece === 'p' ? m.to : pos.p), w: (m.piece === 'k' ? m.to : pos.w), k: pos.k },
+                'b', left - 1)) { res = false; }
+      game.undo();
+    }
+    memo[key] = res;
+    return res;
+  }
+
+  return wins({ p: pawn, w: wk, k: bk }, turn, maxPlies);
+}
+
+// Збирає позицію з усім потрібним для гри. null — якщо підходящого білого короля немає:
+// з ним відповідь має лишитись тією самою, що й без нього («далеко й не допоможе»).
+// Для відповіді «спіймає» це ще й повний перебір chess.js. Для «не спіймає» він не потрібен:
+// білі можуть просто гнати пішака, а білий король при цьому стоїть — це хід і з повної гри,
+// отже якщо так пішак проходить, то й у повній грі проходить.
+function buildPuzzle(pf, pr, bf, br, turn, budget) {
   var answerFree = agreedAnswer(pf, pr, bf, br, turn);
+  var pawn = nameOf(pf, pr);
+  var bk = nameOf(bf, br);
   var spots, i, res, resQueen;
   if (answerFree === null) { return null; }
+  if (!budget) { budget = { left: PROOF_NODES }; }
   spots = whiteKingSpots(pf, pr, bf, br);
   for (i = 0; i < spots.length && i < 6; i = i + 1) {
     res = solveRace(pf, pr, bf, br, turn, spots[i], false);
     resQueen = solveRace(pf, pr, bf, br, turn, spots[i], true);
-    if (res.caught === answerFree && resQueen.caught === answerFree) {
-      return {
-        pf: pf, pr: pr, bf: bf, br: br, turn: turn,
-        pawn: nameOf(pf, pr),
-        bk: nameOf(bf, br),
-        wk: spots[i],
-        caught: res.caught,
-        how: res.how,
-        line: res.line,
-        square: squareInfo(pf, pr, bf, br, turn),
-        tricky: turnMatters(pf, pr, bf, br, turn, res.caught)
-      };
-    }
+    if (res.caught !== answerFree || resQueen.caught !== answerFree) { continue; }
+    if (answerFree && !blackForcesCapture(pawn, spots[i], bk, turn, res.line.length + PROOF_SLACK, budget)) { continue; }
+    return {
+      pf: pf, pr: pr, bf: bf, br: br, turn: turn,
+      pawn: pawn,
+      bk: bk,
+      wk: spots[i],
+      caught: res.caught,
+      how: res.how,
+      line: res.line,
+      square: squareInfo(pf, pr, bf, br, turn),
+      tricky: turnMatters(pf, pr, bf, br, turn, res.caught)
+    };
   }
   return null;
 }
 
 // Нова позиція для рівня: «так» і «ні» випадають приблизно порівну.
 // Ряд пішака (2-й чи інші) обираємо один раз, щоб підступні позиції не зсували його частку.
-// Спершу дешеві перевірки (формула), дорогий перебір — лише для тих, що пройшли.
+// Спершу дешеві перевірки (формула), важкий chess.js — лише для тих, що пройшли.
+// На всі спроби одна позиція має спільний ліміт пошуку chess.js, щоб гра не зависала:
+// коли він вичерпаний, беремо позицію з відповіддю «ні» — їй повний перебір не потрібен.
+// Якщо за 1500 спроб підступної позиції не знайшлось, підступність уже не вимагаємо.
 function makePuzzle(levelId) {
   var level = LEVELS[levelId - 1];
   var wantCaught = (rand(2) === 0);
-  var wantTricky = (Math.random() < level.tricky);
+  var needTricky = (Math.random() < level.tricky);
   var onRank2 = (Math.random() < level.rank2);
-  var spare = null;
+  var budget = { left: PROOF_NODES };
   var n, pf, pr, bf, br, turn, p;
   for (n = 0; n < 3000; n = n + 1) {
+    if (n === 1500) { needTricky = false; }
+    if (budget.left <= 0) { wantCaught = false; }
     pf = rand(8);
     pr = onRank2 ? 2 : 3 + rand(4);
     turn = (rand(2) === 0) ? 'w' : 'b';
@@ -783,12 +902,11 @@ function makePuzzle(levelId) {
     br = (Math.random() < 0.8) ? pr + rand(9 - pr) : 1 + rand(pr);
     if (!validPosition(pf, pr, bf, br)) { continue; }
     if (squareInfo(pf, pr, bf, br, turn).catches !== wantCaught) { continue; }
-    p = buildPuzzle(pf, pr, bf, br, turn);
-    if (p === null) { continue; }
-    if (!wantTricky || p.tricky) { return p; }
-    if (spare === null) { spare = p; }
+    if (needTricky && !turnMatters(pf, pr, bf, br, turn, wantCaught)) { continue; }
+    p = buildPuzzle(pf, pr, bf, br, turn, budget);
+    if (p !== null) { return p; }
   }
-  return spare || buildPuzzle(4, 4, 6, 7, 'b');
+  return buildPuzzle(4, 4, 6, 7, 'b', { left: 100000 });
 }
 
 // ===== ІНТЕРФЕЙС =====
@@ -809,6 +927,8 @@ var state = {
   animId: null,
   step: 0,
   tokens: [],
+  nextPuz: null,       // позиція, підготовлена наперед
+  nextLevel: 0,
   pawnEl: null,
   kingEl: null,
   whiteKingEl: null,
@@ -1194,6 +1314,14 @@ function answer(choice) {
   buildLevels();
   playRace();
   byId('btnNext').focus();
+  window.setTimeout(prefetchPuzzle, 300);
+}
+
+// Наступну позицію шукаємо, поки гравець читає відгук (таймер зупинено), бо повна перевірка chess.js не миттєва.
+function prefetchPuzzle() {
+  if (!state.answered || state.nextPuz !== null) { return; }
+  state.nextPuz = makePuzzle(state.level);
+  state.nextLevel = state.level;
 }
 
 // ---- нова позиція ----
@@ -1201,7 +1329,12 @@ function answer(choice) {
 function nextPuzzle() {
   stopAnim();
   stopTimer();
-  state.puz = makePuzzle(state.level);
+  if (state.nextPuz !== null && state.nextLevel === state.level) {
+    state.puz = state.nextPuz;
+  } else {
+    state.puz = makePuzzle(state.level);
+  }
+  state.nextPuz = null;
   state.answered = false;
   state.step = 0;
   state.tokens = [];
@@ -1223,6 +1356,12 @@ function setLevel(id) {
 // ---- запуск ----
 
 function init() {
+  if (typeof Chess === 'undefined') {
+    byId('noLib').hidden = false;
+    byId('levelBox').hidden = true;
+    byId('game').hidden = true;
+    return;
+  }
   loadStore();
   buildLevels();
   buildBoard();
