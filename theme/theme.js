@@ -225,7 +225,7 @@
       '#brand-bar a{display:flex;align-items:center;gap:8px;max-width:100%;min-width:0;height:44px;' +
       'color:var(--text-dim,inherit);text-decoration:none;}' +
       '#brand-bar a:hover,#brand-bar a:focus-visible{color:var(--text,inherit);}' +
-      '#brand-bar .brand-mark{flex:none;width:28px;height:28px;border-radius:50%;object-fit:cover;}' +
+      '#brand-bar .brand-mark{flex:none;width:36px;height:36px;border-radius:50%;object-fit:cover;}' +
       '#brand-bar .brand-mono{flex:none;display:flex;align-items:center;justify-content:center;' +
       'width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--on-gold);' +
       'font:800 12px/1 Manrope,ui-sans-serif,system-ui,sans-serif;letter-spacing:0;}' +
@@ -251,8 +251,8 @@
     var img = document.createElement('img');
     img.className = 'brand-mark';
     img.alt = '';
-    img.width = 28;
-    img.height = 28;
+    img.width = 36;
+    img.height = 36;
     img.onerror = function () {
       img.onerror = null;
       if (img.parentNode) { img.parentNode.removeChild(img); }
