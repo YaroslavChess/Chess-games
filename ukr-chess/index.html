@@ -137,6 +137,35 @@ p { margin: 0 0 12px; }
 .btn + .btn { margin-top: 12px; }
 .btn:focus-visible, .cell:focus-visible, .icon-btn:focus-visible, .choice:focus-within, .promo-btn:focus-visible { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
 
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  margin: 16px 0 0;
+  padding: 8px 14px;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.toggle:hover, .toggle:focus-visible { border-color: var(--gold); outline: none; }
+.toggle .switch { flex: 0 0 auto; position: relative; width: 48px; height: 28px; border-radius: 14px; background: var(--frame); border: 1px solid var(--hairline); }
+.toggle .switch::after { content: ""; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--text-dim); }
+.toggle[aria-checked="true"] { border-color: var(--gold); }
+.toggle[aria-checked="true"] .switch { background: var(--gold); border-color: var(--gold); }
+.toggle[aria-checked="true"] .switch::after { left: 23px; background: var(--ink); }
+.toggle small { display: block; font-weight: 500; font-size: 13px; color: var(--text-dim); }
+.toggle-game { margin: 12px 0 0; min-height: 48px; }
+
 .hero { display: flex; align-items: flex-end; justify-content: center; gap: 4px; margin: 4px 0 6px; }
 .hero .hero-piece { width: 110px; height: 110px; }
 .hero .hero-piece.pig { animation: wobble 2.4s ease-in-out infinite; }
@@ -414,7 +443,8 @@ p { margin: 0 0 12px; }
       <button type="button" class="btn btn-secondary" id="btn-mode-local"><span class="mode-pic" id="pic-mode-local"></span><span>Удвох на одному пристрої<small>Передавайте планшет по черзі</small></span></button>
       <button type="button" class="btn btn-secondary" id="btn-mode-online"><span class="mode-pic" id="pic-mode-online"></span><span>Онлайн з учителем<small>Гра за посиланням</small></span></button>
     </div>
-    <p class="small">Гра нічого не збирає. В онлайн-режимі ходи передаються через сервіс Ably тільки між двома гравцями кімнати, а на пристрої запам'ятовується лише поточна онлайн-партія.</p>
+    <button type="button" class="toggle" role="switch" aria-checked="false" data-classic-toggle="1"><span class="switch" aria-hidden="true"></span><span>Класичні фігури<small>Звичайні шахові силуети</small></span></button>
+    <p class="small">Гра нічого не збирає. В онлайн-режимі ходи передаються через сервіс Ably тільки між двома гравцями кімнати, а на пристрої запам'ятовуються лише поточна онлайн-партія й вибір «Класичні фігури».</p>
   </section>
 
   <section id="screen-bot" class="hidden">
@@ -499,6 +529,7 @@ p { margin: 0 0 12px; }
       <button type="button" class="btn btn-secondary" id="btn-resign">Здатися</button>
       <button type="button" class="btn btn-primary" id="btn-new">Нова гра</button>
     </div>
+    <button type="button" class="toggle toggle-game" role="switch" aria-checked="false" data-classic-toggle="1"><span class="switch" aria-hidden="true"></span><span>Класичні фігури</span></button>
   </section>
 
   <div id="load-error" class="notice hidden">
@@ -544,10 +575,12 @@ p { margin: 0 0 12px; }
      - Кожен SVG — це вміст картинки 100×100 (без тегу <svg>, його додає гра).
      - {назва} у SVG замінюється кольором із colors тієї самої сторони,
        наприклад {blue} -> colors.blue.
-     - Щоб діти не плутали фігури, силует має лишатися шаховим:
-       король — хрестик, ферзь — корона з кульками, тура — зубці,
-       слон — гостра шапка з прорізом і кулькою, кінь — кінська голова,
-       пішак — кругла голівка на підставці. */
+     - Щоб діти не плутали фігури, силует має лишатися шаховим навіть на 40 px:
+       пішак — найменший і круглий, король — найвищий з великим хрестом,
+       ферзь — корона з кульками, слон — висока шапка з прорізом і кулькою,
+       тура — зубці, кінь — кінська голова. Вуса, рильця й вишиванка — лише деталі
+       всередині силуету.
+     - classic — ті самі силуети без облич («Класичні фігури»). */
   var THEME = {
     title: 'Українці проти свиней',
 
@@ -565,6 +598,59 @@ p { margin: 0 0 12px; }
 
     // Хмаринка, з якою відлітає з'їдена свиня (поле 100×60).
     cloud: '<path d="M20 52 Q4 52 7 39 Q10 28 22 30 Q24 13 42 15 Q53 3 67 13 Q83 9 85 26 Q98 28 95 42 Q93 53 80 52 Z" fill="#f1e9d8" stroke="#b7a98e" stroke-width="3" stroke-linejoin="round"/>',
+
+    // «Класичні фігури»: ті самі силуети, але без облич і вишивки. Кольори — body (тіло) і trim (оздоба)
+    // тієї самої сторони, тож синьо-жовті українці й рожево-золоті свині лишаються впізнаваними.
+    classic: {
+      k: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
+        '<rect x="16" y="84" width="68" height="11" rx="5.5" fill="{trim}"/>' +
+        '<path d="M24 86 Q26 70 39 64 L61 64 Q74 70 76 86 Z" fill="{body}"/>' +
+        '<rect x="33" y="58" width="34" height="8" rx="4" fill="{trim}"/>' +
+        '<circle cx="50" cy="54" r="12.5" fill="{body}"/>' +
+        '<path d="M44.5 3 L55.5 3 L55.5 9 L67 9 L67 19 L55.5 19 L55.5 28 L44.5 28 L44.5 19 L33 19 L33 9 L44.5 9 Z" fill="{trim}"/>' +
+        '<path d="M30 46 Q29 24 50 23 Q71 24 70 46 Z" fill="{body}"/>' +
+        '<rect x="28" y="40" width="44" height="9" rx="4.5" fill="{trim}"/>' +
+        '</g>',
+      q: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
+        '<rect x="18" y="84" width="64" height="11" rx="5.5" fill="{trim}"/>' +
+        '<path d="M27 86 Q29 70 41 64 L59 64 Q71 70 73 86 Z" fill="{body}"/>' +
+        '<rect x="36" y="58" width="28" height="8" rx="4" fill="{trim}"/>' +
+        '<circle cx="50" cy="54" r="11.5" fill="{body}"/>' +
+        '<path d="M31 43 L24 27 L35 35 L38 22 L45 33 L50 18 L55 33 L62 22 L65 35 L76 27 L69 43 Z" fill="{trim}"/>' +
+        '<rect x="30" y="38" width="40" height="7" rx="3.5" fill="{body}"/>' +
+        '<circle cx="24" cy="24" r="4.6" fill="{trim}"/><circle cx="38" cy="19" r="4.6" fill="{trim}"/>' +
+        '<circle cx="50" cy="15" r="5" fill="{trim}"/><circle cx="62" cy="19" r="4.6" fill="{trim}"/>' +
+        '<circle cx="76" cy="24" r="4.6" fill="{trim}"/>' +
+        '</g>',
+      r: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round">' +
+        '<rect x="16" y="82" width="68" height="12" rx="6" fill="{trim}"/>' +
+        '<path d="M27 83 L31 42 L69 42 L73 83 Z" fill="{body}"/>' +
+        '<path d="M22 44 L22 16 L33 16 L33 30 L43 30 L43 16 L57 16 L57 30 L67 30 L67 16 L78 16 L78 44 Z" fill="{trim}"/>' +
+        '</g>',
+      b: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
+        '<rect x="22" y="84" width="56" height="11" rx="5.5" fill="{trim}"/>' +
+        '<path d="M30 86 Q30 71 41 66 L59 66 Q70 71 70 86 Z" fill="{body}"/>' +
+        '<rect x="33" y="59" width="34" height="8" rx="4" fill="{trim}"/>' +
+        '<circle cx="50" cy="55" r="10.5" fill="{body}"/>' +
+        '<path d="M33 49 Q31 34 50 21 Q69 34 67 49 Z" fill="{body}"/>' +
+        '<rect x="33" y="43" width="34" height="7" rx="3.5" fill="{trim}"/>' +
+        '<path d="M59 29 L47 41" fill="none" stroke-width="4.5"/>' +
+        '<circle cx="50" cy="17" r="4.6" fill="{trim}"/>' +
+        '</g>',
+      n: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
+        '<rect x="20" y="82" width="60" height="12" rx="6" fill="{trim}"/>' +
+        '<path d="M31 84 Q29 66 40 57 L27 58 Q15 57 16 47 Q17 40 24 36 L33 25 L37 9 L46 18 Q66 18 73 38 Q78 58 72 84 Z" fill="{body}"/>' +
+        '<path d="M46 18 Q66 18 73 38 Q78 58 72 84 L65 84 Q70 60 65 43 Q60 29 46 23 Z" fill="{trim}"/>' +
+        '<circle cx="31" cy="35" r="4" fill="{white}" stroke-width="2"/>' +
+        '</g>' +
+        '<g fill="{line}"><circle cx="30" cy="35" r="2"/><circle cx="20" cy="46" r="1.6"/></g>',
+      p: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
+        '<rect x="27" y="84" width="46" height="11" rx="5.5" fill="{trim}"/>' +
+        '<path d="M35 86 Q37 70 44 63 L56 63 Q63 70 65 86 Z" fill="{body}"/>' +
+        '<rect x="35" y="58" width="30" height="8" rx="4" fill="{trim}"/>' +
+        '<circle cx="50" cy="47" r="15" fill="{body}"/>' +
+        '</g>'
+    },
 
     bots: {
       easy: 'Свиня-новачок',
@@ -589,76 +675,79 @@ p { margin: 0 0 12px; }
           stitch: '#d6401a',
           hat: '#d6401a',
           fur: '#6b4226',
-          hair: '#8a5a2b'
+          hair: '#8a5a2b',
+          body: '#2a64c8',
+          trim: '#ffd23f'
         },
         pieces: {
           k: {
             name: 'Гетьман',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
               '<rect x="16" y="84" width="68" height="11" rx="5.5" fill="{yellow}"/>' +
-              '<path d="M25 86 Q27 70 40 66 L60 66 Q73 70 75 86 Z" fill="{blue}"/>' +
-              '<path d="M45.5 66 L54.5 66 L54.5 86 L45.5 86 Z" fill="{white}"/>' +
-              '<circle cx="50" cy="55" r="13" fill="{skin}"/>' +
-              '<path d="M32 44 Q31 22 50 21 Q69 22 68 44 Z" fill="{hat}"/>' +
-              '<rect x="29" y="39" width="42" height="9" rx="4.5" fill="{fur}"/>' +
-              '<path d="M46 2 L54 2 L54 8 L60 8 L60 15 L54 15 L54 22 L46 22 L46 15 L40 15 L40 8 L46 8 Z" fill="{yellow}"/>' +
-              '<circle cx="50" cy="31" r="3.5" fill="{yellow}"/>' +
-              '<path d="M41.5 50.5 L47 49.6 M53 49.6 L58.5 50.5" fill="none" stroke-width="2.2"/>' +
+              '<path d="M24 86 Q26 70 39 64 L61 64 Q74 70 76 86 Z" fill="{blue}"/>' +
+              '<path d="M45.5 64 L54.5 64 L54.5 86 L45.5 86 Z" fill="{white}"/>' +
+              '<rect x="33" y="58" width="34" height="8" rx="4" fill="{yellow}"/>' +
+              '<circle cx="50" cy="54" r="12.5" fill="{skin}"/>' +
+              '<path d="M44.5 3 L55.5 3 L55.5 9 L67 9 L67 19 L55.5 19 L55.5 28 L44.5 28 L44.5 19 L33 19 L33 9 L44.5 9 Z" fill="{yellow}"/>' +
+              '<path d="M30 46 Q29 24 50 23 Q71 24 70 46 Z" fill="{yellow}"/>' +
+              '<rect x="28" y="40" width="44" height="9" rx="4.5" fill="{fur}"/>' +
+              '<circle cx="50" cy="32" r="3.5" fill="{stitch}"/>' +
               '</g>' +
-              '<g fill="{line}"><circle cx="45" cy="54" r="2.2"/><circle cx="55" cy="54" r="2.2"/></g>' +
-              '<path d="M50 59.5 C43 55.5 34 57.5 31 66 C37 62.5 44 62.5 50 62 C56 62.5 63 62.5 69 66 C66 57.5 57 55.5 50 59.5 Z" fill="{fur}" stroke="{line}" stroke-width="2" stroke-linejoin="round"/>' +
+              '<g fill="{line}"><circle cx="44.5" cy="54" r="2.2"/><circle cx="55.5" cy="54" r="2.2"/></g>' +
+              '<path d="M50 59 C43 55 34 57 31 65 C37 62 44 62 50 61.5 C56 62 63 62 69 65 C66 57 57 55 50 59 Z" fill="{fur}" stroke="{line}" stroke-width="2" stroke-linejoin="round"/>' +
               '<g fill="{stitch}"><path d="M50 69 l2.8 2.8 l-2.8 2.8 l-2.8 -2.8 Z"/><path d="M50 77 l2.8 2.8 l-2.8 2.8 l-2.8 -2.8 Z"/></g>'
           },
           q: {
             name: 'Берегиня',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
-              '<rect x="18" y="83" width="64" height="12" rx="6" fill="{yellow}"/>' +
-              '<path d="M33 42 L26 74 L33 72 L38 45 Z" fill="{yellow}"/>' +
-              '<path d="M67 42 L74 74 L67 72 L62 45 Z" fill="{blue}"/>' +
-              '<path d="M27 85 Q29 68 41 63 L59 63 Q71 68 73 85 Z" fill="{blue}"/>' +
-              '<path d="M45.5 63 L54.5 63 L54 85 L46 85 Z" fill="{white}"/>' +
-              '<path d="M35 57 Q33 38 50 37 Q67 38 65 57 Z" fill="{hair}"/>' +
-              '<circle cx="50" cy="51" r="12" fill="{skin}"/>' +
-              '<path d="M30 43 L22 20 L34 31 L37 13 L45 28 L50 9 L55 28 L63 13 L66 31 L78 20 L70 43 Z" fill="{yellow}"/>' +
-              '<rect x="30" y="37" width="40" height="7" rx="3.5" fill="{stitch}"/>' +
-              '<circle cx="22" cy="19" r="5" fill="{stitch}"/><circle cx="37" cy="12" r="5" fill="{blue}"/>' +
-              '<circle cx="50" cy="8" r="5.5" fill="{stitch}"/><circle cx="63" cy="12" r="5" fill="{blue}"/>' +
-              '<circle cx="78" cy="19" r="5" fill="{stitch}"/>' +
-              '<path d="M46 56.5 Q50 59.5 54 56.5" fill="none" stroke-width="2"/>' +
+              '<rect x="18" y="84" width="64" height="11" rx="5.5" fill="{yellow}"/>' +
+              '<path d="M34 46 L27 75 L34 73 L40 50 Z" fill="{yellow}"/>' +
+              '<path d="M66 46 L73 75 L66 73 L60 50 Z" fill="{blue}"/>' +
+              '<path d="M27 86 Q29 70 41 64 L59 64 Q71 70 73 86 Z" fill="{blue}"/>' +
+              '<path d="M45.5 64 L54.5 64 L54 86 L46 86 Z" fill="{white}"/>' +
+              '<rect x="36" y="58" width="28" height="8" rx="4" fill="{yellow}"/>' +
+              '<path d="M35 58 Q32 40 50 39 Q68 40 65 58 Z" fill="{hair}"/>' +
+              '<circle cx="50" cy="54" r="11" fill="{skin}"/>' +
+              '<path d="M31 43 L24 27 L35 35 L38 22 L45 33 L50 18 L55 33 L62 22 L65 35 L76 27 L69 43 Z" fill="{yellow}"/>' +
+              '<rect x="30" y="38" width="40" height="7" rx="3.5" fill="{stitch}"/>' +
+              '<circle cx="24" cy="24" r="4.6" fill="{stitch}"/><circle cx="38" cy="19" r="4.6" fill="{blue}"/>' +
+              '<circle cx="50" cy="15" r="5" fill="{stitch}"/><circle cx="62" cy="19" r="4.6" fill="{blue}"/>' +
+              '<circle cx="76" cy="24" r="4.6" fill="{stitch}"/>' +
+              '<path d="M46 60 Q50 63 54 60" fill="none" stroke-width="2"/>' +
               '</g>' +
-              '<g fill="{cheek}" opacity=".7"><circle cx="42.5" cy="55" r="2.6"/><circle cx="57.5" cy="55" r="2.6"/></g>' +
-              '<g fill="{line}"><circle cx="45.5" cy="50.5" r="2.1"/><circle cx="54.5" cy="50.5" r="2.1"/></g>' +
-              '<g fill="{stitch}"><path d="M50 67 l2.8 2.8 l-2.8 2.8 l-2.8 -2.8 Z"/><path d="M50 75 l2.8 2.8 l-2.8 2.8 l-2.8 -2.8 Z"/></g>'
+              '<g fill="{cheek}" opacity=".7"><circle cx="42" cy="58" r="2.4"/><circle cx="58" cy="58" r="2.4"/></g>' +
+              '<g fill="{line}"><circle cx="45.5" cy="53" r="2.1"/><circle cx="54.5" cy="53" r="2.1"/></g>' +
+              '<g fill="{stitch}"><path d="M50 69 l2.8 2.8 l-2.8 2.8 l-2.8 -2.8 Z"/><path d="M50 77 l2.8 2.8 l-2.8 2.8 l-2.8 -2.8 Z"/></g>'
           },
           r: {
             name: 'Фортеця',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round">' +
               '<rect x="16" y="82" width="68" height="12" rx="6" fill="{yellow}"/>' +
-              '<path d="M27 83 L31 40 L69 40 L73 83 Z" fill="{blue}"/>' +
-              '<path d="M22 42 L22 17 L33 17 L33 26 L43 26 L43 17 L57 17 L57 26 L67 26 L67 17 L78 17 L78 42 Z" fill="{yellow}"/>' +
-              '<path d="M29.7 53 L70.3 53 L71.1 63 L28.9 63 Z" fill="{white}"/>' +
+              '<path d="M27 83 L31 42 L69 42 L73 83 Z" fill="{blue}"/>' +
+              '<path d="M22 44 L22 16 L33 16 L33 30 L43 30 L43 16 L57 16 L57 30 L67 30 L67 16 L78 16 L78 44 Z" fill="{yellow}"/>' +
+              '<path d="M29.7 55 L70.3 55 L71.1 65 L28.9 65 Z" fill="{white}"/>' +
               '<path d="M43 83 L43 75 Q50 66 57 75 L57 83 Z" fill="{line}"/>' +
-              '<path d="M37 51 L37 47.5 Q40 43.5 43 47.5 L43 51 Z" fill="{line}"/>' +
-              '<path d="M57 51 L57 47.5 Q60 43.5 63 47.5 L63 51 Z" fill="{line}"/>' +
+              '<path d="M37 53 L37 49.5 Q40 45.5 43 49.5 L43 53 Z" fill="{line}"/>' +
+              '<path d="M57 53 L57 49.5 Q60 45.5 63 49.5 L63 53 Z" fill="{line}"/>' +
               '</g>' +
-              '<g fill="{stitch}"><path d="M31.5 58 l3 -3 l3 3 l-3 3 Z"/><path d="M39.3 58 l3 -3 l3 3 l-3 3 Z"/>' +
-              '<path d="M47 58 l3 -3 l3 3 l-3 3 Z"/><path d="M54.7 58 l3 -3 l3 3 l-3 3 Z"/><path d="M62.5 58 l3 -3 l3 3 l-3 3 Z"/></g>'
+              '<g fill="{stitch}"><path d="M31.5 60 l3 -3 l3 3 l-3 3 Z"/><path d="M39.3 60 l3 -3 l3 3 l-3 3 Z"/>' +
+              '<path d="M47 60 l3 -3 l3 3 l-3 3 Z"/><path d="M54.7 60 l3 -3 l3 3 l-3 3 Z"/><path d="M62.5 60 l3 -3 l3 3 l-3 3 Z"/></g>'
           },
           b: {
             name: 'Характерник',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
               '<rect x="22" y="84" width="56" height="11" rx="5.5" fill="{yellow}"/>' +
-              '<path d="M30 86 Q30 70 41 65 L59 65 Q70 70 70 86 Z" fill="{blue}"/>' +
-              '<path d="M45.5 65 L54.5 65 L53.5 86 L46.5 86 Z" fill="{white}"/>' +
-              '<circle cx="50" cy="54" r="12" fill="{skin}"/>' +
-              '<path d="M36 45 Q35 26 50 15 Q65 26 64 45 Z" fill="{hat}"/>' +
-              '<path d="M57 22 L46 36" fill="none" stroke-width="3.5"/>' +
-              '<rect x="34" y="41" width="32" height="7" rx="3.5" fill="{yellow}"/>' +
-              '<circle cx="50" cy="11" r="5" fill="{yellow}"/>' +
+              '<path d="M30 86 Q30 71 41 66 L59 66 Q70 71 70 86 Z" fill="{blue}"/>' +
+              '<rect x="33" y="59" width="34" height="8" rx="4" fill="{yellow}"/>' +
+              '<circle cx="50" cy="55" r="10.5" fill="{skin}"/>' +
+              '<path d="M33 49 Q31 34 50 21 Q69 34 67 49 Z" fill="{white}"/>' +
+              '<rect x="33" y="43" width="34" height="7" rx="3.5" fill="{stitch}"/>' +
+              '<path d="M59 29 L47 41" fill="none" stroke-width="4.5"/>' +
+              '<circle cx="50" cy="17" r="4.6" fill="{yellow}"/>' +
+              '<path d="M40 59 Q40 76 50 81 Q60 76 60 59 Q55 62 50 61 Q45 62 40 59 Z" fill="{white}"/>' +
               '</g>' +
-              '<g fill="{line}"><circle cx="45.5" cy="52.5" r="2.1"/><circle cx="54.5" cy="52.5" r="2.1"/></g>' +
-              '<path d="M50 58 C44 55 39 57 37 63 C41 60.5 45.5 60.5 50 60.5 C54.5 60.5 59 60.5 63 63 C61 57 56 55 50 58 Z" fill="{fur}" stroke="{line}" stroke-width="2" stroke-linejoin="round"/>' +
-              '<g fill="{stitch}"><path d="M50 69 l2.6 2.6 l-2.6 2.6 l-2.6 -2.6 Z"/><path d="M50 76.5 l2.6 2.6 l-2.6 2.6 l-2.6 -2.6 Z"/></g>'
+              '<g fill="{line}"><circle cx="45.5" cy="55" r="2"/><circle cx="54.5" cy="55" r="2"/></g>' +
+              '<g fill="{stitch}"><path d="M36 76 l2.4 2.4 l-2.4 2.4 l-2.4 -2.4 Z"/><path d="M64 76 l2.4 2.4 l-2.4 2.4 l-2.4 -2.4 Z"/></g>'
           },
           n: {
             name: 'Козак на коні',
@@ -667,33 +756,29 @@ p { margin: 0 0 12px; }
               '<path d="M31 84 Q29 66 40 57 L27 58 Q15 57 16 47 Q17 40 24 36 L33 25 L37 9 L46 18 Q66 18 73 38 Q78 58 72 84 Z" fill="{blue}"/>' +
               '<path d="M46 18 Q66 18 73 38 Q78 58 72 84 L65 84 Q70 60 65 43 Q60 29 46 23 Z" fill="{yellow}"/>' +
               '<path d="M30.4 70 L75.5 70 L74.9 78 L30.6 78 Z" fill="{white}"/>' +
-              '<path d="M55 41 Q56 30 64 30 Q72 30 73 41 Z" fill="{blue}"/>' +
-              '<circle cx="64" cy="22" r="8" fill="{skin}"/>' +
-              '<path d="M56.5 19 Q57 8 64 8 Q70 8 72.5 13 Q75 17 71.5 19 Z" fill="{hat}"/>' +
-              '<rect x="55" y="16" width="18" height="5" rx="2.5" fill="{fur}"/>' +
+              '<path d="M48 21 Q47 7 59 7 Q70 8 69 21 Z" fill="{hat}"/>' +
+              '<rect x="46" y="18" width="25" height="6" rx="3" fill="{fur}"/>' +
               '<circle cx="31" cy="35" r="4" fill="{white}" stroke-width="2"/>' +
               '</g>' +
-              '<g fill="{line}"><circle cx="30" cy="35" r="2"/><circle cx="20" cy="47" r="1.6"/>' +
-              '<circle cx="61" cy="22.5" r="1.4"/><circle cx="67" cy="22.5" r="1.4"/></g>' +
-              '<path d="M64 26 C61 24.5 58.5 25.5 57.5 28 C59.5 27 61.8 27.2 64 26.8 C66.2 27.2 68.5 27 70.5 28 C69.5 25.5 67 24.5 64 26 Z" fill="{fur}" stroke="{line}" stroke-width="1.4" stroke-linejoin="round"/>' +
+              '<g fill="{line}"><circle cx="30" cy="35" r="2"/><circle cx="20" cy="45" r="1.6"/></g>' +
+              '<path d="M17 51 C22 46 28 48 31 54 C26 52.5 21 53.5 17 51 Z" fill="{fur}" stroke="{line}" stroke-width="1.6" stroke-linejoin="round"/>' +
               '<g fill="{stitch}"><path d="M37 74 l2.6 -2.6 l2.6 2.6 l-2.6 2.6 Z"/><path d="M45 74 l2.6 -2.6 l2.6 2.6 l-2.6 2.6 Z"/>' +
               '<path d="M53 74 l2.6 -2.6 l2.6 2.6 l-2.6 2.6 Z"/><path d="M61 74 l2.6 -2.6 l2.6 2.6 l-2.6 2.6 Z"/></g>'
           },
           p: {
             name: 'Козак',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
-              '<rect x="20" y="82" width="60" height="12" rx="6" fill="{yellow}"/>' +
-              '<path d="M30 84 Q31 63 42 57 L58 57 Q69 63 70 84 Z" fill="{blue}"/>' +
-              '<path d="M43 57 L57 57 L55 71 L45 71 Z" fill="{white}"/>' +
-              '<rect x="36" y="51" width="28" height="8" rx="4" fill="{yellow}"/>' +
-              '<circle cx="50" cy="36" r="16" fill="{skin}"/>' +
-              '<path d="M35 30 Q36 13 50 13 Q63 13 67 21 Q71 26 66 30 Z" fill="{hat}"/>' +
-              '<rect x="32" y="25" width="36" height="8" rx="4" fill="{fur}"/>' +
+              '<rect x="27" y="84" width="46" height="11" rx="5.5" fill="{yellow}"/>' +
+              '<path d="M35 86 Q37 70 44 63 L56 63 Q63 70 65 86 Z" fill="{blue}"/>' +
+              '<path d="M45 63 L55 63 L54 86 L46 86 Z" fill="{white}"/>' +
+              '<rect x="35" y="58" width="30" height="8" rx="4" fill="{yellow}"/>' +
+              '<circle cx="50" cy="47" r="15" fill="{skin}"/>' +
+              '<path d="M36.3 41 A15 15 0 0 1 63.7 41 Z" fill="{hat}"/>' +
+              '<rect x="37.5" y="38" width="25" height="7" rx="3.5" fill="{fur}"/>' +
               '</g>' +
-              '<g fill="{cheek}" opacity=".7"><circle cx="38.5" cy="41" r="2.8"/><circle cx="61.5" cy="41" r="2.8"/></g>' +
-              '<g fill="{line}"><circle cx="44" cy="37" r="2.3"/><circle cx="56" cy="37" r="2.3"/></g>' +
-              '<path d="M50 42.5 C44 39.5 38 41.5 35 47.5 C40 46 45 47 50 45.5 C55 47 60 46 65 47.5 C62 41.5 56 39.5 50 42.5 Z" fill="{fur}" stroke="{line}" stroke-width="2" stroke-linejoin="round"/>' +
-              '<g fill="{stitch}"><path d="M50 59.5 l2.6 2.6 l-2.6 2.6 l-2.6 -2.6 Z"/><path d="M50 65.5 l2 2 l-2 2 l-2 -2 Z"/></g>'
+              '<g fill="{line}"><circle cx="44.5" cy="49" r="2.1"/><circle cx="55.5" cy="49" r="2.1"/></g>' +
+              '<path d="M50 53.5 C45 51 40 52.5 38 57 C42 55.5 46 56 50 55 C54 56 58 55.5 62 57 C60 52.5 55 51 50 53.5 Z" fill="{fur}" stroke="{line}" stroke-width="2" stroke-linejoin="round"/>' +
+              '<g fill="{stitch}"><path d="M50 69 l2.6 2.6 l-2.6 2.6 l-2.6 -2.6 Z"/><path d="M50 76 l2.2 2.2 l-2.2 2.2 l-2.2 -2.2 Z"/></g>'
           }
         }
       },
@@ -713,60 +798,62 @@ p { margin: 0 0 12px; }
           cheek: '#ff4f8f',
           gold: '#ffcd3c',
           purple: '#8a4fd6',
-          white: '#ffffff'
+          white: '#ffffff',
+          body: '#ff9ec4',
+          trim: '#ffcd3c'
         },
         pieces: {
           k: {
             name: 'Свинокороль',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
               '<rect x="16" y="84" width="68" height="11" rx="5.5" fill="{dark}"/>' +
-              '<path d="M25 86 Q27 70 40 66 L60 66 Q73 70 75 86 Z" fill="{purple}"/>' +
-              '<path d="M45.5 66 L54.5 66 L54.5 86 L45.5 86 Z" fill="{white}"/>' +
-              '<path d="M38 52 L26 45 L40 44 Z" fill="{pink}"/><path d="M62 52 L74 45 L60 44 Z" fill="{pink}"/>' +
-              '<circle cx="50" cy="55" r="13" fill="{pink}"/>' +
-              '<path d="M32 44 Q31 22 50 21 Q69 22 68 44 Z" fill="{gold}"/>' +
-              '<rect x="29" y="39" width="42" height="9" rx="4.5" fill="{white}"/>' +
-              '<path d="M46 2 L54 2 L54 8 L60 8 L60 15 L54 15 L54 22 L46 22 L46 15 L40 15 L40 8 L46 8 Z" fill="{gold}"/>' +
-              '<circle cx="50" cy="31" r="3.5" fill="{purple}"/>' +
-              '<ellipse cx="50" cy="60" rx="7.5" ry="5.5" fill="{snout}"/>' +
-              '<path d="M46 66.8 Q50 69 54 66.8" fill="none" stroke-width="2"/>' +
+              '<path d="M24 86 Q26 70 39 64 L61 64 Q74 70 76 86 Z" fill="{purple}"/>' +
+              '<path d="M45.5 64 L54.5 64 L54.5 86 L45.5 86 Z" fill="{white}"/>' +
+              '<rect x="33" y="58" width="34" height="8" rx="4" fill="{dark}"/>' +
+              '<path d="M38 54 L26 49 L39 46 Z" fill="{pink}"/><path d="M62 54 L74 49 L61 46 Z" fill="{pink}"/>' +
+              '<circle cx="50" cy="54" r="12.5" fill="{pink}"/>' +
+              '<path d="M44.5 3 L55.5 3 L55.5 9 L67 9 L67 19 L55.5 19 L55.5 28 L44.5 28 L44.5 19 L33 19 L33 9 L44.5 9 Z" fill="{gold}"/>' +
+              '<path d="M30 46 Q29 24 50 23 Q71 24 70 46 Z" fill="{gold}"/>' +
+              '<rect x="28" y="40" width="44" height="9" rx="4.5" fill="{white}"/>' +
+              '<circle cx="50" cy="32" r="3.5" fill="{purple}"/>' +
+              '<ellipse cx="50" cy="60.5" rx="7.5" ry="5" fill="{snout}"/>' +
               '</g>' +
-              '<g fill="{cheek}" opacity=".6"><circle cx="39" cy="59" r="2.8"/><circle cx="61" cy="59" r="2.8"/></g>' +
-              '<g fill="{line}"><circle cx="44.5" cy="53" r="2.2"/><circle cx="55.5" cy="53" r="2.2"/>' +
-              '<ellipse cx="47.3" cy="60" rx="1.6" ry="2.4"/><ellipse cx="52.7" cy="60" rx="1.6" ry="2.4"/>' +
-              '<circle cx="36" cy="43.5" r="1.3"/><circle cx="44" cy="43.5" r="1.3"/><circle cx="56" cy="43.5" r="1.3"/><circle cx="64" cy="43.5" r="1.3"/>' +
+              '<g fill="{cheek}" opacity=".6"><circle cx="39" cy="60" r="2.6"/><circle cx="61" cy="60" r="2.6"/></g>' +
+              '<g fill="{line}"><circle cx="44" cy="53" r="2.1"/><circle cx="56" cy="53" r="2.1"/>' +
+              '<ellipse cx="47.3" cy="60.5" rx="1.5" ry="2.2"/><ellipse cx="52.7" cy="60.5" rx="1.5" ry="2.2"/>' +
+              '<circle cx="36" cy="44.5" r="1.3"/><circle cx="44" cy="44.5" r="1.3"/><circle cx="56" cy="44.5" r="1.3"/><circle cx="64" cy="44.5" r="1.3"/>' +
               '<circle cx="50" cy="73" r="1.4"/><circle cx="50" cy="80" r="1.4"/></g>'
           },
           q: {
             name: 'Свинокоролева',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
-              '<rect x="18" y="83" width="64" height="12" rx="6" fill="{dark}"/>' +
-              '<path d="M27 85 Q29 68 41 63 L59 63 Q71 68 73 85 Z" fill="{pink}"/>' +
-              '<path d="M39 50 L27 43 L41 42 Z" fill="{pink}"/><path d="M61 50 L73 43 L59 42 Z" fill="{pink}"/>' +
-              '<circle cx="50" cy="51" r="12.5" fill="{pink}"/>' +
-              '<path d="M30 43 L22 20 L34 31 L37 13 L45 28 L50 9 L55 28 L63 13 L66 31 L78 20 L70 43 Z" fill="{gold}"/>' +
-              '<rect x="30" y="37" width="40" height="7" rx="3.5" fill="{purple}"/>' +
-              '<circle cx="22" cy="19" r="5" fill="{purple}"/><circle cx="37" cy="12" r="5" fill="{snout}"/>' +
-              '<circle cx="50" cy="8" r="5.5" fill="{purple}"/><circle cx="63" cy="12" r="5" fill="{snout}"/>' +
-              '<circle cx="78" cy="19" r="5" fill="{purple}"/>' +
-              '<ellipse cx="50" cy="56" rx="6.5" ry="4.8" fill="{snout}"/>' +
+              '<rect x="18" y="84" width="64" height="11" rx="5.5" fill="{dark}"/>' +
+              '<path d="M27 86 Q29 70 41 64 L59 64 Q71 70 73 86 Z" fill="{pink}"/>' +
+              '<rect x="36" y="58" width="28" height="8" rx="4" fill="{dark}"/>' +
+              '<path d="M39 55 L27 49 L40 47 Z" fill="{pink}"/><path d="M61 55 L73 49 L60 47 Z" fill="{pink}"/>' +
+              '<circle cx="50" cy="54" r="11.5" fill="{pink}"/>' +
+              '<path d="M31 43 L24 27 L35 35 L38 22 L45 33 L50 18 L55 33 L62 22 L65 35 L76 27 L69 43 Z" fill="{gold}"/>' +
+              '<rect x="30" y="38" width="40" height="7" rx="3.5" fill="{purple}"/>' +
+              '<circle cx="24" cy="24" r="4.6" fill="{purple}"/><circle cx="38" cy="19" r="4.6" fill="{snout}"/>' +
+              '<circle cx="50" cy="15" r="5" fill="{purple}"/><circle cx="62" cy="19" r="4.6" fill="{snout}"/>' +
+              '<circle cx="76" cy="24" r="4.6" fill="{purple}"/>' +
+              '<ellipse cx="50" cy="59" rx="6.5" ry="4.5" fill="{snout}"/>' +
               '</g>' +
-              '<g fill="{white}" opacity=".85"><circle cx="37" cy="79" r="2.6"/><circle cx="50" cy="75" r="2.6"/><circle cx="63" cy="79" r="2.6"/><circle cx="44" cy="69" r="2"/><circle cx="57" cy="69" r="2"/></g>' +
-              '<g fill="{cheek}" opacity=".6"><circle cx="39.5" cy="55" r="2.6"/><circle cx="60.5" cy="55" r="2.6"/></g>' +
-              '<g fill="{line}"><circle cx="45" cy="49.5" r="2.1"/><circle cx="55" cy="49.5" r="2.1"/>' +
-              '<ellipse cx="47.7" cy="56" rx="1.4" ry="2.1"/><ellipse cx="52.3" cy="56" rx="1.4" ry="2.1"/></g>'
+              '<g fill="{white}" opacity=".85"><circle cx="37" cy="79" r="2.6"/><circle cx="50" cy="75" r="2.6"/><circle cx="63" cy="79" r="2.6"/><circle cx="44" cy="70" r="2"/><circle cx="56" cy="70" r="2"/></g>' +
+              '<g fill="{line}"><circle cx="45" cy="52.5" r="2"/><circle cx="55" cy="52.5" r="2"/>' +
+              '<ellipse cx="47.7" cy="59" rx="1.3" ry="2"/><ellipse cx="52.3" cy="59" rx="1.3" ry="2"/></g>'
           },
           r: {
             name: 'Свинобашта',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round">' +
               '<rect x="16" y="82" width="68" height="12" rx="6" fill="{dark}"/>' +
-              '<path d="M27 83 L31 40 L69 40 L73 83 Z" fill="{pink}"/>' +
-              '<path d="M22 42 L22 17 L33 17 L33 26 L43 26 L43 17 L57 17 L57 26 L67 26 L67 17 L78 17 L78 42 Z" fill="{dark}"/>' +
+              '<path d="M27 83 L31 42 L69 42 L73 83 Z" fill="{pink}"/>' +
+              '<path d="M22 44 L22 16 L33 16 L33 30 L43 30 L43 16 L57 16 L57 30 L67 30 L67 16 L78 16 L78 44 Z" fill="{dark}"/>' +
               '<path d="M28.3 73 L71.7 73 L72.3 80 L27.7 80 Z" fill="{gold}"/>' +
               '<ellipse cx="50" cy="60" rx="10" ry="7" fill="{snout}"/>' +
               '</g>' +
               '<g fill="{cheek}" opacity=".6"><circle cx="36" cy="59" r="3.2"/><circle cx="64" cy="59" r="3.2"/></g>' +
-              '<g fill="{line}"><circle cx="41" cy="50" r="2.6"/><circle cx="59" cy="50" r="2.6"/>' +
+              '<g fill="{line}"><circle cx="41" cy="51" r="2.6"/><circle cx="59" cy="51" r="2.6"/>' +
               '<ellipse cx="46.5" cy="60" rx="1.8" ry="2.7"/><ellipse cx="53.5" cy="60" rx="1.8" ry="2.7"/></g>' +
               '<g fill="{purple}"><circle cx="35" cy="76.5" r="1.7"/><circle cx="45" cy="76.5" r="1.7"/><circle cx="55" cy="76.5" r="1.7"/><circle cx="65" cy="76.5" r="1.7"/></g>'
           },
@@ -774,54 +861,53 @@ p { margin: 0 0 12px; }
             name: 'Свинослон',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
               '<rect x="22" y="84" width="56" height="11" rx="5.5" fill="{dark}"/>' +
-              '<path d="M30 86 Q30 70 41 65 L59 65 Q70 70 70 86 Z" fill="{pink}"/>' +
-              '<ellipse cx="35" cy="58" rx="8" ry="11" transform="rotate(25 35 58)" fill="{pink}"/>' +
-              '<ellipse cx="65" cy="58" rx="8" ry="11" transform="rotate(-25 65 58)" fill="{pink}"/>' +
-              '<circle cx="50" cy="54" r="12" fill="{pink}"/>' +
-              '<path d="M36 45 Q35 26 50 15 Q65 26 64 45 Z" fill="{purple}"/>' +
-              '<path d="M57 22 L46 36" fill="none" stroke-width="3.5"/>' +
-              '<rect x="34" y="41" width="32" height="7" rx="3.5" fill="{gold}"/>' +
-              '<circle cx="50" cy="11" r="5" fill="{gold}"/>' +
-              '<path d="M44.5 58 Q44.5 54.5 50 54.5 Q55.5 54.5 55.5 58 L54.5 67 Q50 70 45.5 67 Z" fill="{snout}"/>' +
+              '<path d="M30 86 Q30 71 41 66 L59 66 Q70 71 70 86 Z" fill="{pink}"/>' +
+              '<rect x="33" y="59" width="34" height="8" rx="4" fill="{dark}"/>' +
+              '<ellipse cx="37" cy="56" rx="6" ry="9" transform="rotate(20 37 56)" fill="{pink}"/>' +
+              '<ellipse cx="63" cy="56" rx="6" ry="9" transform="rotate(-20 63 56)" fill="{pink}"/>' +
+              '<circle cx="50" cy="55" r="10.5" fill="{pink}"/>' +
+              '<path d="M33 49 Q31 34 50 21 Q69 34 67 49 Z" fill="{purple}"/>' +
+              '<rect x="33" y="43" width="34" height="7" rx="3.5" fill="{gold}"/>' +
+              '<path d="M59 29 L47 41" fill="none" stroke-width="4.5"/>' +
+              '<circle cx="50" cy="17" r="4.6" fill="{gold}"/>' +
+              '<path d="M44.5 59 Q44.5 55.5 50 55.5 Q55.5 55.5 55.5 59 L54.5 67 Q50 70 45.5 67 Z" fill="{snout}"/>' +
               '</g>' +
               '<g fill="{light}"><circle cx="38" cy="78" r="2.4"/><circle cx="62" cy="78" r="2.4"/><circle cx="50" cy="80" r="2.4"/></g>' +
-              '<g fill="{line}"><circle cx="44" cy="51.5" r="2.1"/><circle cx="56" cy="51.5" r="2.1"/>' +
+              '<g fill="{line}"><circle cx="44.5" cy="53" r="2"/><circle cx="55.5" cy="53" r="2"/>' +
               '<ellipse cx="48" cy="65" rx="1.3" ry="1.8"/><ellipse cx="52" cy="65" rx="1.3" ry="1.8"/></g>'
           },
           n: {
             name: 'Свиня верхи',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
               '<rect x="20" y="82" width="60" height="12" rx="6" fill="{dark}"/>' +
-              '<path d="M31 84 Q29 66 40 57 L27 58 Q15 57 16 47 Q17 40 24 36 L33 25 L37 9 L46 18 Q66 18 73 38 Q78 58 72 84 Z" fill="{light}"/>' +
+              '<path d="M31 84 Q29 66 40 57 L27 58 Q15 57 16 47 Q17 40 24 36 L33 25 L37 9 L46 18 Q66 18 73 38 Q78 58 72 84 Z" fill="{pink}"/>' +
               '<path d="M46 18 Q66 18 73 38 Q78 58 72 84 L65 84 Q70 60 65 43 Q60 29 46 23 Z" fill="{dark}"/>' +
               '<path d="M30.4 70 L75.5 70 L74.9 78 L30.6 78 Z" fill="{gold}"/>' +
-              '<path d="M55 41 Q56 30 64 30 Q72 30 73 41 Z" fill="{purple}"/>' +
-              '<path d="M58 18 L55 8 L63 13 Z" fill="{pink}"/><path d="M70 18 L73 8 L65 13 Z" fill="{pink}"/>' +
-              '<circle cx="64" cy="22" r="8.5" fill="{pink}"/>' +
-              '<ellipse cx="64" cy="25.5" rx="4.5" ry="3.3" fill="{snout}" stroke-width="1.6"/>' +
+              '<path d="M48 21 Q47 7 59 7 Q70 8 69 21 Z" fill="{purple}"/>' +
+              '<rect x="46" y="18" width="25" height="6" rx="3" fill="{gold}"/>' +
+              '<ellipse cx="21" cy="50" rx="8" ry="6.5" transform="rotate(-25 21 50)" fill="{snout}"/>' +
               '<circle cx="31" cy="35" r="4" fill="{white}" stroke-width="2"/>' +
               '</g>' +
-              '<g fill="{line}"><circle cx="30" cy="35" r="2"/><circle cx="20" cy="47" r="1.6"/>' +
-              '<circle cx="60.5" cy="20.5" r="1.4"/><circle cx="67.5" cy="20.5" r="1.4"/>' +
-              '<circle cx="62.5" cy="25.5" r="0.9"/><circle cx="65.5" cy="25.5" r="0.9"/></g>' +
+              '<g fill="{line}"><circle cx="30" cy="35" r="2"/>' +
+              '<ellipse cx="18.5" cy="49" rx="1.1" ry="1.7"/><ellipse cx="23.5" cy="51.5" rx="1.1" ry="1.7"/></g>' +
               '<g fill="{purple}"><circle cx="38" cy="74" r="1.7"/><circle cx="47" cy="74" r="1.7"/><circle cx="56" cy="74" r="1.7"/><circle cx="65" cy="74" r="1.7"/></g>'
           },
           p: {
             name: 'Порося',
             svg: '<g stroke="{line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">' +
-              '<rect x="20" y="82" width="60" height="12" rx="6" fill="{dark}"/>' +
-              '<path d="M68 74 Q79 75 77 67 Q75 62 71.5 66" fill="none"/>' +
-              '<path d="M30 84 Q31 63 42 57 L58 57 Q69 63 70 84 Z" fill="{pink}"/>' +
-              '<ellipse cx="50" cy="74" rx="9" ry="7" fill="{light}" stroke="none"/>' +
-              '<rect x="36" y="51" width="28" height="8" rx="4" fill="{dark}"/>' +
-              '<path d="M37 28 L33 12 L48 21 Z" fill="{pink}"/>' +
-              '<path d="M63 28 L67 12 L52 21 Z" fill="{pink}"/>' +
-              '<circle cx="50" cy="36" r="16" fill="{pink}"/>' +
-              '<ellipse cx="50" cy="41" rx="8" ry="6" fill="{snout}"/>' +
+              '<rect x="27" y="84" width="46" height="11" rx="5.5" fill="{dark}"/>' +
+              '<path d="M63 80 Q75 81 73 73 Q71 68 67.5 72" fill="none"/>' +
+              '<path d="M35 86 Q37 70 44 63 L56 63 Q63 70 65 86 Z" fill="{pink}"/>' +
+              '<ellipse cx="50" cy="77" rx="7" ry="6" fill="{light}" stroke="none"/>' +
+              '<rect x="35" y="58" width="30" height="8" rx="4" fill="{dark}"/>' +
+              '<path d="M37.5 40 L33 28 L47 34 Z" fill="{pink}"/>' +
+              '<path d="M62.5 40 L67 28 L53 34 Z" fill="{pink}"/>' +
+              '<circle cx="50" cy="47" r="15" fill="{pink}"/>' +
+              '<ellipse cx="50" cy="53" rx="7.5" ry="5.5" fill="{snout}"/>' +
               '</g>' +
-              '<g fill="{cheek}" opacity=".6"><circle cx="38" cy="41" r="3"/><circle cx="62" cy="41" r="3"/></g>' +
-              '<g fill="{line}"><circle cx="44" cy="32" r="2.3"/><circle cx="56" cy="32" r="2.3"/>' +
-              '<ellipse cx="47" cy="41" rx="1.5" ry="2.3"/><ellipse cx="53" cy="41" rx="1.5" ry="2.3"/></g>'
+              '<g fill="{cheek}" opacity=".6"><circle cx="38.5" cy="52" r="2.8"/><circle cx="61.5" cy="52" r="2.8"/></g>' +
+              '<g fill="{line}"><circle cx="44" cy="44" r="2.2"/><circle cx="56" cy="44" r="2.2"/>' +
+              '<ellipse cx="47.3" cy="53" rx="1.4" ry="2.1"/><ellipse cx="52.7" cy="53" rx="1.4" ry="2.1"/></g>'
           }
         }
       }
@@ -839,6 +925,7 @@ p { margin: 0 0 12px; }
   var ROOM_PREFIX = 'ukr-chess:';
   var ROOM_DIGITS = 6;                  // id кімнати: 6 цифр, посилання ?room=123456
   var ROOM_KEY = 'ukr-chess-room-v1';   // localStorage: остання онлайн-кімната на цьому пристрої
+  var CLASSIC_KEY = 'ukr-chess-classic-v1';   // localStorage: '1' — «Класичні фігури» увімкнено
 
   var BOT_DELAY_MS = 350;   // пауза перед ходом бота, щоб хід було видно
   var BOT_SEARCH_MS = 550;  // скільки найбільше думає «Хитра свиня»
@@ -856,6 +943,7 @@ p { margin: 0 0 12px; }
   var timers = [];
   var svgCache = {};
   var soundOn = true;
+  var classicOn = false;
   var actx = null;
   var confirmAction = null;
 
@@ -898,14 +986,41 @@ p { margin: 0 0 12px; }
   }
 
   function pieceSvg(color, type) {
-    var key = color + type;
-    var side;
+    var key = (classicOn ? 'c' : 'x') + color + type;
+    var side, art;
     if (!svgCache[key]) {
       side = THEME.sides[color];
+      art = classicOn ? THEME.classic[type] : side.pieces[type].svg;
       svgCache[key] = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">' +
-        paint(side.pieces[type].svg, side.colors) + '</svg>';
+        paint(art, side.colors) + '</svg>';
     }
     return svgCache[key];
+  }
+
+  // «Класичні фігури»: вибір запам'ятовується на цьому пристрої (localStorage, завжди в try/catch).
+  function loadClassic() {
+    try { classicOn = window.localStorage.getItem(CLASSIC_KEY) === '1'; } catch (e) { classicOn = false; }
+  }
+
+  function saveClassic() {
+    try { window.localStorage.setItem(CLASSIC_KEY, classicOn ? '1' : '0'); } catch (e) { /* ігноруємо */ }
+  }
+
+  function renderClassicToggles() {
+    var list = document.querySelectorAll('[data-classic-toggle]');
+    var i;
+    for (i = 0; i < list.length; i++) {
+      list[i].setAttribute('aria-checked', classicOn ? 'true' : 'false');
+    }
+  }
+
+  function onClassicToggle() {
+    classicOn = !classicOn;
+    saveClassic();
+    renderClassicToggles();
+    fillThemeTexts();
+    if (st && game) { renderAll(); }
+    playSound('select');
   }
 
   function pieceName(color, type) { return THEME.sides[color].pieces[type].name; }
@@ -2271,6 +2386,8 @@ p { margin: 0 0 12px; }
       byId('load-error').className = 'notice';
       return;
     }
+    loadClassic();
+    renderClassicToggles();
     fillThemeTexts();
     renderSoundButton();
 
@@ -2284,6 +2401,11 @@ p { margin: 0 0 12px; }
       if (byId('screen-game').className !== 'hidden') { onBack(); return; }
       goMenu();
     });
+
+    radios = document.querySelectorAll('[data-classic-toggle]');
+    for (i = 0; i < radios.length; i++) {
+      radios[i].addEventListener('click', onClassicToggle);
+    }
 
     byId('btn-mode-bot').addEventListener('click', function () { showScreen('bot'); });
     byId('btn-mode-local').addEventListener('click', function () { startGame({ mode: 'local' }); });
