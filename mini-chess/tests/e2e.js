@@ -75,6 +75,25 @@ async function onlineContext(browser, device) {
 
 function log(msg) { process.stdout.write(msg + '\n'); }
 
+// Віддає сторінку на адресі ORIGIN/, а спільну тему (../theme/...) — справжніми файлами з диска.
+var THEME_DIR = path.join(__dirname, '..', '..', 'theme');
+var MIME = { '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' };
+function serve(page, html) {
+  return page.route(ORIGIN + '/**', function (route) {
+    var p = new URL(route.request().url()).pathname;
+    if (p.indexOf('/theme/') === 0 && p.indexOf('..') < 0) {
+      var file = path.join(THEME_DIR, p.slice('/theme/'.length));
+      if (fs.existsSync(file)) {
+        route.fulfill({ status: 200, contentType: MIME[path.extname(file)] || 'text/plain', body: fs.readFileSync(file) });
+        return;
+      }
+      route.fulfill({ status: 404, body: '' });
+      return;
+    }
+    route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+  });
+}
+
 async function newPage(ctx, html, problems, query) {
   var page = await ctx.newPage();
   hub.pages.push(page);
@@ -89,9 +108,7 @@ async function newPage(ctx, html, problems, query) {
   await page.route('https://fonts.googleapis.com/**', function (route) {
     route.fulfill({ status: 200, contentType: 'text/css', body: '' });
   });
-  await page.route(ORIGIN + '/**', function (route) {
-    route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
-  });
+  await serve(page, html);
   await page.goto(ORIGIN + '/' + (query || ''));
   return page;
 }
@@ -113,10 +130,7 @@ async function pickMove(page, level, real, color) {
       var m = /, (білі|чорні): (\S+)$/.exec(sqs[i].getAttribute('aria-label'));
       s.board[i] = m ? { c: m[1] === 'білі' ? 'w' : 'b', t: names[m[2]], id: i + 1 } : null;
     }
-    // Стартову кількість і втечі беремо зі справжньої гри та з підпису «Утекли: N».
     s.start = window.MiniChess.createGame(a.level, a.real).start;
-    var esc = /Утекли: (\d+)/.exec(document.getElementById('tray-top').textContent);
-    s.escaped = { w: 0, b: esc ? parseInt(esc[1], 10) : 0 };
     var mv = window.MiniChess.botFox(s);
     return mv ? [mv.from, mv.to] : null;
   }, { level: level, real: real, color: color });
@@ -202,17 +216,35 @@ async function main() {
   var title = await playToEnd(page, 1, false);
   assert.equal(title, 'Перемога!');
   var pr = await progress(page);
-  assert.ok(pr.stars[0] >= 1 && pr.stars[0] <= 2, 'зірочки за Ведмедика: ' + pr.stars[0]);
+  assert.ok(pr.stars[0] >= 1 && pr.stars[0] <= 3, 'зірочки: ' + pr.stars[0]);
   assert.ok(await page.locator('#result-stars .star-on').count() === pr.stars[0]);
+  assert.equal(await page.locator('#star-list li').count(), 4, 'три підписи зірочок і кількість ходів');
+  assert.match(await page.locator('#star-list li').nth(0).textContent(), /Перемога/);
+  assert.match(await page.locator('#star-list li').nth(1).textContent(), /втрат/);
+  assert.match(await page.locator('#star-list li').nth(2).textContent(), /Швидко/);
+  assert.equal(await page.locator('#star-list li.got').count(), pr.stars[0], 'підсвічено стільки підписів, скільки зірочок');
+  assert.ok(await page.locator('#medal-row').isHidden(), 'медаль лише за Лисичку');
+  assert.deepEqual(pr.medals.slice(0, 2), [false, false], 'за Ведмедика медалі немає');
+  await noHScroll(page, 'результат');
 
   log('4. «Далі» → рівень 2, гра проти Лисички до кінця');
   await page.locator('#result-actions button', { hasText: 'Далі' }).click();
   assert.match(await page.locator('#intro-title').textContent(), /Рівень 2/);
   await page.click('#btn-fox');
-  assert.match(await page.locator('#goal-line').textContent(), /утече/);
+  assert.match(await page.locator('#goal-line').textContent(), /Не пропусти жодного пішака/);
+  assert.equal(await page.locator('#board .sq.finish').count(), 5, 'нижній ряд підсвічено');
   title = await playToEnd(page, 2, false);
-  assert.ok(['Перемога!', 'Нічия', 'Спробуй ще раз!'].indexOf(title) >= 0, title);
+  assert.ok(['Перемога!', 'Спробуй ще раз!'].indexOf(title) >= 0, title);
   log('   рівень 2 проти Лисички: ' + title);
+  pr = await progress(page);
+  if (title === 'Перемога!') {
+    assert.ok(await page.locator('#medal-row').isVisible(), 'медаль за Лисичку');
+    assert.equal(pr.medals[1], true);
+    assert.equal(pr.medals[0], false, 'медаль лише на цьому рівні');
+  } else {
+    assert.equal(pr.medals[1], false);
+  }
+  await noHScroll(page, 'результат рівня 2');
   await page.locator('#result-actions button', { hasText: 'Додому' }).click();
   assert.ok(await page.locator('#scr-map').isVisible());
 
@@ -254,6 +286,25 @@ async function main() {
   assert.equal((await progress(page)).mute, true);
   await page.reload();
   assert.equal(await page.locator('#btn-sound').getAttribute('aria-pressed'), 'true');
+
+  log('7б. Старе збереження (без медалей) читається, зірочки лишаються');
+  var octx = await browser.newContext(device);
+  var old = await octx.newPage();
+  await old.addInitScript(function () {
+    if (!localStorage.getItem('mini-chess-progress-v1')) {
+      localStorage.setItem('mini-chess-progress-v1', JSON.stringify({ stars: [3, 2, 0, 0, 0, 0, 0], all: false, mute: false }));
+    }
+  });
+  await old.route('https://fonts.googleapis.com/**', function (route) { route.fulfill({ status: 200, contentType: 'text/css', body: '' }); });
+  await serve(old, HTML);
+  old.on('pageerror', function (e) { problems.push('pageerror: ' + e.message); });
+  await old.goto(ORIGIN + '/');
+  assert.equal(await old.locator('.tile').nth(0).locator('.star-on').count(), 3);
+  assert.equal(await old.locator('.tile').nth(1).locator('.star-on').count(), 2);
+  assert.equal(await old.locator('.tile.locked').count(), 4, 'рівні 1–3 відкриті за старими зірочками');
+  assert.equal(await old.locator('.tile .medal-svg.on').count(), 0);
+  assert.equal(await old.locator('.tile .medal-svg.off').count(), 7);
+  await octx.close();
 
   log('8. Сховища: лише прогрес у localStorage');
   var st = await page.evaluate(function () {
@@ -307,10 +358,10 @@ async function main() {
   await waitStatus(student, 'Твій хід');
 
   log('   учень не може ходити за вчителя');
-  await tapSq(student, 18);
-  await tapSq(student, 13);
+  await tapSq(student, 19);
+  await tapSq(student, 14);
   await student.waitForTimeout(300);
-  assert.match(await student.locator('#board .sq').nth(18).getAttribute('aria-label'), /чорні: пішак/);
+  assert.match(await student.locator('#board .sq').nth(19).getAttribute('aria-label'), /чорні: пішак/);
 
   log('   учень оновлює сторінку — партія на місці');
   await student.reload();
