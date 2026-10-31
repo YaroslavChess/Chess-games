@@ -162,6 +162,25 @@
   #boardTools{
     width: min(520px, 88vw);
   }
+  /* пройдений шлях: «1. Nc3 2. Nd5 …» */
+  .path-line{
+    width: min(520px, 88vw);
+    margin: 0;
+    padding: 8px 12px;
+    max-height: 5em;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    font-family:'JetBrains Mono', monospace;
+    font-size: .8rem;
+    line-height: 1.55;
+    color: var(--text-dim);
+    overflow-wrap: anywhere;
+  }
+  .path-line .lbl{ font-family:'Manrope', ui-sans-serif, system-ui, sans-serif; color: var(--text-faint); margin-right: 6px; }
+  .path-line .mv{ white-space: nowrap; margin-right: 6px; }
+  .path-line .mv.last{ color: var(--gold-soft); font-weight: 700; }
   .board-frame{
     position:relative;
     width: min(520px, 88vw);
@@ -551,6 +570,7 @@
       </div>
     </div>
     <div id="boardTools"></div>
+    <p class="path-line" id="pathLine" aria-label="Пройдений шлях"></p>
 
     <div class="panel">
       <div class="card">
@@ -714,6 +734,7 @@
     puzzle: null,
     knightIdx: 0,
     moves: 0,
+    path: [],
     startTs: 0,
     elapsed: 0,
     timerId: null,
@@ -724,6 +745,7 @@
   var boardEl = document.getElementById('board');
   var knightToken = document.getElementById('knightToken');
   var boardToolsEl = document.getElementById('boardTools');
+  var pathLineEl = document.getElementById('pathLine');
   var overlay = document.getElementById('overlay');
   var levelsNav = document.getElementById('levels');
   var filesEl = document.getElementById('files');
@@ -820,6 +842,18 @@
     });
   }
 
+  // Пройдений шлях англійською нотацією: «1. Nc3 2. Nd5». Кінь не бере фігур, тож лише N + клітинка.
+  function renderPath(){
+    var html = '<span class="lbl">Шлях:</span>';
+    var i;
+    if(!state.path.length){ html += '—'; }
+    for(i = 0; i < state.path.length; i++){
+      html += '<span class="mv' + (i === state.path.length - 1 ? ' last' : '') + '">' + (i + 1) + '. ' + state.path[i] + '</span>';
+    }
+    pathLineEl.innerHTML = html;
+    pathLineEl.scrollTop = pathLineEl.scrollHeight;
+  }
+
   function updateSidePanel(){
     statLevel.textContent = state.level + ' / ' + TOTAL_LEVELS;
     statMoves.textContent = state.moves;
@@ -892,6 +926,7 @@
     state.puzzle = generateLevel(level);
     state.knightIdx = coordToIdx(0,0);
     state.moves = 0;
+    state.path = [];
     state.completed = false;
     overlay.classList.remove('show');
     finalOverlay.classList.remove('show');
@@ -901,6 +936,7 @@
     positionKnight(state.knightIdx, false);
     if(boardUI){ boardUI.clearShapes(); }
     statMoves.textContent = '0';
+    renderPath();
     renderBoard();
     updateLevelNav();
     updateSidePanel();
@@ -923,9 +959,11 @@
 
     state.knightIdx = idx;
     state.moves += 1;
+    state.path.push('N' + idxToSquare(idx));
     if(boardUI){ boardUI.clearShapes(); }
     positionKnight(idx, animateHop);
     statMoves.textContent = state.moves;
+    renderPath();
     renderBoard();
 
     if(idx === state.puzzle.target){

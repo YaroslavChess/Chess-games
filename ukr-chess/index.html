@@ -414,6 +414,60 @@ p { margin: 0 0 12px; }
   100% { transform: translateY(110vh) rotate(720deg); }
 }
 
+/* ---------- Запис ходів ---------- */
+.game-layout { display: block; }
+.moves { background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 10px; margin: 8px 0 4px; }
+.moves-title { font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 17px; margin: 0 0 6px; color: var(--gold-soft); }
+.moves-list {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 2px 6px;
+  min-height: 44px;
+  max-height: 116px;
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--frame);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  line-height: 1.2;
+}
+.moves-empty { padding: 8px 4px; color: var(--text-faint); font-family: 'Manrope', sans-serif; font-size: 14px; }
+.mv-pair { display: inline-flex; align-items: center; white-space: nowrap; }
+.mv-num { padding: 0 4px 0 2px; color: var(--text-faint); }
+.mv {
+  min-height: 34px;
+  padding: 4px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.mv:hover { border-color: var(--gold); }
+.mv:focus-visible { outline: 2px solid var(--gold-soft); outline-offset: 1px; }
+.mv.now { background: var(--gold); color: var(--on-gold); font-weight: 700; }
+.moves-nav { display: flex; gap: 8px; margin-top: 8px; }
+.moves-nav .btn { flex: 1; width: auto; min-height: 46px; margin: 0; padding: 6px 8px; font-size: 16px; }
+.moves-nav .btn-arrow { flex: 0 0 56px; font-size: 22px; line-height: 1; }
+.moves .btn-pgn { margin-top: 8px; min-height: 46px; font-size: 16px; }
+.moves-msg { min-height: 20px; margin: 6px 0 0; font-size: 14px; text-align: center; color: var(--green-soft); }
+.moves-msg:empty { display: none; }
+.pgn-box { display: block; width: 100%; height: 90px; margin-top: 8px; padding: 8px; resize: vertical; background: var(--frame); color: var(--text); border: 1px solid var(--hairline); border-radius: var(--radius-sm); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+@media (min-width: 820px) {
+  .wrap.wrap-game { max-width: 860px; }
+  .game-layout { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); column-gap: 20px; align-items: start; }
+  .game-layout > * { grid-column: 1; }
+  .game-layout > .moves { grid-column: 2; grid-row: 1 / span 8; position: sticky; top: 12px; margin-top: 6px; }
+  .moves-list { max-height: 340px; font-size: 16px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero .hero-piece, .party-pic, .board.party .piece.winner, .cell.check::after, .spinner { animation: none !important; }
   .confetti { display: none; }
@@ -437,7 +491,7 @@ p { margin: 0 0 12px; }
   <button type="button" class="icon-btn" id="btn-sound" aria-pressed="true" aria-label="Звук увімкнено. Натисніть, щоб вимкнути"></button>
 </header>
 
-<main class="wrap">
+<main class="wrap" id="wrap">
 
   <section id="screen-menu">
     <div class="hero" aria-hidden="true">
@@ -526,20 +580,34 @@ p { margin: 0 0 12px; }
   </section>
 
   <section id="screen-game" class="hidden">
-    <div class="player" id="bar-top"><span class="mini"></span><span class="pname"></span><span class="taken"></span></div>
-    <div class="board-wrap">
-      <div class="board" id="board"></div>
-      <div class="fx" id="fx"></div>
+    <div class="game-layout">
+      <div class="player" id="bar-top"><span class="mini"></span><span class="pname"></span><span class="taken"></span></div>
+      <div class="board-wrap">
+        <div class="board" id="board"></div>
+        <div class="fx" id="fx"></div>
+      </div>
+      <div class="player" id="bar-bottom"><span class="mini"></span><span class="pname"></span><span class="taken"></span></div>
+      <div id="boardTools"></div>
+      <div class="status" id="status" aria-live="polite"></div>
+      <div class="net-line hidden" id="net-line" aria-live="polite"></div>
+      <aside class="moves" id="moves" aria-label="Запис ходів">
+        <h2 class="moves-title">Запис ходів</h2>
+        <div class="moves-list" id="moves-list"></div>
+        <div class="moves-nav">
+          <button type="button" class="btn btn-secondary btn-arrow" id="mv-prev" aria-label="Хід назад">&larr;</button>
+          <button type="button" class="btn btn-secondary btn-arrow" id="mv-next" aria-label="Хід вперед">&rarr;</button>
+          <button type="button" class="btn btn-primary" id="mv-live">До гри</button>
+        </div>
+        <button type="button" class="btn btn-secondary btn-pgn" id="btn-pgn">Скопіювати PGN</button>
+        <p class="moves-msg" id="moves-msg" aria-live="polite"></p>
+        <textarea class="pgn-box hidden" id="pgn-box" readonly aria-label="PGN партії"></textarea>
+      </aside>
+      <div class="row-btns">
+        <button type="button" class="btn btn-secondary" id="btn-resign">Здатися</button>
+        <button type="button" class="btn btn-primary" id="btn-new">Нова гра</button>
+      </div>
+      <button type="button" class="toggle toggle-game" role="switch" aria-checked="false" data-classic-toggle="1"><span class="switch" aria-hidden="true"></span><span>Класичні фігури</span></button>
     </div>
-    <div class="player" id="bar-bottom"><span class="mini"></span><span class="pname"></span><span class="taken"></span></div>
-    <div id="boardTools"></div>
-    <div class="status" id="status" aria-live="polite"></div>
-    <div class="net-line hidden" id="net-line" aria-live="polite"></div>
-    <div class="row-btns">
-      <button type="button" class="btn btn-secondary" id="btn-resign">Здатися</button>
-      <button type="button" class="btn btn-primary" id="btn-new">Нова гра</button>
-    </div>
-    <button type="button" class="toggle toggle-game" role="switch" aria-checked="false" data-classic-toggle="1"><span class="switch" aria-hidden="true"></span><span>Класичні фігури</span></button>
   </section>
 
   <div id="load-error" class="notice hidden">
@@ -958,6 +1026,7 @@ p { margin: 0 0 12px; }
   var actx = null;
   var confirmAction = null;
   var boardUI = null;       // перетягування й стрілки (shared/board-ui.js)
+  var viewGame = null;      // позиція з історії, яку зараз дивимось (null — показуємо поточну гру)
 
   /* ================== ДОПОМІЖНІ ФУНКЦІЇ ================== */
 
@@ -1044,6 +1113,7 @@ p { margin: 0 0 12px; }
       byId('screen-' + names[i]).className = (names[i] === name) ? '' : 'hidden';
     }
     byId('btn-back').className = 'icon-btn' + (name === 'menu' ? ' invisible' : '');
+    byId('wrap').className = 'wrap' + (name === 'game' ? ' wrap-game' : '');
     window.scrollTo(0, 0);
   }
 
@@ -1211,6 +1281,7 @@ p { margin: 0 0 12px; }
     byId('fx').innerHTML = '';
     if (boardUI) { boardUI.clearShapes(); }
     game = new window.Chess();
+    viewGame = null;
     st = {
       mode: opts.mode,
       level: opts.level || null,
@@ -1221,8 +1292,11 @@ p { margin: 0 0 12px; }
       lastMove: null,
       busy: false,
       over: null,
-      pendingPromo: null
+      pendingPromo: null,
+      view: null          // null — поточна гра; число — скільки півходів показано в історії
     };
+    byId('pgn-box').className = 'pgn-box hidden';
+    byId('moves-msg').textContent = '';
     byId('net-line').className = (st.mode === 'online') ? 'net-line' : 'net-line hidden';
     showScreen('game');
     renderAll();
@@ -1234,12 +1308,13 @@ p { margin: 0 0 12px; }
     renderBars();
     renderStatus();
     renderButtons();
+    renderMoves();
   }
 
   // Сторона, якою зараз може ходити людина за цим пристроєм (або null).
   function controlSide() {
     var turn;
-    if (!st || st.over || st.busy || st.pendingPromo) { return null; }
+    if (!st || st.over || st.busy || st.pendingPromo || st.view !== null) { return null; }
     turn = game.turn();
     if (st.mode === 'local') { return turn; }
     if (st.mode === 'bot') { return turn === 'w' ? 'w' : null; }
@@ -1272,12 +1347,15 @@ p { margin: 0 0 12px; }
     return list;
   }
 
+  // Позиція, яку зараз видно на дошці: з історії (якщо дивимось ходи) або поточна.
+  function pos() { return viewGame || game; }
+
   function findKing(color) {
     var f, r, name, piece;
     for (f = 0; f < 8; f++) {
       for (r = 1; r <= 8; r++) {
         name = FILES.charAt(f) + r;
-        piece = game.get(name);
+        piece = pos().get(name);
         if (piece && piece.type === 'k' && piece.color === color) { return name; }
       }
     }
@@ -1298,19 +1376,20 @@ p { margin: 0 0 12px; }
     var kept = keepSq ? squareCell(keepSq) : null;
     var squares = squareList();
     var frag = document.createDocumentFragment();
-    var checkSq = game.in_check() ? findKing(game.turn()) : null;
-    var winner = st.over ? st.over.winner : null;
+    var checkSq = pos().in_check() ? findKing(pos().turn()) : null;
+    var winner = (st.over && st.view === null) ? st.over.winner : null;
+    var last = shownLastMove();
     var i, sq, cell, piece, isDark, isLast, bg, span, target;
 
     for (i = 0; i < squares.length; i++) {
       sq = squares[i];
       isDark = ((sq.file + sq.rank) % 2) === 1;
-      isLast = st.lastMove && (st.lastMove.from === sq.name || st.lastMove.to === sq.name);
+      isLast = last && (last.from === sq.name || last.to === sq.name);
       bg = isDark ? THEME.board.dark : THEME.board.light;
       if (isLast) { bg = isDark ? THEME.board.lastDark : THEME.board.lastLight; }
       if (st.selected === sq.name) { bg = THEME.board.selected; }
 
-      piece = game.get(sq.name);
+      piece = pos().get(sq.name);
 
       if (kept && sq.name === keepSq) {
         // та сама клітинка: міняємо лише колір і прибираємо старі крапки; фігура, підписи й aria-label ті самі
@@ -1495,6 +1574,8 @@ p { margin: 0 0 12px; }
 
     if (textOverride) {
       text = textOverride;
+    } else if (st.view !== null) {
+      text = 'Перегляд: ' + (st.view === 0 ? 'початкова позиція' : 'після ходу ' + moveLabel(st.view)) + '. Натисни «До гри».';
     } else if (st.over) {
       text = overTitle(st.over);
     } else if (st.mode === 'bot' && turn === 'b') {
@@ -1508,7 +1589,7 @@ p { margin: 0 0 12px; }
     } else {
       text = 'Хід ' + side.teamGen;
     }
-    if (!st.over && game.in_check()) {
+    if (!st.over && st.view === null && game.in_check()) {
       text = 'Шах! ' + pieceName(turn, 'k') + ' в небезпеці. ' + text;
       alert = true;
     }
@@ -1520,6 +1601,163 @@ p { margin: 0 0 12px; }
     var canResign = !st.over;
     if (st.mode === 'online') { canResign = canResign && !!(net && net.peerHere); }
     byId('btn-resign').disabled = !canResign;
+  }
+
+  /* ================== ЗАПИС ХОДІВ ================== */
+
+  // Скільки півходів показано зараз: усі (поточна гра) або st.view.
+  function shownPly() { return st.view === null ? game.history().length : st.view; }
+
+  // Підпис ходу: «3. Nf3» для білих, «3... Nc6» для чорних.
+  function moveLabel(ply) {
+    var san = game.history()[ply - 1];
+    var num = Math.ceil(ply / 2);
+    return num + (ply % 2 === 1 ? '. ' : '... ') + san;
+  }
+
+  // Який хід підсвітити на дошці як останній.
+  function shownLastMove() {
+    var hist;
+    if (st.view === null) { return st.lastMove; }
+    if (st.view === 0) { return null; }
+    hist = game.history({ verbose: true });
+    return { from: hist[st.view - 1].from, to: hist[st.view - 1].to };
+  }
+
+  // Показати позицію після ply-го півходу (null або останній — повернутися в поточну гру).
+  function setView(ply) {
+    var hist, i;
+    if (!st || !game) { return; }
+    if (ply !== null && ply >= game.history().length) { ply = null; }
+    if (ply !== null && ply < 0) { ply = 0; }
+    if (ply === st.view) { return; }
+    st.view = ply;
+    viewGame = null;
+    if (ply !== null) {
+      hist = game.history({ verbose: true });
+      viewGame = new window.Chess();
+      for (i = 0; i < ply; i++) {
+        viewGame.move({ from: hist[i].from, to: hist[i].to, promotion: hist[i].promotion });
+      }
+    }
+    st.selected = null;
+    st.legal = [];
+    if (boardUI) { boardUI.cancel(); boardUI.clearShapes(); }
+    byId('fx').innerHTML = '';
+    renderBoard();
+    renderStatus();
+    renderMoves();
+  }
+
+  function moveButton(san, ply, now) {
+    return '<button type="button" class="mv' + (ply === now ? ' now' : '') + '" data-ply="' + ply + '"' +
+      (ply === now ? ' aria-current="true"' : '') + '>' + san + '</button>';
+  }
+
+  function renderMoves() {
+    var list = byId('moves-list');
+    var hist, now, html, i, cur, top, bottom;
+    if (!st || !game) { return; }
+    hist = game.history();
+    now = shownPly();
+    html = '';
+    if (!hist.length) { html = '<span class="moves-empty">Ходів ще немає</span>'; }
+    for (i = 0; i < hist.length; i += 2) {
+      html += '<span class="mv-pair"><span class="mv-num">' + (i / 2 + 1) + '.</span>' + moveButton(hist[i], i + 1, now);
+      if (i + 1 < hist.length) { html += moveButton(hist[i + 1], i + 2, now); }
+      html += '</span>';
+    }
+    list.innerHTML = html;
+    if (st.view === null) {
+      list.scrollTop = list.scrollHeight;
+    } else {
+      cur = list.querySelector('.now');
+      if (cur) {
+        top = cur.offsetTop;
+        bottom = top + cur.offsetHeight;
+        if (top < list.scrollTop) { list.scrollTop = top - 4; }
+        else if (bottom > list.scrollTop + list.clientHeight) { list.scrollTop = bottom - list.clientHeight + 4; }
+      }
+    }
+    byId('mv-prev').disabled = (now === 0);
+    byId('mv-next').disabled = (st.view === null);
+    byId('mv-live').disabled = (st.view === null);
+    byId('btn-pgn').disabled = !hist.length;
+  }
+
+  function onMovesClick(event) {
+    var node = event.target;
+    var ply = null;
+    while (node && node !== byId('moves-list')) {
+      if (node.getAttribute && node.getAttribute('data-ply')) {
+        ply = parseInt(node.getAttribute('data-ply'), 10);
+        break;
+      }
+      node = node.parentNode;
+    }
+    if (ply !== null) { setView(ply); }
+  }
+
+  // Стрілки ← → (і Home/End) гортають ходи, поки відкрита гра.
+  function onKeyDown(event) {
+    var tag = event.target && event.target.tagName;
+    var key = event.key;
+    if (!st || !game || byId('screen-game').className === 'hidden') { return; }
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) { return; }
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') { return; }
+    if (document.querySelector('.modal:not(.hidden)')) { return; }
+    if (key === 'ArrowLeft') { event.preventDefault(); if (shownPly() > 0) { setView(shownPly() - 1); } }
+    else if (key === 'ArrowRight') { event.preventDefault(); if (st.view !== null) { setView(st.view + 1); } }
+    else if (key === 'Home') { event.preventDefault(); setView(0); }
+    else if (key === 'End') { event.preventDefault(); setView(null); }
+  }
+
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  // Партія у форматі PGN: теги + ходи з chess.js (поле san) + результат.
+  function buildPgn() {
+    var hist = game.history();
+    var now = new Date();
+    var result = '*';
+    var parts = [];
+    var i;
+    if (st.over) { result = st.over.winner === 'w' ? '1-0' : (st.over.winner === 'b' ? '0-1' : '1/2-1/2'); }
+    for (i = 0; i < hist.length; i++) {
+      parts.push(i % 2 === 0 ? (i / 2 + 1) + '. ' + hist[i] : hist[i]);
+    }
+    parts.push(result);
+    return '[Event "' + THEME.title + '"]\n' +
+      '[Date "' + now.getFullYear() + '.' + pad2(now.getMonth() + 1) + '.' + pad2(now.getDate()) + '"]\n' +
+      '[White "' + THEME.sides.w.team + '"]\n' +
+      '[Black "' + THEME.sides.b.team + '"]\n' +
+      '[Result "' + result + '"]\n\n' + parts.join(' ') + '\n';
+  }
+
+  function copyPgn() {
+    var text = buildPgn();
+    var box = byId('pgn-box');
+    var msg = byId('moves-msg');
+    function done() {
+      box.className = 'pgn-box hidden';
+      msg.textContent = 'PGN скопійовано! Встав його куди треба.';
+    }
+    function byHand() {
+      box.value = text;
+      box.className = 'pgn-box';
+      box.focus();
+      box.select();
+      try {
+        if (document.execCommand('copy')) { done(); return; }
+      } catch (e) { /* немає доступу до буфера */ }
+      msg.textContent = 'Виділи текст і скопіюй його вручну.';
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, byHand);
+        return;
+      }
+    } catch (e) { /* спробуємо інакше */ }
+    byHand();
   }
 
   /* ================== ХОДИ ЛЮДИНИ ================== */
@@ -1710,14 +1948,14 @@ p { margin: 0 0 12px; }
       saveRoom();
     }
 
-    renderBoard();
-    animateMove(move, dropped);
-    if (move.captured) {
-      showCapture(move);
-      playSound(THEME.sides[other(move.color)].captured.sound);
-    } else {
-      playSound('move');
+    if (st.view === null) {
+      renderBoard();
+      animateMove(move, dropped);
+      if (move.captured) { showCapture(move); }
     }
+    // Якщо дивимось історію, дошку не чіпаємо: у списку лише додається новий хід.
+    renderMoves();
+    playSound(move.captured ? THEME.sides[other(move.color)].captured.sound : 'move');
 
     result = gameResult();
     if (result) {
@@ -1767,6 +2005,8 @@ p { margin: 0 0 12px; }
   }
 
   function finishGame(result, delay) {
+    st.view = null;       // партія закінчилась: показуємо кінцеву позицію, а не історію
+    viewGame = null;
     st.over = result;
     st.busy = false;
     st.selected = null;
@@ -2545,6 +2785,12 @@ p { margin: 0 0 12px; }
     byId('btn-copy').addEventListener('click', copyLink);
 
     byId('board').addEventListener('click', onBoardClick);
+    byId('moves-list').addEventListener('click', onMovesClick);
+    byId('mv-prev').addEventListener('click', function () { if (st) { setView(shownPly() - 1); } });
+    byId('mv-next').addEventListener('click', function () { if (st && st.view !== null) { setView(st.view + 1); } });
+    byId('mv-live').addEventListener('click', function () { setView(null); });
+    byId('btn-pgn').addEventListener('click', copyPgn);
+    document.addEventListener('keydown', onKeyDown);
     attachBoardUI();
     byId('promo-row').addEventListener('click', onPromoClick);
     byId('promo-cancel').addEventListener('click', function () {
