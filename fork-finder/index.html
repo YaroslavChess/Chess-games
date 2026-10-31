@@ -131,6 +131,20 @@
   .side-chip.w{ background: var(--text); }
   .side-chip.b{ background: var(--frame); border-color: var(--text-faint); }
 
+  /* постійне нагадування над дошкою */
+  .rule-line{
+    width: min(520px, 88vw);
+    text-align:center;
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: var(--text-dim);
+    font-size: .92rem;
+    line-height: 1.4;
+  }
+  .rule-line b{ color: var(--gold-soft); }
+
   /* дошка */
   .board-frame{
     position:relative;
@@ -244,6 +258,21 @@
   }
   .piece.gone{ opacity:0; transform: scale(.4); }
 
+  /* підказка: фігура світиться */
+  .piece.hint::before{
+    content:"";
+    position:absolute; top:4%; right:4%; bottom:4%; left:4%;
+    border-radius:50%;
+    background: rgba(var(--gold-rgb),.3);
+    box-shadow: 0 0 0 3px var(--gold-soft), 0 0 16px 4px rgba(var(--gold-rgb),.8);
+    z-index:-1;
+    animation: hint-pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes hint-pulse{
+    0%,100%{ transform: scale(.92); opacity:.85; }
+    50%{ transform: scale(1.06); opacity:1; }
+  }
+
   /* стрілки вилки */
   .arrows{
     position:absolute; top:0; right:0; bottom:0; left:0;
@@ -267,6 +296,11 @@
     animation: head-in .15s ease-out forwards;
   }
   @keyframes head-in{ to{ opacity:1; } }
+  /* червона стрілка — небезпека (хто б'є), темна — не ціль */
+  .arrow-line.bad{ stroke: var(--danger); }
+  .arrow-head.bad{ fill: var(--danger); }
+  .arrow-line.dim{ stroke: var(--arrow-safe); }
+  .arrow-head.dim{ fill: var(--arrow-safe); }
 
   .fork-badge{
     position:absolute; left:50%; top:46%;
@@ -285,6 +319,11 @@
     white-space:nowrap;
   }
   .fork-badge.show{ animation: badge-pop 1.9s ease forwards; }
+  .fork-badge.bad{
+    background: linear-gradient(160deg, var(--danger), var(--danger));
+    color: var(--text);
+    box-shadow: 0 14px 40px -8px rgba(0,0,0,.8), 0 0 0 3px var(--text);
+  }
   @keyframes badge-pop{
     0%{ opacity:0; transform: translate(-50%,-50%) scale(.4); }
     15%{ opacity:1; transform: translate(-50%,-50%) scale(1.12); }
@@ -304,7 +343,7 @@
 
   /* повідомлення */
   .status{
-    min-height: 4.2em;
+    min-height: 7.6em;
     width: min(520px, 88vw);
     text-align:center;
     color: var(--text-dim);
@@ -319,14 +358,22 @@
   .status.good .lead{ color: var(--green); }
   .status.bad .lead{ color: var(--danger); }
 
-  .next-btn{ width: min(320px, 88vw); font-size: 1.05rem; padding: 14px 16px; }
-  .next-btn.off{ visibility:hidden; }
+  /* «Далі» і «Підказка» стоять в одному місці */
+  .action-slot{ display:grid; justify-items:center; width: min(320px, 88vw); }
+  .action-slot .btn{ grid-area: 1 / 1; }
+  .next-btn, .hint-btn{ width: 100%; font-size: 1.05rem; padding: 14px 16px; }
+  .next-btn.off, .hint-btn.off{ visibility:hidden; }
+  .sub-actions{ display:flex; gap:10px; justify-content:center; min-height: 36px; }
+  .sub-actions .btn{ width:auto; padding: 8px 14px; }
+  .sub-btn.off{ display:none; }
 
   /* бічна панель */
   .panel{ width: min(260px, 88vw); display:flex; flex-direction:column; gap:14px; }
   .card{ background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 16px 18px; }
   .card h2{ margin:0 0 12px; font-size:.72rem; text-transform: uppercase; letter-spacing:.09em; color: var(--text-faint); font-weight:700; }
   .card p{ margin:0; color: var(--text-dim); font-size:.88rem; line-height:1.45; }
+  .card p.note{ margin-top: 10px; font-size:.8rem; color: var(--text-faint); }
+  .card .btn{ margin-top: 12px; }
   .stat-row{ display:flex; align-items:baseline; justify-content:space-between; padding: 7px 0; border-bottom: 1px solid var(--hairline); }
   .stat-row:last-child{ border-bottom:none; padding-bottom:0; }
   .stat-row .label{ color: var(--text-dim); font-size:.85rem; }
@@ -337,6 +384,7 @@
   .dots{ display:flex; gap:6px; margin-top: 12px; }
   .dots i{ flex:1; height:8px; border-radius: 4px; background: var(--panel-2); border:1px solid var(--hairline); }
   .dots i.ok{ background: var(--green); border-color: var(--green); }
+  .dots i.half{ background: var(--gold); border-color: var(--gold); }
   .dots i.no{ background: var(--danger); border-color: var(--danger); }
   .dots i.now{ border-color: var(--gold-soft); }
 
@@ -355,6 +403,8 @@
     width:100%;
   }
   .btn:hover{ border-color: var(--gold); transform: translateY(-1px); }
+  .btn:disabled{ opacity:.55; cursor:default; }
+  .btn:disabled:hover{ border-color: var(--hairline); transform:none; }
   .btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
   .btn.primary{ background: linear-gradient(160deg, var(--gold), var(--gold-deep)); color: var(--on-gold); border-color: transparent; }
   .btn.ghost{ background: transparent; }
@@ -404,6 +454,7 @@
 
   @media (prefers-reduced-motion: reduce){
     .piece{ transition:none; }
+    .piece.hint::before{ animation:none; }
     .arrow-line{ animation:none; stroke-dashoffset:0; }
     .arrow-head{ animation:none; opacity:1; }
     .sq.tgt::before{ animation:none; opacity:1; }
@@ -428,7 +479,7 @@
         <span class="title-badge" aria-hidden="true">&#9822;&#65038;</span>
         <h1>Знайди вилку</h1>
       </div>
-      <p>Зроби хід, після якого твоя фігура б'є одразу двох. Одна спроба на задачу, десять задач у раунді.</p>
+      <p>Вилка — один хід, після якого твоя фігура нападає на ДВІ цінні фігури одразу. Дві спроби на задачу, десять задач у раунді.</p>
     </div>
   </header>
 
@@ -437,6 +488,7 @@
   <main class="stage">
     <div class="board-col">
       <div class="task-line"><span class="side-chip w" id="sideChip"></span><span id="taskText">Завантаження…</span></div>
+      <div class="rule-line" id="ruleLine"><b>Ціль</b> — король, ферзь, тура, слон чи кінь. <b>Пішаки не рахуються.</b></div>
       <div class="board-frame">
         <div class="board-wrap" id="boardWrap">
           <div class="board" id="board" role="grid" aria-label="Шахова дошка 8 на 8"></div>
@@ -460,19 +512,29 @@
         <div class="files" id="files"></div>
       </div>
       <div class="status" id="status" aria-live="polite"></div>
-      <button class="btn primary next-btn off" id="nextBtn">Далі →</button>
+      <div class="action-slot">
+        <button class="btn primary next-btn off" id="nextBtn">Далі →</button>
+        <button class="btn hint-btn off" id="hintBtn">Підказка · 1 бал замість 2</button>
+      </div>
+      <div class="sub-actions">
+        <button class="btn ghost small sub-btn off" id="skipBtn">Пропустити</button>
+        <button class="btn ghost small sub-btn off" id="replayBtn">Показати ще раз</button>
+      </div>
     </div>
 
     <div class="panel">
       <div class="card">
         <h2>Рівень <span id="lvlNum">1</span></h2>
         <p id="lvlDesc"></p>
+        <button class="btn small" id="howBtn">Як це працює?</button>
       </div>
       <div class="card">
         <h2>Раунд</h2>
         <div class="stat-row"><span class="label">Задача</span><span class="value" id="statIndex">1<small>/ 10</small></span></div>
-        <div class="stat-row"><span class="label">Правильно</span><span class="value gold" id="statCorrect">0</span></div>
+        <div class="stat-row"><span class="label">Знайдено</span><span class="value" id="statCorrect">0</span></div>
+        <div class="stat-row"><span class="label">Бали</span><span class="value gold" id="statPoints">0<small>/ 20</small></span></div>
         <div class="dots" id="dots"></div>
+        <p class="note">2 бали — з першої спроби без підказки. 1 бал — з підказкою або з другої спроби.</p>
       </div>
       <div class="card">
         <h2>Рекорди</h2>
@@ -491,8 +553,9 @@
   </main>
 
   <footer class="hint">
-    Вилка — це хід, після якого одна твоя фігура атакує двох: короля (шах), дорожчу за себе фігуру або фігуру без захисту.
-    А сама вона стоїть на клітинці, яку суперник не б'є.
+    Вилка — один хід, після якого твоя фігура нападає на ДВІ цінні фігури одразу. Ціль — король, ферзь, тура, слон чи кінь
+    (пішаки не рахуються). Слон чи кінь, якого захищають і який не дорожчий за твою фігуру, — не ціль.
+    А сама твоя фігура має стояти там, де її не можна побити.
   </footer>
 </div>
 
@@ -936,16 +999,182 @@ function makePuzzle(levelNo) {
 
 <script>
 // ---------- Інтерфейс ----------
-var STORE_KEY = 'fork-finder-v1';
+var STORE_KEY = 'fork-finder-v2';
+var OLD_STORE_KEY = 'fork-finder-v1'; // у v1 рахували задачі (до 10), у v2 — бали (до 20)
+var MAX_POINTS = ROUND_SIZE * 2;
+var WHITE_ONLY_UP_TO = 3; // рівні 1-3: завжди хід білих, дошка не перевертається
+var DEFINITION = 'Вилка — один хід, після якого твоя фігура нападає на ДВІ цінні фігури одразу.';
 var GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
 var NAME_NOM = { k: 'король', q: 'ферзь', r: 'тура', b: 'слон', n: 'кінь', p: 'пішак' };
 var NAME_ACC = { k: 'короля', q: 'ферзя', r: 'туру', b: 'слона', n: 'коня', p: 'пішака' };
+// Доповнення до опису рівня (сам опис лежить у рушії, його не чіпаємо)
+var LEVEL_NOTE = {
+  1: 'Ти граєш білими.',
+  2: 'Ти граєш білими.',
+  3: 'Ти граєш білими.',
+  4: 'Іноді ти граєш чорними — тоді дошка перевертається.',
+  5: 'Іноді ти граєш чорними — тоді дошка перевертається.'
+};
+
+/* EXPLAIN:START */
+// ---------- Пояснення, чому хід — не вилка ----------
+// Чиста функція: бере задачу й помилковий хід, повертає текст і список стрілок
+// [звідки, куди, 'good' | 'bad' | 'dim'].
+//   good — фігура нападає на ціль; bad — хто б'є нашу фігуру (або захищає чужу);
+//   dim — напад, який не рахується (не ціль).
+function adj(type, masc, fem) { return (type === 'r') ? fem : masc; }
+
+function targetsText(list) {
+  var names = [], i;
+  for (i = 0; i < list.length; i++) { names.push('<b>' + NAME_ACC[list[i].type] + '</b>'); }
+  if (names.length === 1) { return names[0]; }
+  return names.slice(0, names.length - 1).join(', ') + ' і ' + names[names.length - 1];
+}
+
+function explainWrong(pz, from, to) {
+  var enemy = opp(pz.color), rec = pz.moves[from + to], ch = new Chess(pz.fen);
+  var ms = ch.moves({ square: from, verbose: true }), m = null, i, j, after, me, text, arrows = [];
+  var att, a, o, isTarget, prot, notTargets = [], pawns = 0, n, side, sq, cheaper;
+
+  for (i = 0; i < ms.length; i++) { if (ms[i].to === to) { m = ms[i]; break; } }
+  if (!m || !rec) { return { text: 'Це не вилка.', arrows: [] }; }
+  after = applyMoveToPos(pz.pos, m);
+  me = NAME_NOM[rec.piece];
+
+  // 1) Клітинка під боєм
+  if (!rec.safe) {
+    att = attackersOf(after, to, enemy);
+    for (i = 0; i < att.length && i < 2; i++) { arrows.push([att[i], to, 'bad']); }
+    if (att.length) {
+      text = 'Тут <b>' + me + '</b> під боєм: ' + NAME_NOM[after[att[0]].type] + ' на <b>' + att[0] + '</b> може ' +
+        adj(rec.piece, 'його', 'її') + ' побити.';
+    } else {
+      // пішак пішов на два поля, сусідній пішак б'є «на проході»
+      for (side = -1; side <= 1; side += 2) {
+        if (inBoard(sqFile(to) + side, 0)) {
+          sq = sqName(sqFile(to) + side, sqRank(to));
+          if (after[sq] && after[sq].type === 'p' && after[sq].color === enemy) { arrows.push([sq, to, 'bad']); }
+        }
+      }
+      text = 'Тут <b>' + me + '</b> під боєм: сусідній пішак може його побити «на проході».';
+    }
+    if (rec.targets.length >= 2) {
+      for (i = 0; i < rec.targets.length; i++) { arrows.push([to, rec.targets[i].sq, 'dim']); }
+      text += ' Вилка була б, але фігуру з\'їдять.';
+    } else {
+      text += ' Фігура, яку можна побити, вилки не робить.';
+    }
+    return { text: text, arrows: arrows };
+  }
+
+  // 2) Клітинка безпечна, але цілей менше двох
+  for (i = 0; i < rec.attacked.length; i++) {
+    o = rec.attacked[i];
+    isTarget = false;
+    for (j = 0; j < rec.targets.length; j++) { if (rec.targets[j].sq === o.sq) { isTarget = true; } }
+    if (isTarget) {
+      arrows.push([to, o.sq, 'good']);
+    } else if (o.type === 'p') {
+      pawns++;
+      arrows.push([to, o.sq, 'dim']);
+    } else {
+      notTargets.push(o);
+      arrows.push([to, o.sq, 'dim']);
+      prot = attackersOf(after, o.sq, enemy);
+      if (prot.length) { arrows.push([prot[0], o.sq, 'bad']); }
+    }
+  }
+  n = rec.targets.length;
+  if (n === 1) {
+    text = 'Тут <b>' + me + '</b> атакує лише одну ціль: ' + targetsText(rec.targets) + '.';
+  } else if (!rec.attacked.length) {
+    text = 'Звідси <b>' + me + '</b> нікого не атакує.';
+  } else {
+    text = 'Тут <b>' + me + '</b> не атакує жодної цілі.';
+  }
+  for (i = 0; i < notTargets.length; i++) {
+    o = notTargets[i];
+    cheaper = VALUE[o.type] < VALUE[rec.piece];
+    text += ' <b>' + NAME_NOM[o.type].charAt(0).toUpperCase() + NAME_NOM[o.type].substring(1) + '</b> ' +
+      adj(o.type, 'захищений', 'захищена') + ' і ' +
+      (cheaper ? adj(o.type, 'дешевший', 'дешевша') : 'коштує стільки ж, скільки ' + me) + ' — це не ціль.';
+  }
+  if (pawns) { text += ' Пішаки не рахуються.'; }
+  return { text: text, arrows: arrows };
+}
+/* EXPLAIN:END */
+
+/* DEMOS:START */
+// ---------- Анімації-пояснення перед першою задачею рівня ----------
+// Позиції — рядками: колір (w/b), фігура (K Q R B N P), клітинка. Кожну перевірено рушієм:
+// у «вилках» рівно один хід-вилка, у «хибних» (bad: true) ход вилкою не є.
+// Кадри: t1 — «ось фігура», t2 — «вона ходить», t3 — «що з цього».
+function demoPos(list) {
+  var pos = {}, i, s;
+  for (i = 0; i < list.length; i++) {
+    s = list[i];
+    pos[s.substring(2)] = { type: s.charAt(1).toLowerCase(), color: s.charAt(0) };
+  }
+  return pos;
+}
+
+var DEMOS = {
+  1: [{
+    title: 'Кінь', pos: ['wKg1', 'wNc3', 'bKg8', 'bQc7', 'bRe7'], from: 'c3', to: 'd5',
+    arrows: [['d5', 'c7', 'good'], ['d5', 'e7', 'good']], wrong: null, bad: false,
+    t1: 'Ось кінь — він світиться.',
+    t2: 'Кінь стрибає на <b>d5</b>. Цю клітинку ніхто не б\'є, тож коня не з\'їдять.',
+    t3: 'Тепер кінь нападає на <b>ферзя</b> і <b>туру</b>. Суперник урятує лише одну — другу забереш ти!'
+  }],
+  2: [{
+    title: 'Пішак', pos: ['wKg1', 'wPd4', 'bKg8', 'bRc6', 'bRe6'], from: 'd4', to: 'd5',
+    arrows: [['d5', 'c6', 'good'], ['d5', 'e6', 'good']], wrong: null, bad: false,
+    t1: 'Ось пішак. Він б\'є по діагоналі вперед.',
+    t2: 'Пішак робить крок вперед на <b>d5</b>. Цю клітинку ніхто не б\'є.',
+    t3: 'Тепер пішак нападає на <b>дві тури</b>. Суперник урятує лише одну!'
+  }],
+  3: [{
+    title: 'Слон', pos: ['wKf1', 'wBc3', 'bKg8', 'bRb8', 'bRh2'], from: 'c3', to: 'e5',
+    arrows: [['e5', 'b8', 'good'], ['e5', 'h2', 'good']], wrong: null, bad: false,
+    t1: 'Ось слон. Він ходить по діагоналях.',
+    t2: 'Слон іде на <b>e5</b>. Цю клітинку ніхто не б\'є.',
+    t3: 'Слон нападає на <b>дві тури</b> одразу. Суперник урятує лише одну!'
+  }, {
+    title: 'Тура', pos: ['wKh2', 'wRa4', 'bKe8', 'bNe1'], from: 'a4', to: 'e4',
+    arrows: [['e4', 'e8', 'good'], ['e4', 'e1', 'good']], wrong: null, bad: false,
+    t1: 'Тепер тура. Вона ходить по прямих лініях.',
+    t2: 'Тура іде на <b>e4</b>. Цю клітинку ніхто не б\'є.',
+    t3: 'Тура дає шах <b>королю</b> й нападає на <b>коня</b> без захисту. Король піде — коня забереш ти!'
+  }],
+  4: [{
+    title: 'Ферзь', pos: ['wKg1', 'wQa1', 'bKg8', 'bBd6', 'bRh5'], from: 'a1', to: 'd1',
+    arrows: [['d1', 'd6', 'good'], ['d1', 'h5', 'good']], wrong: null, bad: false,
+    t1: 'Ось ферзь. Він ходить як тура і слон разом.',
+    t2: 'Ферзь іде на <b>d1</b>. Цю клітинку ніхто не б\'є.',
+    t3: 'Ферзь нападає на <b>слона</b> і <b>туру</b>, і в обох немає захисту. Суперник урятує лише одну!'
+  }],
+  5: [{
+    title: 'Хибна вилка', pos: ['wKg1', 'wNc3', 'bKg8', 'bQc7', 'bRe7', 'bPe6'], from: 'c3', to: 'd5',
+    arrows: [['d5', 'c7', 'good'], ['d5', 'e7', 'good'], ['e6', 'd5', 'bad']], wrong: 'd5', bad: true,
+    t1: 'У «Міксі» можна ходити будь-якою фігурою. Але бувають хибні вилки! Ось кінь.',
+    t2: 'Кінь стрибає на <b>d5</b> і нападає на ферзя та туру…',
+    t3: '…але на d5 коня б\'є пішак <b>e6</b>. Фігуру можна побити — це не вилка!'
+  }, {
+    title: 'Хибна ціль', pos: ['wKh1', 'wRa4', 'bKe8', 'bNe2', 'bPd3'], from: 'a4', to: 'e4',
+    arrows: [['e4', 'e8', 'good'], ['e4', 'e2', 'dim'], ['d3', 'e2', 'bad']], wrong: null, bad: true,
+    t1: 'Ще одна пастка. Тура може дати шах.',
+    t2: 'Тура йде на <b>e4</b>: шах королю і напад на коня.',
+    t3: 'Але кінь захищений пішаком і дешевший за туру — це не ціль. Ціль лише одна, тож це не вилка!'
+  }]
+};
+/* DEMOS:END */
 
 var store = loadStore();
 var state = {
-  level: 1, index: 0, correct: 0, results: [], seen: {},
+  level: 1, index: 0, correct: 0, points: 0, results: [], seen: {},
   puzzle: null, game: null, selected: null, legalTo: {},
-  answered: false, flipped: false
+  tries: 0, hint: false, answered: false, locked: false, nextAction: null,
+  intro: false, introEnd: false, flipped: false
 };
 var pieceEls = {};
 var timers = [];
@@ -954,10 +1183,11 @@ function byId(id) { return document.getElementById(id); }
 var dom = {
   levels: byId('levels'), board: byId('board'), pieces: byId('pieces'), arrows: byId('arrows'),
   badge: byId('forkBadge'), status: byId('status'), nextBtn: byId('nextBtn'),
+  hintBtn: byId('hintBtn'), skipBtn: byId('skipBtn'), replayBtn: byId('replayBtn'), howBtn: byId('howBtn'),
   taskText: byId('taskText'), sideChip: byId('sideChip'),
   files: byId('files'), ranks: byId('ranks'),
   lvlNum: byId('lvlNum'), lvlDesc: byId('lvlDesc'),
-  statIndex: byId('statIndex'), statCorrect: byId('statCorrect'), dots: byId('dots'),
+  statIndex: byId('statIndex'), statCorrect: byId('statCorrect'), statPoints: byId('statPoints'), dots: byId('dots'),
   records: byId('records'), totalStars: byId('totalStars'),
   overlay: byId('roundOverlay'), roundTitle: byId('roundTitle'), roundStars: byId('roundStars'),
   roundScore: byId('roundScore'), roundSub: byId('roundSub'), roundRecord: byId('roundRecord'),
@@ -966,10 +1196,9 @@ var dom = {
 };
 
 // ----- Збереження -----
-function loadStore() {
-  var empty = { best: {}, level: 1 };
+function readStore(key) {
   try {
-    var raw = localStorage.getItem(STORE_KEY);
+    var raw = localStorage.getItem(key);
     if (raw) {
       var o = JSON.parse(raw);
       if (o && typeof o === 'object') {
@@ -979,16 +1208,31 @@ function loadStore() {
       }
     }
   } catch (e) {}
-  return empty;
+  return null;
+}
+function loadStore() {
+  var o = readStore(STORE_KEY), old, k;
+  if (o) { return o; }
+  old = readStore(OLD_STORE_KEY);
+  if (old) {
+    // старі рекорди були з 10 — переводимо в бали (до 20)
+    for (k in old.best) {
+      if (old.best.hasOwnProperty(k) && old.best[k] && typeof old.best[k].score === 'number') {
+        old.best[k].score = old.best[k].score * 2;
+      }
+    }
+    return old;
+  }
+  return { best: {}, level: 1 };
 }
 function saveStore() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {}
 }
 
 function starsFor(score) {
-  if (score >= 9) { return 3; }
-  if (score >= 7) { return 2; }
-  if (score >= 5) { return 1; }
+  if (score >= 18) { return 3; }
+  if (score >= 14) { return 2; }
+  if (score >= 10) { return 1; }
   return 0;
 }
 function starText(n) {
@@ -1007,12 +1251,12 @@ function displayRow(r) { return state.flipped ? r : 7 - r; }
 
 function pieceLabel(p) {
   var white = (p.color === 'w');
-  var adj = (p.type === 'r') ? (white ? 'біла' : 'чорна') : (white ? 'білий' : 'чорний');
-  return adj + ' ' + NAME_NOM[p.type];
+  var adjective = (p.type === 'r') ? (white ? 'біла' : 'чорна') : (white ? 'білий' : 'чорний');
+  return adjective + ' ' + NAME_NOM[p.type];
 }
 
 function buildSquares() {
-  var f, r, row, col, btn, sq, c, order = [];
+  var f, r, row, col, btn, sq, c;
   dom.board.innerHTML = '';
   for (row = 0; row < 8; row++) {
     for (col = 0; col < 8; col++) {
@@ -1103,7 +1347,8 @@ function clearArrows() {
 function svgEl(name) { return document.createElementNS('http://www.w3.org/2000/svg', name); }
 function center(sq) { return { x: displayCol(sqFile(sq)) + 0.5, y: displayRow(sqRank(sq)) + 0.5 }; }
 
-function drawArrow(fromSq, toSq, delay) {
+// kind: 'good' (золота, за замовчуванням), 'bad' (червона), 'dim' (темна)
+function drawArrow(fromSq, toSq, delay, kind) {
   var a = center(fromSq), b = center(toSq);
   var dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy);
   var ux = dx / len, uy = dy / len;
@@ -1112,22 +1357,32 @@ function drawArrow(fromSq, toSq, delay) {
   var bx = tipx - ux * 0.32, by = tipy - uy * 0.32;
   var px = -uy * 0.18, py = ux * 0.18;
   var line = svgEl('path'), head = svgEl('polygon');
+  var extra = (kind && kind !== 'good') ? ' ' + kind : '';
   line.setAttribute('d', 'M' + sx + ' ' + sy + ' L' + bx + ' ' + by);
   line.setAttribute('pathLength', '1');
-  line.setAttribute('class', 'arrow-line');
+  line.setAttribute('class', 'arrow-line' + extra);
   line.style.animationDelay = delay + 's';
   head.setAttribute('points', tipx + ',' + tipy + ' ' + (bx + px) + ',' + (by + py) + ' ' + (bx - px) + ',' + (by - py));
-  head.setAttribute('class', 'arrow-head');
+  head.setAttribute('class', 'arrow-head' + extra);
   head.style.animationDelay = (delay + 0.4) + 's';
   dom.arrows.appendChild(line);
   dom.arrows.appendChild(head);
 }
 
-function showBadge(text) {
+// Список стрілок [звідки, куди, вид]; золоті стрілки ще й обводять ціль кільцем
+function drawArrowList(list) {
+  var i;
+  for (i = 0; i < list.length; i++) {
+    drawArrow(list[i][0], list[i][1], i * 0.25, list[i][2]);
+    if (list[i][2] === 'good') { squareEl(list[i][1]).className += ' tgt'; }
+  }
+}
+
+function showBadge(text, bad) {
   dom.badge.textContent = text;
   dom.badge.className = 'fork-badge';
   void dom.badge.offsetWidth; // перезапуск анімації
-  dom.badge.className = 'fork-badge show';
+  dom.badge.className = 'fork-badge show' + (bad ? ' bad' : '');
 }
 
 // ----- Панель -----
@@ -1147,7 +1402,7 @@ function renderLevels() {
 }
 
 function renderRecords() {
-  var i, lv, best, row, total = 0, html = '';
+  var i, lv, best, total = 0, html = '';
   for (i = 0; i < LEVELS.length; i++) {
     lv = LEVELS[i];
     best = store.best[lv.id];
@@ -1160,14 +1415,16 @@ function renderRecords() {
 }
 
 function renderRound() {
-  var i, d, html = '';
+  var i, d, html = '', cls;
   dom.lvlNum.textContent = state.level + ' · ' + LEVELS[state.level - 1].name;
-  dom.lvlDesc.textContent = LEVELS[state.level - 1].desc;
+  dom.lvlDesc.textContent = LEVELS[state.level - 1].desc + ' ' + LEVEL_NOTE[state.level];
   dom.statIndex.innerHTML = Math.min(state.index + 1, ROUND_SIZE) + '<small>/ ' + ROUND_SIZE + '</small>';
   dom.statCorrect.textContent = String(state.correct);
+  dom.statPoints.innerHTML = state.points + '<small>/ ' + MAX_POINTS + '</small>';
   for (i = 0; i < ROUND_SIZE; i++) {
     d = state.results[i];
-    html += '<i class="' + (d === true ? 'ok' : (d === false ? 'no' : (i === state.index ? 'now' : ''))) + '"></i>';
+    cls = (d === 2) ? 'ok' : (d === 1) ? 'half' : (d === 0) ? 'no' : (i === state.index ? 'now' : '');
+    html += '<i class="' + cls + '"></i>';
   }
   dom.dots.innerHTML = html;
 }
@@ -1177,54 +1434,172 @@ function setStatus(cls, lead, text) {
   dom.status.innerHTML = (lead ? '<span class="lead">' + lead + '</span>' : '') + text;
 }
 
+// ----- Кнопки під дошкою -----
+function hideNext() {
+  state.nextAction = null;
+  dom.nextBtn.className = 'btn primary next-btn off';
+}
+function setNext(action, label) {
+  state.nextAction = action;
+  dom.nextBtn.textContent = label;
+  dom.nextBtn.className = 'btn primary next-btn';
+}
+function nextLabel() { return (state.index + 1 >= ROUND_SIZE) ? 'Результат' : 'Далі →'; }
+
+function updateButtons() {
+  var play = !!state.puzzle && !state.intro && !state.locked && !state.answered;
+  dom.hintBtn.className = 'btn hint-btn' + (play ? '' : ' off');
+  dom.hintBtn.disabled = state.hint;
+  dom.hintBtn.textContent = state.hint ? 'Підказка показана' : 'Підказка · 1 бал замість 2';
+  dom.howBtn.disabled = !play;
+  dom.skipBtn.className = 'btn ghost small sub-btn' + ((state.intro && !state.introEnd) ? '' : ' off');
+  dom.replayBtn.className = 'btn ghost small sub-btn' + ((state.intro && state.introEnd) ? '' : ' off');
+}
+
+// ----- Анімація-пояснення -----
+function playIntro() {
+  state.intro = true;
+  state.locked = true;
+  playScene(0);
+}
+
+function playScene(i) {
+  var scenes = DEMOS[state.level], sc = scenes[i], pos = demoPos(sc.pos), isLast = (i === scenes.length - 1);
+  var t1 = (i === 0) ? 5400 : 3000, t2 = 3400;
+  clearTimers();
+  clearArrows();
+  state.introEnd = false;
+  state.flipped = false;
+  state.selected = null;
+  state.legalTo = {};
+  buildSquares();
+  renderPieces(pos);
+  fitPieces();
+  dom.sideChip.className = 'side-chip w';
+  dom.taskText.textContent = 'Пояснення: ' + sc.title;
+  hideNext();
+  setStatus('', (i === 0) ? 'Що таке вилка?' : sc.title, (i === 0 ? DEFINITION + ' ' : '') + sc.t1);
+  pieceEls[sc.from].className += ' hint';
+  renderRound();
+  updateButtons();
+
+  later(function () {
+    var el = pieceEls[sc.from];
+    if (el) { el.className = el.className.replace(' hint', ''); }
+    movePieceEl(sc.from, sc.to);
+    squareEl(sc.to).className += sc.wrong ? ' wrong' : ' dest';
+    setStatus('', 'Хід', sc.t2);
+  }, t1);
+  later(function () {
+    drawArrowList(sc.arrows);
+    setStatus(sc.bad ? 'bad' : 'good', sc.bad ? 'Не вилка!' : 'Вилка!', sc.t3);
+  }, t1 + t2);
+  later(function () { showBadge(sc.bad ? 'Не вилка!' : 'Вилка!', sc.bad); }, t1 + t2 + 700);
+  later(function () {
+    if (isLast) {
+      state.introEnd = true;
+      setNext('start', 'Почати задачі →');
+      updateButtons();
+    } else {
+      playScene(i + 1);
+    }
+  }, t1 + t2 + (isLast ? 1500 : 5200));
+}
+
 // ----- Хід гри -----
-function startRound(level) {
+function startRound(level, withIntro) {
   clearTimers();
   state.level = level;
   state.index = 0;
   state.correct = 0;
+  state.points = 0;
   state.results = [];
   state.seen = {};
   store.level = level;
   saveStore();
   dom.overlay.className = 'overlay';
   renderLevels();
-  nextPuzzle();
+  nextPuzzle(withIntro);
 }
 
-function nextPuzzle() {
-  var pz = null, guard = 0;
-  clearTimers();
-  clearArrows();
-  clearMarks();
-  if (state.index >= ROUND_SIZE) { finishRound(); return; }
-
-  while (guard < 5) {
-    pz = makePuzzle(state.level);
-    if (pz && !state.seen[pz.fen]) { break; }
-    guard++;
+// Готує нову задачу (без малювання). Рівні 1-3 — лише з ходом білих:
+// задачі за чорних просто відкидаємо й генеруємо нову (генерація швидка).
+function preparePuzzle() {
+  var pz = null, spare = null, n, c;
+  for (n = 0; n < 30; n++) {
+    c = makePuzzle(state.level);
+    if (!c) { continue; }
+    if (state.level <= WHITE_ONLY_UP_TO && c.color !== 'w') { continue; }
+    if (!state.seen[c.fen]) { pz = c; break; }
+    if (!spare) { spare = c; }
   }
-  if (!pz) {
-    setStatus('bad', 'Ой!', 'Не вдалося створити задачу. Натисни «Далі», щоб спробувати ще раз.');
-    dom.nextBtn.className = 'btn primary next-btn';
-    return;
-  }
+  if (!pz) { pz = spare; }
+  if (!pz) { return false; }
   state.seen[pz.fen] = true;
   state.puzzle = pz;
   state.game = new Chess(pz.fen);
   state.selected = null;
   state.legalTo = {};
+  state.tries = 0;
+  state.hint = false;
   state.answered = false;
-  state.flipped = (pz.color === 'b');
+  state.locked = false;
+  state.intro = false;
+  return true;
+}
 
+function nextPuzzle(withIntro) {
+  clearTimers();
+  clearArrows();
+  clearMarks();
+  if (state.index >= ROUND_SIZE) { finishRound(); return; }
+  if (!preparePuzzle()) {
+    state.puzzle = null;
+    state.locked = true;
+    state.intro = false;
+    setStatus('bad', 'Ой!', 'Не вдалося створити задачу. Натисни «Ще раз».');
+    setNext('gen', 'Ще раз');
+    updateButtons();
+    return;
+  }
+  if (withIntro && DEMOS[state.level]) { playIntro(); } else { showPuzzle(); }
+}
+
+function startStatus(pz) {
+  var t = 'Торкнись фігури, потім клітинки, куди її поставити.', lead = '';
+  if (pz.color === 'b') { t = 'Ти граєш чорними — дошка перевернута. ' + t; }
+  if (state.tries > 0) { lead = 'Друга спроба'; t = 'Знайди клітинку, де фігуру не б\'ють і є дві цілі.'; }
+  if (state.hint) { t += ' Фігура, що світиться, — підказка.'; }
+  setStatus('', lead, t);
+}
+
+function markHint() {
+  var el = pieceEls[state.puzzle.from];
+  if (el && el.className.indexOf(' hint') < 0) { el.className += ' hint'; }
+}
+
+// Малює поточну задачу з початкової позиції (з урахуванням спроб і підказки)
+function showPuzzle() {
+  var pz = state.puzzle;
+  clearTimers();
+  clearArrows();
+  clearMarks();
+  state.intro = false;
+  state.introEnd = false;
+  state.locked = false;
+  state.selected = null;
+  state.legalTo = {};
+  state.flipped = (pz.color === 'b');
   buildSquares();
   renderPieces(pz.pos);
   fitPieces();
+  if (state.hint) { markHint(); }
   dom.sideChip.className = 'side-chip ' + pz.color;
   dom.taskText.textContent = 'Хід ' + (pz.color === 'w' ? 'білих' : 'чорних') + ': знайди вилку';
-  dom.nextBtn.className = 'btn primary next-btn off';
-  setStatus('', '', 'Торкнись фігури, потім клітинки, куди її поставити.');
+  hideNext();
+  startStatus(pz);
   renderRound();
+  updateButtons();
 }
 
 function selectSquare(sq) {
@@ -1249,7 +1624,7 @@ function deselect() {
 function onBoardClick(e) {
   var t = e.target, sq, piece;
   while (t && t !== dom.board && !(t.getAttribute && t.getAttribute('data-sq'))) { t = t.parentNode; }
-  if (!t || t === dom.board || state.answered || !state.puzzle) { return; }
+  if (!t || t === dom.board || state.answered || state.locked || state.intro || !state.puzzle) { return; }
   sq = t.getAttribute('data-sq');
   if (state.selected && state.legalTo[sq]) { attempt(state.selected, sq); return; }
   piece = state.game.get(sq);
@@ -1262,11 +1637,9 @@ function onBoardClick(e) {
   }
 }
 
-function targetsText(list) {
-  var names = [], i;
-  for (i = 0; i < list.length; i++) { names.push('<b>' + NAME_ACC[list[i].type] + '</b>'); }
-  if (names.length === 1) { return names[0]; }
-  return names.slice(0, names.length - 1).join(', ') + ' і ' + names[names.length - 1];
+function solvedText() {
+  var pz = state.puzzle;
+  return cap(NAME_NOM[pz.piece]) + ' на <b>' + pz.to + '</b> атакує: ' + targetsText(pz.targets) + '.';
 }
 
 // Показ правильного ходу: фігура ходить, потім стрілки на цілі.
@@ -1284,44 +1657,102 @@ function playSolution(badgeText, delay) {
       squareEl(pz.targets[i].sq).className += ' tgt';
     }
   }, delay + 450);
-  later(function () { showBadge(badgeText); }, delay + 450 + 300 + pz.targets.length * 250);
+  later(function () { showBadge(badgeText, false); }, delay + 450 + 300 + pz.targets.length * 250);
+}
+
+// Задачу закінчено: pts — 2, 1 або 0 балів
+function finishPuzzle(pts) {
+  state.answered = true;
+  state.locked = true;
+  state.results[state.index] = pts;
+  state.points += pts;
+  if (pts > 0) { state.correct++; }
+  renderRound();
+  updateButtons();
 }
 
 function attempt(from, to) {
-  var pz = state.puzzle, ok = (from === pz.from && to === pz.to), rec, reason, text;
-  state.answered = true;
-  state.results[state.index] = ok;
-  if (ok) { state.correct++; }
+  var pz = state.puzzle, ok = (from === pz.from && to === pz.to), ex;
   deselect();
-  renderRound();
-  dom.nextBtn.textContent = (state.index + 1 >= ROUND_SIZE) ? 'Результат' : 'Далі →';
-
-  text = cap(NAME_NOM[pz.piece]) + ' на <b>' + pz.to + '</b> атакує: ' + targetsText(pz.targets) + '.';
+  state.locked = true;
+  hideNext();
   if (ok) {
-    setStatus('good', 'Вилка!', text);
+    finishPuzzle((state.tries === 0 && !state.hint) ? 2 : 1);
+    setStatus('good', 'Вилка!', solvedText() + (state.tries > 0 ? ' Друга спроба вдалася — ти не здався.' : ''));
     playSolution('Вилка!', 0);
-    later(function () { dom.nextBtn.className = 'btn primary next-btn'; }, 600);
+    later(function () { setNext('next', nextLabel()); }, 700);
+    return;
+  }
+
+  // Помилка: показуємо цей хід на дошці й пояснюємо стрілками, чому це не вилка
+  ex = explainWrong(pz, from, to);
+  state.tries++;
+  movePieceEl(from, to);
+  squareEl(to).className += ' wrong';
+  later(function () { drawArrowList(ex.arrows); }, 500);
+  if (state.tries < 2) {
+    setStatus('bad', 'Це не вилка.', ex.text);
+    updateButtons();
+    later(function () { setNext('retry', 'Спробувати ще раз'); }, 1100);
   } else {
-    rec = pz.moves[from + to];
-    if (rec && !rec.safe && rec.targets.length >= 2) { reason = 'Вилка була б, але клітинка під боєм — фігуру з\'їдять.'; }
-    else if (rec && !rec.safe) { reason = 'Ця клітинка під боєм — фігуру з\'їдять.'; }
-    else if (rec && rec.targets.length === 1) { reason = 'Тут лише одна ціль, а потрібні дві.'; }
-    else { reason = 'Тут немає двох цілей.'; }
-    squareEl(to).className += ' wrong';
-    setStatus('bad', 'Не те.', reason + ' Дивись, де була вилка: ' + text);
-    playSolution('Ось вилка!', 1100);
-    later(function () { dom.nextBtn.className = 'btn primary next-btn'; }, 1500);
+    finishPuzzle(0);
+    setStatus('bad', 'Це не вилка.', ex.text);
+    later(function () { setNext('solution', 'Показати розв\'язок'); }, 1100);
   }
 }
 
+// Друга спроба: та сама позиція, підказка (якщо була) лишається
+function retryPuzzle() {
+  var pz = state.puzzle;
+  clearTimers();
+  clearArrows();
+  clearMarks();
+  renderPieces(pz.pos);
+  if (state.hint) { markHint(); }
+  state.locked = false;
+  hideNext();
+  startStatus(pz);
+  updateButtons();
+}
+
+// Після другої помилки: розв'язок
+function showSolution() {
+  var pz = state.puzzle;
+  clearTimers();
+  clearArrows();
+  clearMarks();
+  renderPieces(pz.pos);
+  hideNext();
+  setStatus('', 'Ось вилка', solvedText() + ' Подивись уважно — наступна вийде.');
+  playSolution('Ось вилка!', 400);
+  later(function () { setNext('next', nextLabel()); }, 1900);
+}
+
+function onHint() {
+  if (state.hint || state.locked || state.answered || state.intro || !state.puzzle) { return; }
+  state.hint = true;
+  markHint();
+  setStatus('', 'Підказка', 'Ходи фігурою, що світиться. За цю задачу буде 1 бал.');
+  updateButtons();
+}
+
+function onHow() {
+  if (!state.puzzle || state.intro || state.locked || state.answered) { return; }
+  deselect();
+  playIntro();
+}
+
 function onNext() {
-  if (!state.answered && state.puzzle) { return; }
-  state.index++;
-  nextPuzzle();
+  var a = state.nextAction;
+  if (a === 'retry') { retryPuzzle(); }
+  else if (a === 'solution') { showSolution(); }
+  else if (a === 'start') { showPuzzle(); }
+  else if (a === 'gen') { nextPuzzle(false); }
+  else if (a === 'next') { state.index++; nextPuzzle(false); }
 }
 
 function finishRound() {
-  var score = state.correct, stars = starsFor(score), prev = store.best[state.level], isRecord = false, i, s = '';
+  var score = state.points, stars = starsFor(score), prev = store.best[state.level], isRecord = false, i, s = '';
   if (!prev || score > prev.score) {
     store.best[state.level] = { score: score, stars: Math.max(stars, prev ? prev.stars : 0) };
     isRecord = score > 0;
@@ -1334,9 +1765,9 @@ function finishRound() {
 
   for (i = 0; i < 3; i++) { s += (i < stars) ? '★' : '<span class="off">★</span>'; }
   dom.roundStars.innerHTML = s;
-  dom.roundScore.textContent = score + ' з ' + ROUND_SIZE;
+  dom.roundScore.textContent = score + ' з ' + MAX_POINTS + ' балів';
   dom.roundTitle.textContent = (stars === 3) ? 'Чудово!' : (stars >= 1 ? 'Добре!' : 'Спробуй ще');
-  dom.roundSub.textContent = (stars === 3) ? 'Ти бачиш вилки майже всюди.' : 'Дев\'ять правильних дають три зірки.';
+  dom.roundSub.textContent = (stars === 3) ? 'Ти уважно перевіряв кожну клітинку й кожну ціль.' : '18 балів із 20 дають три зірки.';
   dom.roundRecord.innerHTML = isRecord ? '<span class="record-badge">Новий рекорд!</span>' : '';
   dom.upBtn.style.display = (state.level < LEVELS.length) ? '' : 'none';
   dom.overlay.className = 'overlay show';
@@ -1345,12 +1776,16 @@ function finishRound() {
 // ----- Події -----
 dom.board.addEventListener('click', onBoardClick);
 dom.nextBtn.addEventListener('click', onNext);
-dom.againBtn.addEventListener('click', function () { startRound(state.level); });
-dom.upBtn.addEventListener('click', function () { startRound(Math.min(state.level + 1, LEVELS.length)); });
+dom.hintBtn.addEventListener('click', onHint);
+dom.howBtn.addEventListener('click', onHow);
+dom.skipBtn.addEventListener('click', function () { if (state.intro) { showPuzzle(); } });
+dom.replayBtn.addEventListener('click', function () { if (state.intro) { playIntro(); } });
+dom.againBtn.addEventListener('click', function () { startRound(state.level, false); });
+dom.upBtn.addEventListener('click', function () { startRound(Math.min(state.level + 1, LEVELS.length), true); });
 dom.levels.addEventListener('click', function (e) {
   var t = e.target;
   while (t && t !== dom.levels && !(t.getAttribute && t.getAttribute('data-level'))) { t = t.parentNode; }
-  if (t && t !== dom.levels) { startRound(parseInt(t.getAttribute('data-level'), 10)); }
+  if (t && t !== dom.levels) { startRound(parseInt(t.getAttribute('data-level'), 10), true); }
 });
 dom.resetBtn.addEventListener('click', function () { dom.resetConfirm.className = 'reset-confirm show'; });
 dom.resetNo.addEventListener('click', function () { dom.resetConfirm.className = 'reset-confirm'; });
@@ -1369,7 +1804,7 @@ if (typeof Chess === 'undefined') {
   dom.taskText.textContent = 'Немає зв\'язку';
 } else {
   renderRecords();
-  startRound(store.level);
+  startRound(store.level, true);
 }
 </script>
 </body>
