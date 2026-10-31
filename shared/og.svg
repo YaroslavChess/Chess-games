@@ -9,7 +9,7 @@
   <!-- логотип -->
   <circle cx="900" cy="315" r="270" fill="#d8a94c"/>
   <clipPath id="round"><circle cx="900" cy="315" r="258"/></clipPath>
-  <image href="logo.png" x="642" y="57" width="516" height="516" clip-path="url(#round)"/>
+  <image href="logo-source.png" x="642" y="57" width="516" height="516" clip-path="url(#round)"/>
   <!-- текст -->
   <rect x="70" y="170" width="90" height="8" rx="4" fill="#d8a94c"/>
   <text x="70" y="290" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="104" fill="#f1e9d8">Yaroslav</text>
