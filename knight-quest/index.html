@@ -606,9 +606,13 @@
 </div>
 
 <script src="../shared/board-ui.js"></script>
+<script src="../shared/sound.js"></script>
 <script>
 (function(){
   "use strict";
+
+  // Звуки — у спільному shared/sound.js. Якщо файл не завантажився — гра просто мовчить.
+  if(!window.Sound){ window.Sound = { play: function(){}, setMuted: function(){}, isMuted: function(){ return true; } }; }
 
   var FILES = ['a','b','c','d','e','f','g','h'];
   var KNIGHT_OFFSETS = [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
@@ -954,12 +958,14 @@
     var legal = legalMovesFrom(state.knightIdx, state.puzzle.blocked);
     if(legal.indexOf(idx) === -1){
       positionKnight(state.knightIdx, false); // illegal drop: snap back
+      if(idx !== state.knightIdx){ Sound.play('wrong'); }
       return false;
     }
 
     state.knightIdx = idx;
     state.moves += 1;
     state.path.push('N' + idxToSquare(idx));
+    Sound.play('move');
     if(boardUI){ boardUI.clearShapes(); }
     positionKnight(idx, animateHop);
     statMoves.textContent = state.moves;
@@ -1046,6 +1052,9 @@
     updateSidePanel();
     updateLevelNav();
     renderBoard();
+
+    Sound.play(state.level >= TOTAL_LEVELS ? 'win' : 'level');
+    if(isNewMoveRecord || isNewTimeRecord){ setTimeout(function(){ Sound.play('star'); }, 700); }
 
     if(state.level >= TOTAL_LEVELS){
       var sumMoves = 0, sumTime = 0;

@@ -462,7 +462,6 @@ p { margin: 0 0 12px; }
 <header class="topbar">
   <button type="button" class="icon-btn hidden" id="btn-home" aria-label="Додому"></button>
   <h1 id="top-title">Міні-шахи</h1>
-  <button type="button" class="icon-btn" id="btn-sound" aria-label="Звук"></button>
   <button type="button" class="icon-btn" id="btn-lock" aria-label="Для вчителя"></button>
 </header>
 
@@ -978,6 +977,7 @@ var MiniChess = (function () {
 /* ENGINE:END */
 </script>
 <script src="../shared/board-ui.js"></script>
+<script src="../shared/sound.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1095,8 +1095,6 @@ var MiniChess = (function () {
 
   var ICONS = {
     home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>',
-    soundOn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>',
-    soundOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6"/></svg>',
     lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
     unlock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>',
     lockBig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><circle cx="12" cy="16" r="1.5" fill="#1c1712" stroke="none"/></svg>',
@@ -1157,13 +1155,13 @@ var MiniChess = (function () {
   function later(fn, ms) { return window.setTimeout(fn, ms); }
 
   /* ================== ПРОГРЕС (localStorage) ================== */
-  // Зберігаються зірочки рівнів, медалі за Лисичку, «усі рівні відкрито» і вимкнений звук.
+  // Зберігаються зірочки рівнів, медалі за Лисичку, «усі рівні відкрито». Звук вимикається окремо (shared/sound.js).
   // Старі збереження (без поля medals) читаються як є: зірочки лишаються, медалей ще немає.
 
   function blankProgress() {
     var stars = [], medals = [];
     for (var i = 0; i < LEVEL_COUNT; i++) { stars.push(0); medals.push(false); }
-    return { stars: stars, medals: medals, all: false, mute: false };
+    return { stars: stars, medals: medals, all: false };
   }
 
   function loadProgress() {
@@ -1178,7 +1176,6 @@ var MiniChess = (function () {
           p.medals[i] = !!(d.medals && d.medals[i] === true);
         }
         p.all = d.all === true;
-        p.mute = d.mute === true;
       }
     } catch (e) { /* сховище недоступне — граємо без збереження */ }
     return p;
@@ -1194,76 +1191,10 @@ var MiniChess = (function () {
     return progress.all || level === 1 || progress.stars[level - 2] > 0;
   }
 
-  /* ================== ЗВУК (WebAudio, синтез) ================== */
-
-  var Sound = {
-    ctx: null,
-    unlock: function () {
-      if (!this.ctx) {
-        var AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return;
-        try { this.ctx = new AC(); } catch (e) { return; }
-      }
-      if (this.ctx.state === 'suspended') this.ctx.resume();
-    },
-    tone: function (freq, at, dur, type, vol, freqEnd) {
-      var c = this.ctx, t = c.currentTime + at;
-      var o = c.createOscillator(), g = c.createGain();
-      o.type = type;
-      o.frequency.setValueAtTime(freq, t);
-      if (freqEnd) o.frequency.exponentialRampToValueAtTime(freqEnd, t + dur);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g);
-      g.connect(c.destination);
-      o.start(t);
-      o.stop(t + dur + 0.02);
-    },
-    noise: function (at, dur, vol, freq) {
-      var c = this.ctx, t = c.currentTime + at, n = Math.floor(c.sampleRate * dur);
-      var buf = c.createBuffer(1, n, c.sampleRate), data = buf.getChannelData(0);
-      for (var i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / n);
-      var src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-      src.buffer = buf;
-      f.type = 'bandpass';
-      f.frequency.value = freq;
-      g.gain.value = vol;
-      src.connect(f);
-      f.connect(g);
-      g.connect(c.destination);
-      src.start(t);
-    },
-    play: function (name) {
-      if (progress.mute || !this.ctx) return;
-      try {
-        if (name === 'move') {
-          this.tone(620, 0, 0.09, 'triangle', 0.3, 380);
-          this.noise(0, 0.04, 0.25, 1800);
-        } else if (name === 'capture') {
-          this.noise(0, 0.14, 0.6, 900);
-          this.tone(300, 0, 0.18, 'square', 0.12, 110);
-          this.tone(900, 0.05, 0.12, 'triangle', 0.18, 1400);
-        } else if (name === 'select') {
-          this.tone(880, 0, 0.06, 'sine', 0.12);
-        } else if (name === 'promo') {
-          this.tone(400, 0, 0.45, 'triangle', 0.22, 1300);
-          this.tone(1568, 0.45, 0.15, 'sine', 0.15);
-          this.tone(2093, 0.55, 0.25, 'sine', 0.15);
-        } else if (name === 'win') {
-          var notes = [523, 659, 784, 1047];
-          for (var i = 0; i < notes.length; i++) this.tone(notes[i], i * 0.13, 0.25, 'triangle', 0.25);
-          this.tone(1047, 0.52, 0.5, 'sine', 0.2);
-        } else if (name === 'lose') {
-          this.tone(392, 0, 0.3, 'triangle', 0.2);
-          this.tone(330, 0.28, 0.3, 'triangle', 0.2);
-          this.tone(262, 0.56, 0.5, 'triangle', 0.2);
-        } else if (name === 'error') {
-          this.tone(180, 0, 0.14, 'square', 0.1);
-        }
-      } catch (e) { /* звук не обов'язковий */ }
-    }
-  };
+  /* ================== ЗВУКИ ================== */
+  // Усі звуки — у спільному shared/sound.js (Sound.play). Кнопка 🔊/🔇 — у смужці бренду (theme.js).
+  // Якщо файл звуків не завантажився — гра просто мовчить.
+  if (!window.Sound) { window.Sound = { play: function () {}, setMuted: function () {}, isMuted: function () { return true; } }; }
 
   /* ================== ОЗВУЧЕННЯ ПІДКАЗКИ (якщо є український голос) ================== */
 
@@ -1525,9 +1456,8 @@ var MiniChess = (function () {
   }
   function makeLevelTap(lv, tile) {
     return function () {
-      Sound.unlock();
       if (!isOpen(lv)) {
-        Sound.play('error');
+        Sound.play('wrong');
         restartClass(tile, 'shake');
         return;
       }
@@ -1666,11 +1596,9 @@ var MiniChess = (function () {
       },
       // Почали тягнути — показуємо крапки ходів, як після тапу.
       onDragStart: function (name) {
-        Sound.unlock();
         var sq = MC.sqIndex(name);
         if (G.sel !== sq) {
           G.sel = sq;
-          Sound.play('select');
           renderMarks();
         }
       },
@@ -1746,7 +1674,6 @@ var MiniChess = (function () {
   }
 
   function onSquare(sq) {
-    Sound.unlock();
     if (!G.state) return;
     var s = G.state;
     if (G.sel >= 0 && myTurn() && s.board[G.sel] && s.board[G.sel].c === G.me) {
@@ -1758,7 +1685,6 @@ var MiniChess = (function () {
       }
     }
     G.sel = (s.board[sq] && sq !== G.sel) ? sq : -1;
-    if (G.sel >= 0) Sound.play('select');
     renderMarks();
   }
 
@@ -1777,6 +1703,7 @@ var MiniChess = (function () {
 
     var viewing = G.view !== null;   // дивимось історію: дошку не чіпаємо, у списку лише додається хід
     Sound.play(last.capture ? 'capture' : 'move');
+    if (MC.inCheck(ns.board, ns.turn)) setTimeout(function () { Sound.play('check'); }, 220);
     if (!viewing) {
       view.sync(ns.board, {
         jumpId: mover.t === 'n' ? mover.id : null,
@@ -1794,7 +1721,7 @@ var MiniChess = (function () {
         var w = view.pieceEl(mover.id);
         if (w) restartClass(w, 'glow');
         if (mine) {
-          Sound.play('promo');
+          Sound.play('star');
           launchConfetti(90);
         }
       }, 300);
@@ -2125,6 +2052,7 @@ var MiniChess = (function () {
 
     if (win && G.role !== 'teacher') {
       Sound.play('win');
+      if (stars > 0) setTimeout(function () { Sound.play('star'); }, 1100);
       launchConfetti(160);
     } else if (!win && !draw && G.role !== 'teacher') {
       Sound.play('lose');
@@ -2156,7 +2084,7 @@ var MiniChess = (function () {
       box.appendChild(b);
     }
   }
-  function makeDigit(fn, k) { return function () { Sound.unlock(); Sound.play('select'); fn(k); }; }
+  function makeDigit(fn, k) { return function () { fn(k); }; }
 
   function renderPinDots() {
     var dots = $('pin-dots').getElementsByTagName('i');
@@ -2178,7 +2106,7 @@ var MiniChess = (function () {
         openTeacher();
       }, 150);
     } else {
-      Sound.play('error');
+      Sound.play('wrong');
       restartClass($('pin-dialog'), 'shake');
       later(function () { pinValue = ''; renderPinDots(); }, 400);
     }
@@ -2588,9 +2516,6 @@ var MiniChess = (function () {
   /* ================== ПОДІЇ ================== */
 
   function renderTopButtons() {
-    $('btn-sound').innerHTML = progress.mute ? ICONS.soundOff : ICONS.soundOn;
-    $('btn-sound').setAttribute('aria-label', progress.mute ? 'Увімкнути звук' : 'Вимкнути звук');
-    $('btn-sound').setAttribute('aria-pressed', progress.mute ? 'true' : 'false');
     $('btn-lock').innerHTML = progress.all ? ICONS.unlock : ICONS.lock;
     $('btn-lock').classList.toggle('gold', progress.all);
   }
@@ -2606,14 +2531,7 @@ var MiniChess = (function () {
     renderMap();
 
     $('btn-home').addEventListener('click', goHome);
-    $('btn-sound').addEventListener('click', function () {
-      progress.mute = !progress.mute;
-      saveProgress();
-      renderTopButtons();
-      Sound.unlock();
-      Sound.play('select');
-    });
-    $('btn-lock').addEventListener('click', function () { Sound.unlock(); openPin(); });
+    $('btn-lock').addEventListener('click', function () { openPin(); });
     $('pin-cancel').addEventListener('click', function () { hideOverlay('pin'); });
     buildPad($('pin-pad'), pinDigit, function () { pinValue = pinValue.slice(0, -1); renderPinDots(); });
 
@@ -2646,11 +2564,9 @@ var MiniChess = (function () {
     }
 
     $('btn-bear').addEventListener('click', function () {
-      Sound.unlock();
       startGame(intro.level, { mode: 'bot', real: intro.real, opponent: 'bear' });
     });
     $('btn-fox').addEventListener('click', function () {
-      Sound.unlock();
       startGame(intro.level, { mode: 'bot', real: intro.real, opponent: 'fox' });
     });
     $('btn-restart').addEventListener('click', function () {
@@ -2658,7 +2574,7 @@ var MiniChess = (function () {
       startGame(G.level, { mode: 'bot', real: G.real, opponent: G.opponent });
     });
 
-    $('btn-join').addEventListener('click', function () { Sound.unlock(); openJoin(); });
+    $('btn-join').addEventListener('click', function () { openJoin(); });
     buildPad($('join-pad'), joinDigit, joinDel);
 
     $('btn-unlock-all').addEventListener('click', function () {
@@ -2670,9 +2586,7 @@ var MiniChess = (function () {
     });
     $('btn-reset').addEventListener('click', function () {
       if (!window.confirm('Скинути всі зірочки й медалі на цьому пристрої?')) return;
-      var keepMute = progress.mute;
       progress = blankProgress();
-      progress.mute = keepMute;
       saveProgress();
       renderTopButtons();
       renderTeacher();

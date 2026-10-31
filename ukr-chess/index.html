@@ -488,7 +488,7 @@ p { margin: 0 0 12px; }
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
   <div class="title" id="top-title">Українці проти свиней</div>
-  <button type="button" class="icon-btn" id="btn-sound" aria-pressed="true" aria-label="Звук увімкнено. Натисніть, щоб вимкнути"></button>
+  <span class="icon-btn invisible" aria-hidden="true"></span>
 </header>
 
 <main class="wrap" id="wrap">
@@ -645,6 +645,7 @@ p { margin: 0 0 12px; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
 <script src="../shared/board-ui.js"></script>
+<script src="../shared/sound.js"></script>
 <script>
 (function () {
   'use strict';
@@ -743,7 +744,7 @@ p { margin: 0 0 12px; }
         winText: 'Перемогли українці!',
         confetti: ['#2a64c8', '#ffd23f', '#d6401a', '#ffffff'],
         // Що відбувається, коли фігуру цієї сторони з'їли.
-        captured: { say: 'ой!', anim: 'hide', sound: 'oi' },
+        captured: { say: 'ой!', anim: 'hide', sound: 'oy' },
         colors: {
           line: '#1a2c54',
           blue: '#2a64c8',
@@ -1021,9 +1022,7 @@ p { margin: 0 0 12px; }
   var runId = 0;
   var timers = [];
   var svgCache = {};
-  var soundOn = true;
   var classicOn = false;
-  var actx = null;
   var confirmAction = null;
   var boardUI = null;       // перетягування й стрілки (shared/board-ui.js)
   var viewGame = null;      // позиція з історії, яку зараз дивимось (null — показуємо поточну гру)
@@ -1101,7 +1100,6 @@ p { margin: 0 0 12px; }
     renderClassicToggles();
     fillThemeTexts();
     if (st && game) { renderAll(); }
-    playSound('select');
   }
 
   function pieceName(color, type) { return THEME.sides[color].pieces[type].name; }
@@ -1135,141 +1133,10 @@ p { margin: 0 0 12px; }
     }
   }
 
-  /* ================== ЗВУКИ (WebAudio) ================== */
-
-  function audio() {
-    var AC;
-    if (!soundOn) { return null; }
-    if (!actx) {
-      AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) { return null; }
-      try { actx = new AC(); } catch (e) { return null; }
-    }
-    if (actx.state === 'suspended' && actx.resume) { actx.resume(); }
-    return actx;
-  }
-
-  // Короткий тон: f — початкова частота, f2 — кінцева, d — тривалість (с).
-  function tone(ctx, o) {
-    var t0 = ctx.currentTime + (o.at || 0);
-    var osc = ctx.createOscillator();
-    var env = ctx.createGain();
-    var filt;
-    osc.type = o.type || 'sine';
-    osc.frequency.setValueAtTime(o.f, t0);
-    if (o.f2) { osc.frequency.exponentialRampToValueAtTime(o.f2, t0 + o.d); }
-    env.gain.setValueAtTime(0.0001, t0);
-    env.gain.exponentialRampToValueAtTime(o.v || 0.2, t0 + 0.015);
-    env.gain.exponentialRampToValueAtTime(0.0001, t0 + o.d);
-    if (o.bp) {
-      filt = ctx.createBiquadFilter();
-      filt.type = 'bandpass';
-      filt.frequency.value = o.bp;
-      filt.Q.value = o.q || 2;
-      osc.connect(filt);
-      filt.connect(env);
-    } else {
-      osc.connect(env);
-    }
-    env.connect(ctx.destination);
-    osc.start(t0);
-    osc.stop(t0 + o.d + 0.05);
-  }
-
-  // «Хрюк»: пилкоподібний тон, що «тремтить» і падає вниз.
-  function grunt(ctx, at, f1, f2, d) {
-    var t0 = ctx.currentTime + at;
-    var osc = ctx.createOscillator();
-    var lfo = ctx.createOscillator();
-    var lfoGain = ctx.createGain();
-    var amp = ctx.createGain();
-    var env = ctx.createGain();
-    var filt = ctx.createBiquadFilter();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(f1, t0);
-    osc.frequency.exponentialRampToValueAtTime(f2, t0 + d);
-    filt.type = 'bandpass';
-    filt.frequency.value = 850;
-    filt.Q.value = 1.4;
-    lfo.type = 'square';
-    lfo.frequency.value = 36;
-    lfoGain.gain.value = 0.45;
-    amp.gain.value = 0.55;
-    lfo.connect(lfoGain);
-    lfoGain.connect(amp.gain);
-    env.gain.setValueAtTime(0.0001, t0);
-    env.gain.exponentialRampToValueAtTime(0.5, t0 + 0.02);
-    env.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
-    osc.connect(filt);
-    filt.connect(amp);
-    amp.connect(env);
-    env.connect(ctx.destination);
-    osc.start(t0);
-    lfo.start(t0);
-    osc.stop(t0 + d + 0.05);
-    lfo.stop(t0 + d + 0.05);
-  }
-
-  function playSound(name) {
-    var ctx = audio();
-    var t0, osc, env, filt, notes, i;
-    if (!ctx) { return; }
-    try {
-      if (name === 'select') {
-        tone(ctx, { f: 880, d: 0.05, v: 0.06 });
-      } else if (name === 'move') {
-        tone(ctx, { f: 420, f2: 240, d: 0.09, v: 0.3 });
-      } else if (name === 'oink') {
-        grunt(ctx, 0, 240, 150, 0.17);
-        grunt(ctx, 0.2, 290, 170, 0.22);
-      } else if (name === 'oi') {
-        // «Ой!»: голосний писк угору, потім униз.
-        t0 = ctx.currentTime;
-        osc = ctx.createOscillator();
-        env = ctx.createGain();
-        filt = ctx.createBiquadFilter();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(560, t0);
-        osc.frequency.linearRampToValueAtTime(900, t0 + 0.07);
-        osc.frequency.exponentialRampToValueAtTime(430, t0 + 0.32);
-        filt.type = 'lowpass';
-        filt.frequency.value = 2200;
-        env.gain.setValueAtTime(0.0001, t0);
-        env.gain.exponentialRampToValueAtTime(0.35, t0 + 0.03);
-        env.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
-        osc.connect(filt);
-        filt.connect(env);
-        env.connect(ctx.destination);
-        osc.start(t0);
-        osc.stop(t0 + 0.4);
-      } else if (name === 'check') {
-        tone(ctx, { f: 988, d: 0.12, v: 0.08, type: 'square' });
-        tone(ctx, { f: 784, d: 0.16, v: 0.08, type: 'square', at: 0.14 });
-      } else if (name === 'win') {
-        notes = [523, 659, 784, 1047];
-        for (i = 0; i < notes.length; i++) {
-          tone(ctx, { f: notes[i], d: i === 3 ? 0.6 : 0.16, v: 0.22, type: 'triangle', at: i * 0.14 });
-        }
-        tone(ctx, { f: 1568, d: 0.3, v: 0.08, at: 0.7 });
-        tone(ctx, { f: 2093, d: 0.4, v: 0.06, at: 0.8 });
-      } else if (name === 'draw') {
-        tone(ctx, { f: 523, d: 0.25, v: 0.18, type: 'triangle' });
-        tone(ctx, { f: 659, d: 0.4, v: 0.18, type: 'triangle', at: 0.22 });
-      } else if (name === 'start') {
-        tone(ctx, { f: 659, d: 0.1, v: 0.15, type: 'triangle' });
-        tone(ctx, { f: 880, d: 0.18, v: 0.15, type: 'triangle', at: 0.1 });
-      }
-    } catch (e) { /* звук не обов'язковий */ }
-  }
-
-  function renderSoundButton() {
-    var btn = byId('btn-sound');
-    btn.innerHTML = soundOn
-      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
-      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-    btn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
-    btn.setAttribute('aria-label', soundOn ? 'Звук увімкнено. Натисніть, щоб вимкнути' : 'Звук вимкнено. Натисніть, щоб увімкнути');
-  }
+  /* ================== ЗВУКИ ================== */
+  // Усі звуки — у спільному shared/sound.js (Sound.play). Кнопка 🔊/🔇 — у смужці бренду (theme.js).
+  // Якщо файл звуків не завантажився — гра просто мовчить.
+  if (!window.Sound) { window.Sound = { play: function () {}, setMuted: function () {}, isMuted: function () { return true; } }; }
 
   /* ================== ПОЧАТОК ГРИ ================== */
 
@@ -1300,7 +1167,6 @@ p { margin: 0 0 12px; }
     byId('net-line').className = (st.mode === 'online') ? 'net-line' : 'net-line hidden';
     showScreen('game');
     renderAll();
-    playSound('start');
   }
 
   function renderAll() {
@@ -1803,8 +1669,7 @@ p { margin: 0 0 12px; }
     if (piece && piece.color === side) {
       st.selected = name;
       st.legal = game.moves({ square: name, verbose: true });
-      playSound('select');
-    } else {
+      } else {
       st.selected = null;
       st.legal = [];
     }
@@ -1857,7 +1722,6 @@ p { margin: 0 0 12px; }
     if (!side || st.selected === name) { return; }
     st.selected = name;
     st.legal = game.moves({ square: name, verbose: true });
-    playSound('select');
     renderBoard(name);
   }
 
@@ -1955,14 +1819,14 @@ p { margin: 0 0 12px; }
     }
     // Якщо дивимось історію, дошку не чіпаємо: у списку лише додається новий хід.
     renderMoves();
-    playSound(move.captured ? THEME.sides[other(move.color)].captured.sound : 'move');
+    Sound.play(move.captured ? THEME.sides[other(move.color)].captured.sound : 'move');
 
     result = gameResult();
     if (result) {
       finishGame(result, move.captured ? 1000 : 600);
       return move;
     }
-    if (game.in_check()) { later(function () { playSound('check'); }, 260); }
+    if (game.in_check()) { later(function () { Sound.play('check'); }, 260); }
     renderBars();
     renderStatus();
     renderButtons();
@@ -2052,11 +1916,12 @@ p { margin: 0 0 12px; }
         bit.style.transform = 'rotate(' + Math.floor(Math.random() * 360) + 'deg)';
         conf.appendChild(bit);
       }
-      playSound('win');
+      // проти бота й онлайн: виграв свій колір — «win», програв — «lose»; удвох за одним екраном — завжди «win»
+      Sound.play(st.mySide && st.mySide !== over.winner ? 'lose' : 'win');
     } else {
       pic.className = 'party-pic draw';
       pic.innerHTML = '<div>' + pieceSvg('w', 'k') + '</div><div>' + pieceSvg('b', 'k') + '</div>';
-      playSound('draw');
+      Sound.play('level');
     }
     byId('party').className = 'modal';
     byId('party-new').focus();
@@ -2746,13 +2611,7 @@ p { margin: 0 0 12px; }
     loadClassic();
     renderClassicToggles();
     fillThemeTexts();
-    renderSoundButton();
 
-    byId('btn-sound').addEventListener('click', function () {
-      soundOn = !soundOn;
-      renderSoundButton();
-      playSound('select');
-    });
     byId('btn-back').addEventListener('click', function () {
       if (byId('screen-wait').className !== 'hidden') { netLeave(); forgetRoom(); openOnline(); return; }
       if (byId('screen-game').className !== 'hidden') { onBack(); return; }
