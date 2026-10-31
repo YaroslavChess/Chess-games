@@ -24,6 +24,7 @@
     --gold: #d8a94c;
     --gold-soft: #f0cf8f;
     --green: #2ecc71;
+    --blue: #5b8fd8;
     --green-soft: #a8e0bb;
     --blocked-a: #443c30;
     --blocked-b: #37312a;
@@ -398,6 +399,14 @@
   .shop-btn:focus-visible{ outline:2px solid var(--gold-soft); outline-offset:2px; }
   .shop-btn.on{ border-color: var(--gold-soft); background: var(--panel-hi-2); box-shadow: 0 0 0 3px rgba(var(--gold-rgb),.2); }
   .shop-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  /* кнопки магазину можна тягнути на дошку: сторінка під пальцем не скролиться */
+  .shop-btn{ touch-action:none; -webkit-user-select:none; user-select:none; }
+  /* фігура з магазину під пальцем (копія .tok) */
+  .shop-ghost{ position:fixed; z-index:1000; pointer-events:none; }
+  .shop-ghost .tok{ left:0; top:0; width:100%; height:100%; animation:none; transition:none; }
+  /* клітинка під фігурою, яку тягнуть з магазину */
+  .sq.drop{ box-shadow: inset 0 0 0 4px var(--gold-soft); }
+  #boardTools{ width: min(520px, 88vw); }
 
   .btn{
     appearance:none;
@@ -541,6 +550,7 @@
         <div class="files" id="files" aria-hidden="true"></div>
         <div class="ranks" id="ranks" aria-hidden="true"></div>
       </div>
+      <div id="boardTools"></div>
       <div class="msg" id="msg" role="status" aria-live="polite"></div>
     </div>
 
@@ -580,6 +590,7 @@
   </main>
 </div>
 
+<script src="../shared/board-ui.js"></script>
 <script>
 /* ===== ЛОГІКА БОЮ (без малювання; перевіряється тестами в node) ===== */
 
@@ -1035,6 +1046,10 @@ var pending = null;
 var resetArmed = false;
 var praiseIndex = 0;
 
+var boardUI = null;      /* перетягування й стрілки (shared/board-ui.js) */
+var shopDrag = null;     /* фігуру тягнуть з магазину: { type, id, touch, x, y, active, ghost, hover } */
+var noClickUntil = 0;    /* до цього часу ігноруємо клік по магазину (він від перетягування) */
+
 var sqEls = [];
 var laneEls = [];
 var pieceEls = {};
@@ -1124,13 +1139,20 @@ function buildShop() {
     b.className = 'shop-btn';
     b.innerHTML = '<span class="g">' + GLYPH[types[i]] + '</span><span>' + NAMES[types[i]] + '</span><span class="c">' + COST[types[i]] + ' очок</span>';
     b.addEventListener('click', makeShopHandler(types[i]));
+    b.addEventListener('pointerdown', makeShopDownHandler(types[i]));
     shopEl.appendChild(b);
     shopBtns[types[i]] = b;
   }
 }
 
 function makeSquareHandler(sq) { return function () { onSquare(sq); }; }
-function makeShopHandler(type) { return function () { onShop(type); }; }
+function makeShopHandler(type) {
+  return function () {
+    if (new Date().getTime() < noClickUntil) { return; }   /* клік від перетягування не рахуємо */
+    onShop(type);
+  };
+}
+function makeShopDownHandler(type) { return function (e) { onShopDown(e, type); }; }
 
 /* Розмір фігур залежить від ширини дошки. */
 function fitBoard() {
@@ -1227,6 +1249,7 @@ function onGo() {
   selShop = '';
   selSq = -1;
   paused = false;
+  if (boardUI) { boardUI.clearShapes(); }
   say('Хвиля ' + state.wave + ' іде! Пішаків: ' + waveSize(state.wave) + '.');
   render();
   scrollToTop();
@@ -1270,6 +1293,7 @@ function newGame() {
   paused = false;
   resetArmed = false;
   overlayEl.className = 'overlay';
+  if (boardUI) { boardUI.clearShapes(); }
   clearPieces();
   say('Купи фігуру, тапни її, потім тапни клітинку внизу.');
   render();
@@ -1338,6 +1362,7 @@ function onWaveCleared() {
     (st.stuck > 0 ? ' Застрягло (прибрано): ' + st.stuck + '.' : '') +
     ' +' + waveBonus(n) + ' очок.';
   praiseIndex = praiseIndex + 1;
+  if (boardUI) { boardUI.clearShapes(); }
   say(text);
   render();
 }
@@ -1558,6 +1583,199 @@ function renderPanel() {
   resetBtn.className = 'btn small ghost' + (resetArmed ? ' danger-confirm' : '');
 }
 
+/* ---------- Перетягування ---------- */
+
+/* 'c3' -> номер клітинки 0..63 */
+function sqFromName(name) {
+  return FILES.indexOf(name.charAt(0)) + (parseInt(name.substring(1), 10) - 1) * 8;
+}
+
+/* Номер клітинки під точкою екрана (x, y) або -1, якщо точка поза дошкою. Дошка не перевертається. */
+function sqFromPoint(x, y) {
+  var r = boardEl.getBoundingClientRect();
+  var col;
+  var row;
+  if (!r.width || x < r.left || y < r.top || x >= r.right || y >= r.bottom) { return -1; }
+  col = Math.floor((x - r.left) / r.width * 8);
+  row = Math.floor((y - r.top) / r.height * 8);
+  return sqOf(col, 7 - row);
+}
+
+/* Фігуру можна ставити і переставляти тільки під час розстановки. */
+function canArrange() {
+  return state.status === 'place';
+}
+
+/* Порожня клітинка на нижніх 4 рядах? */
+function isFreeHome(sq) {
+  return sq >= 0 && rankOf(sq) < HOME_RANKS && !state.board[sq];
+}
+
+/* --- Фігури на дошці: перетягує shared/board-ui.js --- */
+
+function onBoardDragStart(name) {
+  var sq = sqFromName(name);
+  var p = state.board[sq];
+  if (!p) { return; }
+  if (selSq !== sq || selShop) {
+    selShop = '';
+    selSq = sq;
+    say('Вибрано: ' + NAMES[p.type].toLowerCase() + ' на ' + name + '. Віднеси її на порожню клітинку.');
+    render();
+  }
+}
+
+function onBoardDrop(from, to) {
+  var p = state.board[sqFromName(from)];
+  var el;
+  if (!p || !canArrange()) { return; }
+  el = pieceEls[p.id];
+  if (el) { el.style.transition = 'none'; }    /* фігура вже під пальцем: без анімації, щоб не їхала знову */
+  selShop = '';
+  selSq = sqFromName(from);
+  onSquare(sqFromName(to));                    /* вибрана фігура + порожня клітинка = хід, як після тапу */
+  if (el) {
+    void el.offsetWidth;
+    el.style.transition = '';
+  }
+}
+
+function attachBoardUI() {
+  if (!window.BoardUI) { return; }    /* модуль не завантажився: працює тап, як раніше */
+  boardUI = BoardUI.attach(boardEl, {
+    squareFromPoint: function (x, y) {
+      var sq = sqFromPoint(x, y);
+      return sq < 0 ? null : sqName(sq);
+    },
+    squareRect: function (name) {
+      var el = sqEls[sqFromName(name)];
+      return el ? el.getBoundingClientRect() : null;
+    },
+    pieceElement: function (name) {
+      var p = state.board[sqFromName(name)];
+      return p ? (pieceEls[p.id] || null) : null;
+    },
+    canDrag: function (name) {
+      var p = state.board[sqFromName(name)];
+      return canArrange() && !!p && p.color === 'w';
+    },
+    legalTargets: function () {
+      var out = [];
+      var sq;
+      for (sq = 0; sq < 64; sq = sq + 1) {
+        if (isFreeHome(sq)) { out.push(sqName(sq)); }
+      }
+      return out;
+    },
+    onDragStart: onBoardDragStart,
+    onDrop: onBoardDrop,
+    tools: document.getElementById('boardTools')
+  });
+}
+
+/* --- Фігури з магазину: модуль їх не тягне, тому це робимо тут --- */
+
+function shopHover(sq) {
+  var d = shopDrag;
+  if (d.hover === sq) { return; }
+  if (d.hover >= 0) { sqEls[d.hover].classList.remove('drop'); }
+  d.hover = -1;
+  if (isFreeHome(sq)) {
+    d.hover = sq;
+    sqEls[sq].classList.add('drop');
+  }
+}
+
+function placeShopGhost(x, y) {
+  var d = shopDrag;
+  d.ghost.style.left = (x - d.size / 2) + 'px';
+  d.ghost.style.top = (y - d.size / 2) + 'px';
+  d.ghost.style.transform = d.touch ? 'scale(1.5)' : 'none';
+}
+
+function onShopDown(e, type) {
+  noClickUntil = 0;       /* нове натискання: старий «клік» від перетягування вже не прийде */
+  if (!canArrange() || COST[type] > state.budget || shopDrag) { return; }
+  if (e.pointerType === 'mouse' && e.button !== 0) { return; }
+  shopDrag = { type: type, id: e.pointerId, touch: e.pointerType !== 'mouse', x: e.clientX, y: e.clientY,
+    active: false, ghost: null, hover: -1, size: 0 };
+}
+
+function startShopDrag(e) {
+  var d = shopDrag;
+  d.active = true;
+  d.size = boardEl.getBoundingClientRect().width / 8;
+  selShop = d.type;       /* як після тапу: крапки показують, куди можна ставити */
+  selSq = -1;
+  say(NAMES[d.type] + ': віднеси на порожню клітинку нижніх 4 рядів.');
+  render();
+  d.ghost = document.createElement('div');
+  d.ghost.className = 'shop-ghost';
+  d.ghost.setAttribute('aria-hidden', 'true');
+  d.ghost.style.width = d.size + 'px';
+  d.ghost.style.height = d.size + 'px';
+  d.ghost.style.fontSize = Math.round(d.size * 0.8) + 'px';
+  d.ghost.appendChild(makeToken({ type: d.type, color: 'w' }));
+  document.body.appendChild(d.ghost);
+  placeShopGhost(e.clientX, e.clientY);
+  shopHover(sqFromPoint(e.clientX, e.clientY));
+}
+
+function endShopDrag() {
+  var d = shopDrag;
+  if (d.hover >= 0) { sqEls[d.hover].classList.remove('drop'); }
+  if (d.ghost && d.ghost.parentNode) { d.ghost.parentNode.removeChild(d.ghost); }
+  shopDrag = null;
+  noClickUntil = new Date().getTime() + 500;
+}
+
+function onShopMove(e) {
+  var d = shopDrag;
+  var dx;
+  var dy;
+  var limit;
+  if (!d || e.pointerId !== d.id) { return; }
+  if (!d.active) {
+    dx = e.clientX - d.x;
+    dy = e.clientY - d.y;
+    limit = d.touch ? 8 : 4;
+    if (dx * dx + dy * dy < limit * limit) { return; }
+    startShopDrag(e);
+    return;
+  }
+  placeShopGhost(e.clientX, e.clientY);
+  shopHover(sqFromPoint(e.clientX, e.clientY));
+  if (e.cancelable) { e.preventDefault(); }
+}
+
+function onShopUp(e) {
+  var d = shopDrag;
+  var sq;
+  var err;
+  if (!d || e.pointerId !== d.id) { return; }
+  if (!d.active) { shopDrag = null; return; }   /* це був тап: далі звичайний клік */
+  sq = sqFromPoint(e.clientX, e.clientY);
+  endShopDrag();
+  selShop = '';
+  selSq = -1;
+  if (sq >= 0 && canArrange()) {
+    err = placePiece(state, d.type, sq);
+    if (err) { say(err, true); } else { say(NAMES[d.type] + ' стоїть на ' + sqName(sq) + '.'); }
+  } else {
+    say('Фігуру не поставлено. Віднеси її на дошку.');
+  }
+  render();
+}
+
+function onShopCancel(e) {
+  var d = shopDrag;
+  if (!d || e.pointerId !== d.id) { return; }
+  if (!d.active) { shopDrag = null; return; }
+  endShopDrag();
+  selShop = '';
+  render();
+}
+
 /* ---------- Старт ---------- */
 
 buildBoard();
@@ -1569,6 +1787,10 @@ speedBtn.addEventListener('click', onSpeed);
 resetBtn.addEventListener('click', onReset);
 document.getElementById('againBtn').addEventListener('click', newGame);
 window.addEventListener('resize', fitBoard);
+document.addEventListener('pointermove', onShopMove);
+document.addEventListener('pointerup', onShopUp);
+document.addEventListener('pointercancel', onShopCancel);
+attachBoardUI();
 fitBoard();
 say('Купи фігуру, тапни її, потім тапни клітинку внизу.');
 render();
