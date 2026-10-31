@@ -26,6 +26,7 @@
     --green: #2ecc71;
     --green-soft: #a8e0bb;
     --danger: #c96a4d;
+    --blue: #5b8fd8;
     --blocked-a: #443c30;
     --blocked-b: #37312a;
     --ink: #120f0b;
@@ -552,6 +553,7 @@
           </div>
         </div>
       </div>
+      <div id="boardTools"></div>
     </div>
 
     <div class="panel">
@@ -579,6 +581,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+<script src="../shared/board-ui.js"></script>
 <script>
 'use strict';
 
@@ -970,6 +973,7 @@ var ENCOURAGE = [
 ];
 
 var store = { level: 1, mode: 'play', records: {} };
+var boardUI = null;   // стрілки (shared/board-ui.js), див. attachBoardUI()
 
 var state = {
   level: 1,
@@ -1081,6 +1085,7 @@ function onMenuClick(e) {
 
 function showMenu() {
   stopTimer();
+  if (boardUI) { boardUI.cancel(); boardUI.clearShapes(); }
   byId('menu').hidden = false;
   byId('game').hidden = true;
   byId('btnMenu').hidden = true;
@@ -1116,6 +1121,7 @@ function nextPosition() {
 }
 
 function startStep() {
+  if (boardUI) { boardUI.cancel(); boardUI.clearShapes(); }   // новий крок або позиція — стираємо свої стрілки
   state.selected = {};
   state.answered = false;
   state.lastOk = false;
@@ -1552,6 +1558,37 @@ function init() {
   });
   byId('btnNext').addEventListener('click', onNext);
 }
+
+// ----- Стрілки (shared/board-ui.js) -----
+// Тут фігури не ходять, а тапаються — тому перетягування вимкнено (canDrag завжди false),
+// працюють лише стрілки: права кнопка миші або «Олівець» на телефоні.
+// Якщо файл модуля не завантажився (window.BoardUI немає) — гра працює як раніше.
+function attachBoardUI() {
+  if (!window.BoardUI) { return; }
+  boardUI = BoardUI.attach(byId('board'), {
+    // Яка клітинка під точкою екрана (x, y) — або null, якщо точка поза дошкою.
+    squareFromPoint: function (x, y) {
+      var r = byId('board').getBoundingClientRect(), col, row;
+      if (!state.pos || !r.width || x < r.left || y < r.top || x >= r.right || y >= r.bottom) { return null; }
+      col = Math.floor((x - r.left) / r.width * 8);
+      row = Math.floor((y - r.top) / r.height * 8);
+      return fromXY(col, row, state.pos.flip);
+    },
+    // Де на екрані клітинка (дошка — один SVG, окремих елементів клітинок немає).
+    squareRect: function (sq) {
+      var r = byId('board').getBoundingClientRect(), p;
+      if (!state.pos || !r.width) { return null; }
+      p = toXY(sq, state.pos.flip);
+      return { left: r.left + p.x * r.width / 8, top: r.top + p.y * r.height / 8, width: r.width / 8, height: r.height / 8 };
+    },
+    isFlipped: function () { return !!(state.pos && state.pos.flip); },
+    canDrag: function (sq) { return false; },
+    legalTargets: function (from) { return []; },
+    onDrop: function (from, to) {},
+    tools: byId('boardTools')
+  });
+}
+attachBoardUI();
 
 init();
 </script>
