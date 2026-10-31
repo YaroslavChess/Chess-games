@@ -27,6 +27,7 @@
   --gold: #d8a94c;
   --gold-soft: #f0cf8f;
   --green: #2ecc71;
+  --blue: #5b8fd8;
   --green-soft: #a8e0bb;
   --blocked-a: #443c30;
   --blocked-b: #37312a;
@@ -239,6 +240,7 @@ p { margin: 0 0 12px; }
 .taken .mini { flex: 0 0 20px; width: 20px; height: 20px; opacity: 0.9; }
 
 .board-wrap { position: relative; width: 100%; max-width: 480px; margin: 6px auto; }
+#boardTools { max-width: 480px; margin: 6px auto 0; }
 .board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -523,6 +525,7 @@ p { margin: 0 0 12px; }
       <div class="fx" id="fx"></div>
     </div>
     <div class="player" id="bar-bottom"><span class="mini"></span><span class="pname"></span><span class="taken"></span></div>
+    <div id="boardTools"></div>
     <div class="status" id="status" aria-live="polite"></div>
     <div class="net-line hidden" id="net-line" aria-live="polite"></div>
     <div class="row-btns">
@@ -566,6 +569,7 @@ p { margin: 0 0 12px; }
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+<script src="../shared/board-ui.js"></script>
 <script>
 (function () {
   'use strict';
@@ -946,6 +950,7 @@ p { margin: 0 0 12px; }
   var classicOn = false;
   var actx = null;
   var confirmAction = null;
+  var boardUI = null;       // перетягування й стрілки (shared/board-ui.js)
 
   /* ================== ДОПОМІЖНІ ФУНКЦІЇ ================== */
 
@@ -1197,6 +1202,7 @@ p { margin: 0 0 12px; }
     clearTimers();
     closeModals();
     byId('fx').innerHTML = '';
+    if (boardUI) { boardUI.clearShapes(); }
     game = new window.Chess();
     st = {
       mode: opts.mode,
@@ -1279,8 +1285,10 @@ p { margin: 0 0 12px; }
     return null;
   }
 
-  function renderBoard() {
+  // keepSq — клітинка, з якої почався дотик: її елемент лишаємо в DOM (інакше палець «губить» дошку і сторінка скролиться).
+  function renderBoard(keepSq) {
     var board = byId('board');
+    var kept = keepSq ? squareCell(keepSq) : null;
     var squares = squareList();
     var frag = document.createDocumentFragment();
     var checkSq = game.in_check() ? findKing(game.turn()) : null;
@@ -1295,13 +1303,26 @@ p { margin: 0 0 12px; }
       if (isLast) { bg = isDark ? THEME.board.lastDark : THEME.board.lastLight; }
       if (st.selected === sq.name) { bg = THEME.board.selected; }
 
+      piece = game.get(sq.name);
+
+      if (kept && sq.name === keepSq) {
+        // та сама клітинка: міняємо лише колір і прибираємо старі крапки; фігура, підписи й aria-label ті самі
+        cell = kept;
+        cell.className = 'cell' + (sq.name === checkSq ? ' check' : '');
+        cell.style.background = bg;
+        while (cell.querySelector('.dot, .ring')) {
+          cell.removeChild(cell.querySelector('.dot, .ring'));
+        }
+        frag.appendChild(cell);
+        continue;
+      }
+
       cell = document.createElement('button');
       cell.type = 'button';
       cell.className = 'cell' + (sq.name === checkSq ? ' check' : '');
       cell.style.background = bg;
       cell.setAttribute('data-sq', sq.name);
 
-      piece = game.get(sq.name);
       cell.setAttribute('aria-label', piece
         ? sq.name + ': ' + pieceName(piece.color, piece.type) + ' (' + THEME.sides[piece.color].team.toLowerCase() + ')'
         : sq.name);
@@ -1348,15 +1369,18 @@ p { margin: 0 0 12px; }
     board.appendChild(frag);
   }
 
-  function pieceElementAt(name) {
+  function squareCell(name) {
     var cells = byId('board').childNodes;
     var i;
     for (i = 0; i < cells.length; i++) {
-      if (cells[i].getAttribute('data-sq') === name) {
-        return cells[i].querySelector('.piece');
-      }
+      if (cells[i].getAttribute('data-sq') === name) { return cells[i]; }
     }
     return null;
+  }
+
+  function pieceElementAt(name) {
+    var cell = squareCell(name);
+    return cell ? cell.querySelector('.piece') : null;
   }
 
   // Плавно «пересуває» фігуру зі старої клітинки в нову.
@@ -1374,9 +1398,10 @@ p { margin: 0 0 12px; }
     el.style.transform = 'translate(0, 0)';
   }
 
-  function animateMove(move) {
+  // dropped — фігуру перетягнули, вона вже стоїть на новій клітинці: її не анімуємо (туру при рокіровці — так).
+  function animateMove(move, dropped) {
     var rank = move.color === 'w' ? '1' : '8';
-    slidePiece(move.from, move.to);
+    if (!dropped) { slidePiece(move.from, move.to); }
     if (move.flags.indexOf('k') !== -1) { slidePiece('h' + rank, 'f' + rank); }
     if (move.flags.indexOf('q') !== -1) { slidePiece('a' + rank, 'd' + rank); }
   }
@@ -1541,6 +1566,89 @@ p { margin: 0 0 12px; }
     renderBoard();
   }
 
+  /* ================== ПЕРЕТЯГУВАННЯ Й СТРІЛКИ (shared/board-ui.js) ================== */
+
+  // Клітинка під точкою екрана (x, y) або null. Переворот дошки враховуємо тут.
+  function squareFromPoint(x, y) {
+    var el = byId('board');
+    var r = el.getBoundingClientRect();
+    var left = r.left + el.clientLeft;
+    var top = r.top + el.clientTop;
+    var w = el.clientWidth;
+    var h = el.clientHeight;
+    var col, row;
+    if (!st || !w || !h || x < left || y < top || x >= left + w || y >= top + h) { return null; }
+    col = Math.floor((x - left) / w * 8);
+    row = Math.floor((y - top) / h * 8);
+    if (st.orientation === 'w') { return FILES.charAt(col) + (8 - row); }
+    return FILES.charAt(7 - col) + (row + 1);
+  }
+
+  function squareRect(name) {
+    var cell = squareCell(name);
+    return cell ? cell.getBoundingClientRect() : null;
+  }
+
+  // Чи можна тягнути фігуру з цієї клітинки: лише своя, лише у свій хід (так само, як тапом).
+  function canDrag(name) {
+    var side = controlSide();
+    var piece;
+    if (!side) { return false; }
+    piece = game.get(name);
+    return !!piece && piece.color === side && game.moves({ square: name }).length > 0;
+  }
+
+  function legalTargets(from) {
+    var moves = game.moves({ square: from, verbose: true });
+    var out = [];
+    var i;
+    for (i = 0; i < moves.length; i++) { out.push(moves[i].to); }
+    return out;
+  }
+
+  // Почали тягнути — показуємо крапки ходів, як після тапу.
+  function onDragStart(name) {
+    var side = controlSide();
+    if (!side || st.selected === name) { return; }
+    st.selected = name;
+    st.legal = game.moves({ square: name, verbose: true });
+    playSound('select');
+    renderBoard(name);
+  }
+
+  // Відпустили фігуру на легальній клітинці. Перетворення пішака вирішує вибір фігури, як після тапу.
+  function onDrop(from, to) {
+    var side = controlSide();
+    var moves, i;
+    if (!side) { return; }
+    moves = game.moves({ square: from, verbose: true });
+    for (i = 0; i < moves.length; i++) {
+      if (moves[i].to !== to) { continue; }
+      if (moves[i].flags.indexOf('p') !== -1) {
+        askPromotion(from, to, side);
+      } else {
+        makeMove({ from: from, to: to }, 'me', true);
+      }
+      return;
+    }
+  }
+
+  // Якщо файл модуля не завантажився (window.BoardUI немає) — працює тап-тап, як раніше.
+  function attachBoardUI() {
+    if (!window.BoardUI) { return; }
+    boardUI = BoardUI.attach(byId('board'), {
+      squareFromPoint: squareFromPoint,
+      squareRect: squareRect,
+      isFlipped: function () { return !!st && st.orientation === 'b'; },
+      pieceElement: pieceElementAt,
+      canDrag: canDrag,
+      legalTargets: legalTargets,
+      onDragStart: onDragStart,
+      onDrop: onDrop,
+      tools: byId('boardTools')
+    });
+  }
+
   function askPromotion(from, to, color) {
     var order = ['q', 'r', 'b', 'n'];
     var row = byId('promo-row');
@@ -1581,20 +1689,22 @@ p { margin: 0 0 12px; }
   /* ================== ХІД (спільне для всіх режимів) ================== */
 
   // source: 'me' — людина за цим пристроєм, 'bot' — бот, 'net' — суперник онлайн.
-  function makeMove(spec, source) {
+  // dropped — хід зроблено перетягуванням (без анімації фігури).
+  function makeMove(spec, source, dropped) {
     var move = game.move(spec);
     var result;
     if (!move) { return null; }
     st.lastMove = { from: move.from, to: move.to };
     st.selected = null;
     st.legal = [];
+    if (boardUI) { boardUI.clearShapes(); }
     if (st.mode === 'online') {
       if (source === 'me') { netSendState(); }
       saveRoom();
     }
 
     renderBoard();
-    animateMove(move);
+    animateMove(move, dropped);
     if (move.captured) {
       showCapture(move);
       playSound(THEME.sides[other(move.color)].captured.sound);
@@ -2428,6 +2538,7 @@ p { margin: 0 0 12px; }
     byId('btn-copy').addEventListener('click', copyLink);
 
     byId('board').addEventListener('click', onBoardClick);
+    attachBoardUI();
     byId('promo-row').addEventListener('click', onPromoClick);
     byId('promo-cancel').addEventListener('click', function () {
       if (st) { st.pendingPromo = null; }
