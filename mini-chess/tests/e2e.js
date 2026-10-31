@@ -75,14 +75,17 @@ async function onlineContext(browser, device) {
 
 function log(msg) { process.stdout.write(msg + '\n'); }
 
-// Віддає сторінку на адресі ORIGIN/, а спільну тему (../theme/...) — справжніми файлами з диска.
+// Віддає сторінку на адресі ORIGIN/, а спільну тему (../theme/...) і модуль перетягування
+// (../shared/board-ui.js) — справжніми файлами з диска.
 var THEME_DIR = path.join(__dirname, '..', '..', 'theme');
+var SHARED_DIR = path.join(__dirname, '..', '..', 'shared');
 var MIME = { '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' };
 function serve(page, html) {
   return page.route(ORIGIN + '/**', function (route) {
     var p = new URL(route.request().url()).pathname;
-    if (p.indexOf('/theme/') === 0 && p.indexOf('..') < 0) {
-      var file = path.join(THEME_DIR, p.slice('/theme/'.length));
+    if ((p.indexOf('/theme/') === 0 || p.indexOf('/shared/') === 0) && p.indexOf('..') < 0) {
+      var isTheme = p.indexOf('/theme/') === 0;
+      var file = isTheme ? path.join(THEME_DIR, p.slice('/theme/'.length)) : path.join(SHARED_DIR, p.slice('/shared/'.length));
       if (fs.existsSync(file)) {
         route.fulfill({ status: 200, contentType: MIME[path.extname(file)] || 'text/plain', body: fs.readFileSync(file) });
         return;

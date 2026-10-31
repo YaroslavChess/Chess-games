@@ -28,6 +28,7 @@
   --gold-soft: #f0cf8f;
   --green: #2ecc71;
   --green-soft: #a8e0bb;
+  --blue: #5b8fd8;
   --blocked-a: #443c30;
   --blocked-b: #37312a;
   --danger: #c96a4d;
@@ -302,6 +303,7 @@ p { margin: 0 0 12px; }
 .tray .lbl { margin-right: 6px; }
 .tray svg { width: 32px; height: 32px; }
 .board-box { padding: 6px; }
+#boardTools { margin-top: 6px; }
 .room {
   background: var(--panel-2); border: 1px solid var(--hairline); border-radius: var(--radius-md);
   padding: 10px 14px; margin-bottom: 10px;
@@ -459,6 +461,7 @@ p { margin: 0 0 12px; }
     <div class="tray" id="tray-top"></div>
     <div class="board-box"><div class="board" id="board"></div></div>
     <div class="tray" id="tray-bottom"></div>
+    <div id="boardTools"></div>
     <div class="game-actions">
       <button type="button" class="btn btn-secondary" id="btn-restart"></button>
     </div>
@@ -870,6 +873,7 @@ var MiniChess = (function () {
 })();
 /* ENGINE:END */
 </script>
+<script src="../shared/board-ui.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1500,6 +1504,7 @@ var MiniChess = (function () {
     timers: []
   };
   var view = null;
+  var boardUI = null;      // перетягування й стрілки (shared/board-ui.js)
 
   function gameLater(fn, ms) { G.timers.push(later(fn, ms)); }
   function clearGameTimers() {
@@ -1511,6 +1516,66 @@ var MiniChess = (function () {
     clearGameTimers();
     G.state = null;
     G.busy = false;
+  }
+
+  // Дошка 5×5: клітинок по 5 (не 8). Переворот дошки (view.flip) враховують лише squareFromPoint і squareRect.
+  // Якщо файл модуля не завантажився (window.BoardUI немає) — працює тап-тап, як раніше.
+  function attachBoardUI() {
+    if (!window.BoardUI || boardUI) return;
+    boardUI = BoardUI.attach($('board'), {
+      // Яка клітинка ('a1'..'e5') під точкою екрана (x, y) — або null, якщо точка поза дошкою.
+      squareFromPoint: function (x, y) {
+        var r = $('board').getBoundingClientRect();
+        if (!r.width || x < r.left || y < r.top || x >= r.right || y >= r.bottom) return null;
+        var col = Math.floor((x - r.left) / r.width * 5);
+        var row = Math.floor((y - r.top) / r.height * 5);
+        var f = view.flip ? 4 - col : col;
+        var rk = view.flip ? row : 4 - row;
+        return MC.sqName(rk * 5 + f);
+      },
+      // Де на екрані клітинка.
+      squareRect: function (name) {
+        var s = view.squares[MC.sqIndex(name)];
+        return s ? s.getBoundingClientRect() : null;
+      },
+      isFlipped: function () { return !!view.flip; },
+      // Елемент фігури — модуль покаже його копію під пальцем.
+      pieceElement: function (name) {
+        var p = G.state && G.state.board[MC.sqIndex(name)];
+        return p ? view.pieceEl(p.id) : null;
+      },
+      // Тягнути можна лише свою фігуру і лише у свій хід.
+      canDrag: function (name) {
+        var sq = MC.sqIndex(name);
+        if (!myTurn()) return false;
+        var p = G.state.board[sq];
+        return !!p && p.c === G.me && MC.movesFrom(G.state, sq).length > 0;
+      },
+      legalTargets: function (from) {
+        var ms = MC.movesFrom(G.state, MC.sqIndex(from)), out = [];
+        for (var i = 0; i < ms.length; i++) out.push(MC.sqName(ms[i].to));
+        return out;
+      },
+      // Почали тягнути — показуємо крапки ходів, як після тапу.
+      onDragStart: function (name) {
+        Sound.unlock();
+        var sq = MC.sqIndex(name);
+        if (G.sel !== sq) {
+          G.sel = sq;
+          Sound.play('select');
+          renderMarks();
+        }
+      },
+      onDrop: function (from, to) {
+        if (!myTurn()) return;
+        var m = MC.findMove(G.state, MC.sqIndex(from), MC.sqIndex(to));
+        if (m) {
+          G.sel = -1;
+          playMove(m, false, true);
+        }
+      },
+      tools: $('boardTools')
+    });
   }
 
   function startGame(level, opts) {
@@ -1528,8 +1593,11 @@ var MiniChess = (function () {
     G.moves = [];
     G.taken = { w: [], b: [] };
     if (!view) view = new BoardView($('board'), onSquare);
+    attachBoardUI();
+    if (boardUI) { boardUI.cancel(); boardUI.clearShapes(); }
     view.flip = G.me === 'b';
     view.layout();
+    if (boardUI) boardUI.redraw();
     view.finishRow(level >= 2 && level <= 5);
     var replay = opts.moves || [];
     for (var i = 0; i < replay.length; i++) {
@@ -1579,7 +1647,9 @@ var MiniChess = (function () {
     renderMarks();
   }
 
-  function playMove(m, fromNet) {
+  // dropped: фігуру перетягнули, вона вже стоїть на новій клітинці — показуємо хід без анімації.
+  function playMove(m, fromNet, dropped) {
+    if (boardUI) boardUI.clearShapes();
     var mover = G.state.board[m.from];
     var ns = record(m);
     var last = ns.last;
@@ -1592,7 +1662,8 @@ var MiniChess = (function () {
 
     Sound.play(last.capture ? 'capture' : 'move');
     view.sync(ns.board, {
-      jumpId: mover.t === 'n' ? mover.id : null
+      jumpId: mover.t === 'n' ? mover.id : null,
+      instant: !!dropped
     });
     refresh();
 
