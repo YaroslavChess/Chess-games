@@ -28,6 +28,7 @@
     --blocked-a: #443c30;
     --blocked-b: #37312a;
     --danger: #c96a4d;
+    --blue: #5b8fd8;
     --ink: #120f0b;
     --on-gold: #241a08;
     --gold-deep: #a9782c;
@@ -342,6 +343,9 @@
   .ranks{ top:22px; bottom:30px; left:10px; flex-direction:column; justify-content:space-around; }
 
   /* повідомлення */
+  /* кнопки «Олівець» і «Стерти» (shared/board-ui.js) — під дошкою, завширшки з рамку */
+  .board-tools{ width: min(520px, 88vw); }
+
   .status{
     min-height: 7.6em;
     width: min(520px, 88vw);
@@ -511,6 +515,7 @@
         <div class="ranks" id="ranks"></div>
         <div class="files" id="files"></div>
       </div>
+      <div class="board-tools" id="boardTools"></div>
       <div class="status" id="status" aria-live="polite"></div>
       <div class="action-slot">
         <button class="btn primary next-btn off" id="nextBtn">Далі →</button>
@@ -560,6 +565,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+<script src="../shared/board-ui.js"></script>
 <script>
 /* ENGINE:START */
 // ---------- Рушій задач: генерація й перевірка вилок ----------
@@ -1178,6 +1184,7 @@ var state = {
 };
 var pieceEls = {};
 var timers = [];
+var boardUI = null;      // перетягування й стрілки (shared/board-ui.js), див. attachBoardUI()
 
 function byId(id) { return document.getElementById(id); }
 var dom = {
@@ -1282,6 +1289,7 @@ function buildSquares() {
     c.textContent = String(state.flipped ? row + 1 : 8 - row);
     dom.ranks.appendChild(c);
   }
+  if (boardUI) { boardUI.redraw(); }   // дошку могли перевернути
 }
 
 function squareEl(sq) { return dom.board.querySelector('[data-sq="' + sq + '"]'); }
@@ -1320,7 +1328,8 @@ function fitPieces() {
   if (w) { dom.pieces.style.fontSize = Math.floor(w / 8 * 0.84) + 'px'; }
 }
 
-function movePieceEl(from, to) {
+// instant = true: після перетягування фігура вже стоїть на новій клітинці, тож без анімації
+function movePieceEl(from, to, instant) {
   var el = pieceEls[from], target = pieceEls[to];
   if (!el) { return; }
   if (target) {
@@ -1329,7 +1338,9 @@ function movePieceEl(from, to) {
   }
   delete pieceEls[from];
   pieceEls[to] = el;
+  if (instant) { el.style.transition = 'none'; }
   placePieceEl(el, to);
+  if (instant) { void el.offsetWidth; el.style.transition = ''; }
 }
 
 function clearMarks() {
@@ -1342,6 +1353,8 @@ function clearMarks() {
 function clearArrows() {
   while (dom.arrows.firstChild) { dom.arrows.removeChild(dom.arrows.firstChild); }
   dom.badge.className = 'fork-badge';
+  // позиція змінилася — свої стрілки гравця теж стираємо
+  if (boardUI) { boardUI.cancel(); boardUI.clearShapes(); }
 }
 
 function svgEl(name) { return document.createElementNS('http://www.w3.org/2000/svg', name); }
@@ -1621,10 +1634,15 @@ function deselect() {
   state.legalTo = {};
 }
 
+// Чи може гравець зараз ходити (тап і перетягування користуються однією перевіркою)
+function canPlayerMove() {
+  return !!state.puzzle && !state.answered && !state.locked && !state.intro;
+}
+
 function onBoardClick(e) {
   var t = e.target, sq, piece;
   while (t && t !== dom.board && !(t.getAttribute && t.getAttribute('data-sq'))) { t = t.parentNode; }
-  if (!t || t === dom.board || state.answered || state.locked || state.intro || !state.puzzle) { return; }
+  if (!t || t === dom.board || !canPlayerMove()) { return; }
   sq = t.getAttribute('data-sq');
   if (state.selected && state.legalTo[sq]) { attempt(state.selected, sq); return; }
   piece = state.game.get(sq);
@@ -1643,14 +1661,16 @@ function solvedText() {
 }
 
 // Показ правильного ходу: фігура ходить, потім стрілки на цілі.
-function playSolution(badgeText, delay) {
+// instant = true: фігуру щойно перетягнули, хід показуємо одразу й без анімації
+function playSolution(badgeText, delay, instant) {
   var pz = state.puzzle, i;
-  later(function () {
+  function step() {
     clearMarks();
     state.game.move({ from: pz.from, to: pz.to });
-    movePieceEl(pz.from, pz.to);
+    movePieceEl(pz.from, pz.to, instant);
     squareEl(pz.to).className += ' dest';
-  }, delay);
+  }
+  if (instant) { step(); } else { later(step, delay); }
   later(function () {
     for (i = 0; i < pz.targets.length; i++) {
       drawArrow(pz.to, pz.targets[i].sq, i * 0.25);
@@ -1671,15 +1691,17 @@ function finishPuzzle(pts) {
   updateButtons();
 }
 
-function attempt(from, to) {
+// dropped = true: хід зроблено перетягуванням (фігура вже стоїть на новій клітинці)
+function attempt(from, to, dropped) {
   var pz = state.puzzle, ok = (from === pz.from && to === pz.to), ex;
   deselect();
+  if (boardUI) { boardUI.clearShapes(); }
   state.locked = true;
   hideNext();
   if (ok) {
     finishPuzzle((state.tries === 0 && !state.hint) ? 2 : 1);
     setStatus('good', 'Вилка!', solvedText() + (state.tries > 0 ? ' Друга спроба вдалася — ти не здався.' : ''));
-    playSolution('Вилка!', 0);
+    playSolution('Вилка!', 0, dropped);
     later(function () { setNext('next', nextLabel()); }, 700);
     return;
   }
@@ -1687,7 +1709,7 @@ function attempt(from, to) {
   // Помилка: показуємо цей хід на дошці й пояснюємо стрілками, чому це не вилка
   ex = explainWrong(pz, from, to);
   state.tries++;
-  movePieceEl(from, to);
+  movePieceEl(from, to, dropped);
   squareEl(to).className += ' wrong';
   later(function () { drawArrowList(ex.arrows); }, 500);
   if (state.tries < 2) {
@@ -1797,6 +1819,51 @@ dom.resetYes.addEventListener('click', function () {
   renderRecords();
 });
 window.addEventListener('resize', fitPieces);
+
+// ----- Перетягування фігур і стрілки (shared/board-ui.js) -----
+// Якщо файл модуля не завантажився (window.BoardUI немає) — працює тап-тап, як раніше.
+function attachBoardUI() {
+  if (!window.BoardUI) { return; }
+  boardUI = BoardUI.attach(dom.board, {
+    // Яка клітинка під точкою екрана (x, y) — або null, якщо точка поза дошкою.
+    squareFromPoint: function (x, y) {
+      var r = dom.board.getBoundingClientRect(), col, row;
+      if (!r.width || x < r.left || y < r.top || x >= r.right || y >= r.bottom) { return null; }
+      col = Math.floor((x - r.left) / r.width * 8);
+      row = Math.floor((y - r.top) / r.height * 8);
+      return FILES.charAt(state.flipped ? 7 - col : col) + (state.flipped ? row + 1 : 8 - row);
+    },
+    // Де на екрані клітинка.
+    squareRect: function (sq) {
+      var el = squareEl(sq);
+      return el ? el.getBoundingClientRect() : null;
+    },
+    isFlipped: function () { return state.flipped; },
+    // Елемент фігури — модуль покаже його копію під пальцем.
+    pieceElement: function (sq) { return pieceEls[sq] || null; },
+    // Тягнути можна лише фігури гравця, у яких є ходи, і лише коли можна ходити.
+    canDrag: function (sq) {
+      var p;
+      if (!canPlayerMove()) { return false; }
+      p = state.game.get(sq);
+      return !!p && p.color === state.puzzle.color && state.game.moves({ square: sq }).length > 0;
+    },
+    legalTargets: function (from) {
+      var ms = state.game.moves({ square: from, verbose: true }), out = [], i;
+      for (i = 0; i < ms.length; i++) { out.push(ms[i].to); }
+      return out;
+    },
+    // Почали тягнути — показуємо крапки, куди можна піти (як після тапу).
+    onDragStart: function (sq) {
+      if (state.selected !== sq) { selectSquare(sq); }
+    },
+    onDrop: function (from, to) {
+      if (canPlayerMove()) { attempt(from, to, true); }
+    },
+    tools: byId('boardTools')
+  });
+}
+attachBoardUI();
 
 // ----- Старт -----
 if (typeof Chess === 'undefined') {
