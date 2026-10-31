@@ -155,8 +155,9 @@ p { margin: 0 0 12px; }
 .tile .pic svg { width: 84px; height: 84px; }
 .tile .pic svg + svg { margin-left: -34px; }
 .tile .name { font-weight: 800; font-size: 17px; }
-.tile .stars { display: flex; gap: 2px; margin-top: 2px; }
+.tile .stars { display: flex; align-items: center; gap: 2px; margin-top: 2px; }
 .tile .stars svg { width: 24px; height: 24px; }
+.tile .stars svg.medal-svg { width: 26px; height: 26px; margin-left: 6px; }
 .tile.locked { background: repeating-linear-gradient(135deg, var(--blocked-a) 0 7px, var(--blocked-b) 7px 14px); color: var(--text-dim); }
 .tile.locked .pic, .tile.locked .name, .tile.locked .stars { opacity: 0.35; }
 .tile .lock { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; }
@@ -166,9 +167,12 @@ p { margin: 0 0 12px; }
 .shake { animation: shake 0.4s; }
 @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
 
-/* ---------- Зірочки ---------- */
+/* ---------- Зірочки й медаль ---------- */
 .star-on { fill: var(--gold); stroke: var(--gold-deep); }
 .star-off { fill: var(--panel-2); stroke: var(--hairline); }
+.medal-svg .m-ribbon { fill: var(--danger); }
+.medal-svg .m-disc { fill: var(--gold); stroke: var(--gold-deep); stroke-width: 3; }
+.medal-svg.off { opacity: 0.35; filter: grayscale(1); }
 
 /* ---------- Підказка рівня ---------- */
 .card { background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
@@ -216,6 +220,7 @@ p { margin: 0 0 12px; }
   cursor: pointer;
 }
 .board .sq.dark { background: var(--board-dark); }
+.board .sq.finish { background-image: linear-gradient(rgba(var(--danger-rgb),.3), rgba(var(--danger-rgb),.3)); }
 .board .sq.last { box-shadow: inset 0 0 0 4px var(--gold); }
 .board .sq.sel { background-image: linear-gradient(rgba(var(--gold-rgb),.7), rgba(var(--gold-rgb),.7)); }
 .board .sq.check { background-image: radial-gradient(circle, rgba(var(--danger-rgb),.95) 0, rgba(var(--danger-rgb),.55) 45%, rgba(var(--danger-rgb),0) 72%); }
@@ -247,7 +252,6 @@ p { margin: 0 0 12px; }
 .pc-wrap.captured { transition: opacity 0.3s, transform 0.3s; opacity: 0; }
 .pc-wrap.captured .pc-in { transform: scale(0.3) rotate(25deg); }
 .pc-wrap.jump .pc-in { animation: jump 0.3s ease-in-out; }
-.pc-wrap.escaping { transition: transform 0.6s ease-in, opacity 0.6s ease-in; opacity: 0; }
 .pc-wrap.glow .pc-in { animation: glow 1s ease-in-out; }
 .pc-wrap.morph .pc-in { animation: morph 0.6s ease-in-out; }
 @keyframes appear { from { transform: scale(0.2); opacity: 0; } }
@@ -297,8 +301,6 @@ p { margin: 0 0 12px; }
 }
 .tray .lbl { margin-right: 6px; }
 .tray svg { width: 32px; height: 32px; }
-.tray .esc { display: inline-flex; }
-.tray .esc svg { opacity: 0.55; }
 .board-box { padding: 6px; }
 .room {
   background: var(--panel-2); border: 1px solid var(--hairline); border-radius: var(--radius-md);
@@ -342,13 +344,20 @@ p { margin: 0 0 12px; }
 .dialog h2 { font-size: 30px; margin: 6px 0; }
 .dialog .big svg { width: 110px; height: 110px; margin: 0 auto; }
 .dialog .reason { color: var(--text-dim); font-size: 17px; font-weight: 600; }
-.result-stars { display: flex; justify-content: center; gap: 8px; margin: 8px 0 16px; }
-.result-stars svg { width: 58px; height: 58px; }
+.result-stars { display: flex; justify-content: center; gap: 8px; margin: 6px 0 8px; }
+.result-stars svg { width: 48px; height: 48px; }
 .result-stars .star-on { animation: starpop 0.5s ease-out both; }
 .result-stars svg:nth-child(2) .star-on { animation-delay: 0.25s; }
 .result-stars svg:nth-child(3) .star-on { animation-delay: 0.5s; }
 @keyframes starpop { 0% { transform: scale(0); } 70% { transform: scale(1.3); } 100% { transform: scale(1); } }
 .result-stars path { transform-origin: 12px 12px; }
+.star-list { list-style: none; margin: 0 0 10px; padding: 0; text-align: left; }
+.star-list li { display: flex; align-items: center; gap: 10px; padding: 3px 4px; font-size: 16px; font-weight: 700; color: var(--text-dim); }
+.star-list li svg { width: 26px; height: 26px; flex: none; }
+.star-list li.got { color: var(--gold-soft); }
+.star-list li.note { font-size: 14px; font-weight: 600; color: var(--text-faint); padding-left: 40px; }
+.medal-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 0 12px; font-size: 16px; font-weight: 800; color: var(--gold-soft); text-align: left; }
+.medal-row svg { width: 52px; height: 52px; flex: none; animation: starpop 0.6s ease-out both; animation-delay: 0.7s; }
 
 .pin-dots { display: flex; justify-content: center; gap: 14px; margin: 12px 0 16px; }
 .pin-dots i { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--gold-soft); }
@@ -468,7 +477,7 @@ p { margin: 0 0 12px; }
   <section id="scr-teacher" class="hidden">
     <h2>Для вчителя</h2>
     <button type="button" class="btn btn-secondary" id="btn-unlock-all"></button>
-    <button type="button" class="btn btn-secondary" id="btn-reset">Скинути зірочки</button>
+    <button type="button" class="btn btn-secondary" id="btn-reset">Скинути зірочки й медалі</button>
     <div class="section-title">Онлайн-урок</div>
     <p class="lead">Оберіть рівень і колір учня, натисніть «Грати онлайн» і надішліть учню посилання.</p>
     <div class="teacher-levels" id="teacher-levels" role="radiogroup" aria-label="Рівень"></div>
@@ -494,6 +503,8 @@ p { margin: 0 0 12px; }
     <h2 id="result-title"></h2>
     <p class="reason" id="result-reason"></p>
     <div class="result-stars" id="result-stars"></div>
+    <ul class="star-list hidden" id="star-list"></ul>
+    <div class="medal-row hidden" id="medal-row"></div>
     <div id="result-actions"></div>
   </div>
 </div>
@@ -526,20 +537,21 @@ var MiniChess = (function () {
   var QUIET_LIMIT = 40;  // півходів без взяття й ходу пішака → нічия
   var WIN = 10000;
 
-  // promo: 'win' — пішак на останньому ряду виграє; 'queen' — стає ферзем;
-  // 'escape' — пішак «утікає» з дошки, а перемагає той, у кого більше: з'їдених пішаків
-  // чи тих, що втекли (за правилом «не пропусти жодного» фігура проти 4 пішаків на 5×5
-  // програє при точній грі суперника). Стартові клітинки фігур 2–5 підібрано повним
-  // перебором так, щоб фігура вигравала при правильній грі.
+  // promo: 'win' — пішак на останньому ряду виграє; 'queen' — стає ферзем.
+  // Рівні 2–5: фігура проти пішаків за одним правилом «не пропусти жодного пішака»:
+  // пішак дійшов до 1-го ряду — програш, з'їли всіх або пішакам нікуди ходити — перемога.
+  // Кількість і розстановку пішаків підібрано повним перебором (tests/levels.test.js):
+  // фігура виграє, навіть коли пішаки грають найкраще, але не за 1–2 ходи.
   // king: перемога, коли з'їли короля; mate: справжні правила (шах, мат, пат).
+  // stars: ліміти ходів дитини (білих) для зірочок, див. функцію stars().
   var LEVELS = [
-    { setup: '5/ppppp/5/PPPPP/5', piece: 'p', rules: { promo: 'win' } },
-    { setup: '5/pp1pp/5/5/2R2', piece: 'r', rules: { promo: 'escape' } },
-    { setup: '5/pp1pp/5/1B3/5', piece: 'b', rules: { promo: 'escape' } },
-    { setup: '5/pp1pp/5/3N1/5', piece: 'n', rules: { promo: 'escape' } },
-    { setup: '5/ppppp/5/5/2Q2', piece: 'q', rules: { promo: 'escape' } },
-    { setup: '2k2/ppppp/5/PPPPP/2K2', piece: 'k', rules: { promo: 'win', king: true } },
-    { setup: 'rnbqk/ppppp/5/PPPPP/RNBQK', piece: 'all', rules: { promo: 'queen', king: true } }
+    { setup: '5/ppppp/5/PPPPP/5', piece: 'p', rules: { promo: 'win' }, lim: { loss: 2, fast: 6 } },
+    { setup: 'p3p/p3p/5/5/2R2', piece: 'r', rules: { promo: 'win' }, lim: { ok: 10, fast: 7 } },
+    { setup: '1p1p1/1p1p1/5/5/B4', piece: 'b', rules: { promo: 'win' }, lim: { ok: 11, fast: 8 } },
+    { setup: '1p1p1/1p1p1/5/5/3N1', piece: 'n', rules: { promo: 'win' }, lim: { ok: 13, fast: 10 } },
+    { setup: 'ppppp/5/5/5/Q4', piece: 'q', rules: { promo: 'win' }, lim: { ok: 12, fast: 9 } },
+    { setup: '2k2/ppppp/5/PPPPP/2K2', piece: 'k', rules: { promo: 'win', king: true }, lim: { loss: 2, fast: 8 } },
+    { setup: 'rnbqk/ppppp/5/PPPPP/RNBQK', piece: 'all', rules: { promo: 'queen', king: true }, lim: { loss: 3, fast: 7 }, limReal: { loss: 3, fast: 9 } }
   ];
   var REAL_RULES = { promo: 'queen', mate: true };
 
@@ -618,7 +630,6 @@ var MiniChess = (function () {
   function makeBoard(board, m, rules) {
     var b = board.slice(), p = b[m.from];
     b[m.to] = (m.promo && rules.promo === 'queen') ? { c: p.c, t: 'q', id: p.id } : p;
-    if (m.promo && rules.promo === 'escape') b[m.to] = null;
     b[m.from] = null;
     return b;
   }
@@ -690,7 +701,6 @@ var MiniChess = (function () {
     return {
       level: level, rules: rules, board: board, turn: turn || 'w',
       start: { w: countPieces(board, 'w'), b: countPieces(board, 'b') },
-      escaped: { w: 0, b: 0 },
       plies: 0, quiet: 0, over: false, winner: null, reason: '', last: null
     };
   }
@@ -702,50 +712,24 @@ var MiniChess = (function () {
     return s;
   }
 
-  // Рахунок у рівнях з утечею: скільки пішаків чорних з'їдено, утекло й лишилось.
-  function score(s) {
-    var left = countPieces(s.board, 'b');
-    return { eaten: s.start.b - s.escaped.b - left, escaped: s.escaped.b, left: left, total: s.start.b };
-  }
-
-  // Підсумок рівня з утечею; null — гра триває. Заблоковані пішаки (blocked) — спіймані.
-  function escapeResult(s, blocked) {
-    var sc = score(s), caught = sc.eaten + (blocked ? sc.left : 0);
-    if (countPieces(s.board, 'w') === 0) return finish(s, 'b', 'all');
-    if (caught * 2 > sc.total) return finish(s, 'w', 'score');
-    if (sc.escaped * 2 > sc.total) return finish(s, 'b', 'score');
-    if (sc.left === 0 || blocked) return finish(s, caught > sc.escaped ? 'w' : caught < sc.escaped ? 'b' : null, 'score');
-    return null;
-  }
-
   // Новий стан після ходу m (хід має бути з legalMoves). reason:
   // promote — пішак дійшов; king — з'їли короля; all — з'їли всіх; nomoves — суперникові
-  // нічим ходити; score — рахунок у рівнях з утечею; mate — мат; stalemate, kings, quiet — нічия.
+  // нічим ходити; mate — мат; stalemate, kings, quiet — нічия.
   function applyMove(s, m) {
     var mover = s.board[m.from], captured = s.board[m.to], opp = other(mover.c);
     var b = makeBoard(s.board, m, s.rules);
-    var escaped = m.promo && s.rules.promo === 'escape';
     var ns = {
       level: s.level, rules: s.rules, board: b, turn: opp, start: s.start,
-      escaped: {
-        w: s.escaped.w + (escaped && mover.c === 'w' ? 1 : 0),
-        b: s.escaped.b + (escaped && mover.c === 'b' ? 1 : 0)
-      },
       plies: s.plies + 1,
       quiet: (captured || mover.t === 'p') ? 0 : s.quiet + 1,
       over: false, winner: null, reason: '',
       last: {
-        from: m.from, to: m.to, capture: !!captured, promo: m.promo, escaped: escaped,
+        from: m.from, to: m.to, capture: !!captured, promo: m.promo,
         piece: mover, captured: captured
       }
     };
     if (m.promo && s.rules.promo === 'win') return finish(ns, mover.c, 'promote');
     if (captured && captured.t === 'k') return finish(ns, mover.c, 'king');
-    if (s.rules.promo === 'escape') {
-      if (escapeResult(ns, false)) return ns;
-      if (legalMoves(ns).length === 0) return escapeResult(ns, true);
-      return ns;
-    }
     if (countPieces(b, opp) === 0) return finish(ns, mover.c, 'all');
     if (legalMoves(ns).length === 0) {
       if (!s.rules.mate) return finish(ns, mover.c, 'nomoves');
@@ -762,17 +746,30 @@ var MiniChess = (function () {
     return null;
   }
 
-  // Зірочки за перемогу білих: 1 — перемога; +1 — чисто (у рівнях з утечею не втік жоден
-  // пішак, в інших — втрачено не більше третини своїх фігур); +1 — суперник «Лисичка» чи вчитель.
-  function stars(s, opponent) {
-    if (!s.over || s.winner !== 'w') return 0;
-    var n = 1, clean;
-    if (s.rules.promo === 'escape') clean = s.escaped.b === 0;
-    else clean = s.start.w - countPieces(s.board, 'w') <= Math.floor(s.start.w / 3);
-    if (clean) n++;
-    if (opponent !== 'bear') n++;
-    return n;
+  // Скільки ходів зробили білі (дитина). Білі ходять першими.
+  function whiteMoves(s) { return Math.ceil(s.plies / 2); }
+
+  // Зірочки за перемогу білих. Від суперника (ведмедик, лисичка, вчитель) вони не залежать:
+  //  1 — перемога;
+  //  2 — у рівнях 1, 6, 7 (там є що втрачати): втрачено не більше lim.loss фігур;
+  //      у рівнях 2–5 (там втрата фігури — це програш): не більше lim.ok ходів;
+  //  3 — не більше lim.fast ходів (у рівнях 1, 6, 7 — і з другою зіркою).
+  // Кожна наступна зірка потребує попередньої. Рівні 2–5: lim.fast = мінімум ходів проти
+  // найкращого захисту пішаків (повний перебір) + 1 хід запасу, lim.ok = той мінімум + 4.
+  // Повертає { stars, win, second, third, lost, moves, byLoss, loss, fast, ok }.
+  function starInfo(s) {
+    var L = LEVELS[s.level - 1];
+    var lim = (s.rules.mate && L.limReal) ? L.limReal : L.lim;
+    var r = { stars: 0, win: false, second: false, third: false, moves: whiteMoves(s),
+      lost: s.start.w - countPieces(s.board, 'w'), byLoss: lim.loss !== undefined, loss: lim.loss, fast: lim.fast, ok: lim.ok || 0 };
+    if (!s.over || s.winner !== 'w') return r;
+    r.win = true;
+    r.second = r.byLoss ? r.lost <= lim.loss : r.moves <= lim.ok;
+    r.third = r.second && r.moves <= lim.fast;
+    r.stars = 1 + (r.second ? 1 : 0) + (r.third ? 1 : 0);
+    return r;
   }
+  function stars(s) { return starInfo(s).stars; }
 
   /* ---------- Боти ---------- */
 
@@ -789,9 +786,8 @@ var MiniChess = (function () {
   // Оцінка з погляду кольору c: матеріал і просування пішаків.
   var ADVANCE_WIN = [0, 2.5, 0.9, 0.35, 0.1];
   var ADVANCE_QUEEN = [0, 1.2, 0.5, 0.2, 0];
-  var ESCAPE_VALUE = 4;
   function evaluate(s, c) {
-    var sum = (s.escaped[c] - s.escaped[other(c)]) * ESCAPE_VALUE;
+    var sum = 0;
     var adv = s.rules.promo === 'queen' ? ADVANCE_QUEEN : ADVANCE_WIN;
     for (var i = 0; i < s.board.length; i++) {
       var p = s.board[i];
@@ -829,13 +825,14 @@ var MiniChess = (function () {
   }
 
   // «Лисичка»: мінімакс (негамакс з відсіканням) на 1..maxDepth півходів, у межах timeLimit мс.
-  function botFox(s, rnd, maxDepth, timeLimit) {
-    rnd = rnd || Math.random;
+  // foxChoices — усі ходи, серед яких вона вибирає випадково (рівноцінні за оцінкою); botFox
+  // обирає один. Окремий список потрібен тестам: вони перебирають усі можливі відповіді Лисички.
+  function foxChoices(s, maxDepth, timeLimit) {
     maxDepth = maxDepth || 3;
     var deadline = Date.now() + (timeLimit || 900);
     var ms = legalMoves(s);
-    if (!ms.length) return null;
-    var best = ms[0];
+    if (!ms.length) return [];
+    var best = [ms[0]];
     for (var depth = 1; depth <= maxDepth; depth++) {
       try {
         var scored = [], top = -Infinity, i;
@@ -847,7 +844,7 @@ var MiniChess = (function () {
         // Серед рівноцінних ходів — випадковий, щоб ігри не повторювались.
         var good = [];
         for (i = 0; i < ms.length; i++) if (scored[i] >= top - 0.05) good.push(ms[i]);
-        best = pickRandom(good, rnd);
+        best = good;
         if (top >= WIN - 100) break;
       } catch (e) {
         if (e instanceof Timeout) break;
@@ -857,11 +854,17 @@ var MiniChess = (function () {
     return best;
   }
 
+  function botFox(s, rnd, maxDepth, timeLimit) {
+    rnd = rnd || Math.random;
+    var list = foxChoices(s, maxDepth, timeLimit);
+    return list.length ? pickRandom(list, rnd) : null;
+  }
+
   return {
     LEVELS: LEVELS, QUIET_LIMIT: QUIET_LIMIT,
     parse: parse, createGame: createGame, legalMoves: legalMoves, movesFrom: movesFrom,
     applyMove: applyMove, findMove: findMove, inCheck: inCheck, kingSquare: kingSquare,
-    countPieces: countPieces, score: score, stars: stars, botBear: botBear, botFox: botFox,
+    countPieces: countPieces, stars: stars, starInfo: starInfo, whiteMoves: whiteMoves, botBear: botBear, botFox: botFox, foxChoices: foxChoices,
     evaluate: evaluate, sqName: sqName, sqIndex: sqIndex, other: other
   };
 })();
@@ -897,19 +900,19 @@ var MiniChess = (function () {
       demo: { setup: '5/5/1p1p1/2P2/5', hero: 'c2', path: ['c3', 'd3', 'b3'] } },
     { name: 'Тура', piece: 'r',
       hint: 'Тура ходить прямо: вперед, назад, ліворуч і праворуч.',
-      goal: 'З’їж більше пішаків, ніж утече',
+      goal: 'Не пропусти жодного пішака',
       demo: { setup: '5/5/2R2/5/5', hero: 'c3', path: ['c5', 'a3', 'e3', 'c1'] } },
     { name: 'Слон', piece: 'b',
       hint: 'Слон ходить навскоси на будь-яку кількість клітинок.',
-      goal: 'З’їж більше пішаків, ніж утече',
+      goal: 'Не пропусти жодного пішака',
       demo: { setup: '5/5/2B2/5/5', hero: 'c3', path: ['e5', 'a5', 'a1', 'e1'] } },
     { name: 'Кінь', piece: 'n',
       hint: 'Кінь стрибає буквою «Г» і може перестрибувати через інші фігури.',
-      goal: 'З’їж більше пішаків, ніж утече',
+      goal: 'Не пропусти жодного пішака',
       demo: { setup: '5/5/2N2/5/5', hero: 'c3', path: ['d5', 'e2', 'b1', 'a4'], jump: true } },
     { name: 'Ферзь', piece: 'q',
       hint: 'Ферзь ходить і прямо, і навскоси — як тура і слон разом.',
-      goal: 'З’їж більше пішаків, ніж утече',
+      goal: 'Не пропусти жодного пішака',
       demo: { setup: '5/5/2Q2/5/5', hero: 'c3', path: ['c5', 'e5', 'e3', 'a1'] } },
     { name: 'Король', piece: 'k',
       hint: 'Король ходить лише на одну клітинку в будь-який бік.',
@@ -935,6 +938,13 @@ var MiniChess = (function () {
     stalemate: { d: 'Пат: ходити нікуди, але шаху немає.' },
     kings: { d: 'На дошці лишились тільки королі.' },
     quiet: { d: 'Довго ніхто нікого не з’їв.' }
+  };
+
+  // Рівні 2–5 (фігура проти пішаків): свої фрази, бо суперник — пішаки, а не «фігури».
+  var PAWN_REASONS = {
+    promote: { w: 'Пішак дійшов до першого ряду!', l: 'Пішак дійшов до першого ряду. Не пропускай жодного!' },
+    all: { w: 'Усіх пішаків з’їдено!', l: 'Пішак з’їв твою фігуру.' },
+    nomoves: { w: 'Пішакам нікуди ходити!', l: 'Тобі нічим ходити.' }
   };
 
   /* ================== ІКОНКИ Й ФІГУРИ (власні SVG) ================== */
@@ -991,13 +1001,27 @@ var MiniChess = (function () {
     target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>',
     trophy: '<svg viewBox="0 0 64 64"><path d="M18 8h28v14a14 14 0 0 1-28 0z" fill="#d8a94c" stroke="#a9782c" stroke-width="3"/><path d="M18 13H9c0 9 4 14 10 15M46 13h9c0 9-4 14-10 15" fill="none" stroke="#a9782c" stroke-width="3" stroke-linecap="round"/><rect x="28" y="35" width="8" height="10" fill="#d8a94c" stroke="#a9782c" stroke-width="3"/><rect x="18" y="45" width="28" height="10" rx="3" fill="#c96a4d" stroke="#a9782c" stroke-width="3"/></svg>',
     hug: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="#d8a94c" stroke="#a9782c" stroke-width="3"/><circle cx="23" cy="27" r="3.5" fill="#0c0a08"/><circle cx="41" cy="27" r="3.5" fill="#0c0a08"/><path d="M21 39c6 6 16 6 22 0" fill="none" stroke="#0c0a08" stroke-width="3.5" stroke-linecap="round"/><circle cx="17" cy="36" r="4" fill="#c96a4d"/><circle cx="47" cy="36" r="4" fill="#c96a4d"/></svg>',
-    draw: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="#ead9ba" stroke="#0c0a08" stroke-width="3"/><circle cx="23" cy="27" r="3.5" fill="#0c0a08"/><circle cx="41" cy="27" r="3.5" fill="#0c0a08"/><path d="M22 41h20" stroke="#0c0a08" stroke-width="3.5" stroke-linecap="round"/></svg>',
-    run: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h12M12 7l5 5-5 5M20 5v14"/></svg>'
+    draw: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="#ead9ba" stroke="#0c0a08" stroke-width="3"/><circle cx="23" cy="27" r="3.5" fill="#0c0a08"/><circle cx="41" cy="27" r="3.5" fill="#0c0a08"/><path d="M22 41h20" stroke="#0c0a08" stroke-width="3.5" stroke-linecap="round"/></svg>'
   };
 
   function starSvg(on) {
     return '<svg viewBox="0 0 24 24"><path class="' + (on ? 'star-on' : 'star-off') +
       '" stroke-width="1.5" stroke-linejoin="round" d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.2 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>';
+  }
+
+  var FOX_PARTS = '<path d="M8 6l16 14-12 10z" fill="#e8751a"/><path d="M56 6L40 20l12 10z" fill="#e8751a"/>' +
+    '<path d="M12 10l9 9-7 6z" fill="#0c0a08"/><path d="M52 10l-9 9 7 6z" fill="#0c0a08"/>' +
+    '<path d="M32 58L8 32c0-10 10-16 24-16s24 6 24 16z" fill="#f28c28"/>' +
+    '<path d="M32 58L14 38c6 0 12 2 18 8 6-6 12-8 18-8z" fill="#fff"/>' +
+    '<circle cx="23" cy="31" r="3.5" fill="#0c0a08"/><circle cx="41" cy="31" r="3.5" fill="#0c0a08"/>' +
+    '<ellipse cx="32" cy="53" rx="4" ry="3" fill="#0c0a08"/>';
+
+  // Медаль за перемогу над Лисичкою (окремо від зірочок): стрічка, золотий диск і мордочка.
+  function medalSvg(on) {
+    return '<svg class="medal-svg ' + (on ? 'on' : 'off') + '" viewBox="0 0 64 64" aria-hidden="true" focusable="false">' +
+      '<path class="m-ribbon" d="M16 2h14l6 20H22zM48 2H34l-6 20h14z"/>' +
+      '<circle class="m-disc" cx="32" cy="40" r="21"/>' +
+      '<svg x="17" y="25" width="30" height="30" viewBox="0 0 64 64">' + FOX_PARTS + '</svg></svg>';
   }
 
   var AVATARS = {
@@ -1006,12 +1030,7 @@ var MiniChess = (function () {
       '<circle cx="32" cy="35" r="24" fill="#a86b3c"/><ellipse cx="32" cy="43" rx="11" ry="9" fill="#e0b48a"/>' +
       '<circle cx="23" cy="31" r="3.5" fill="#0c0a08"/><circle cx="41" cy="31" r="3.5" fill="#0c0a08"/>' +
       '<ellipse cx="32" cy="39" rx="4.5" ry="3.2" fill="#0c0a08"/><path d="M28 46q4 3 8 0" fill="none" stroke="#0c0a08" stroke-width="2" stroke-linecap="round"/></svg>',
-    fox: '<svg viewBox="0 0 64 64"><path d="M8 6l16 14-12 10z" fill="#e8751a"/><path d="M56 6L40 20l12 10z" fill="#e8751a"/>' +
-      '<path d="M12 10l9 9-7 6z" fill="#0c0a08"/><path d="M52 10l-9 9 7 6z" fill="#0c0a08"/>' +
-      '<path d="M32 58L8 32c0-10 10-16 24-16s24 6 24 16z" fill="#f28c28"/>' +
-      '<path d="M32 58L14 38c6 0 12 2 18 8 6-6 12-8 18-8z" fill="#fff"/>' +
-      '<circle cx="23" cy="31" r="3.5" fill="#0c0a08"/><circle cx="41" cy="31" r="3.5" fill="#0c0a08"/>' +
-      '<ellipse cx="32" cy="53" rx="4" ry="3" fill="#0c0a08"/></svg>',
+    fox: '<svg viewBox="0 0 64 64">' + FOX_PARTS + '</svg>',
     teacher: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#3a3025"/><circle cx="32" cy="25" r="11" fill="#f0cf8f"/>' +
       '<path d="M12 56c2-12 10-18 20-18s18 6 20 18" fill="#f0cf8f"/><rect x="26" y="40" width="12" height="4" rx="2" fill="#c96a4d"/></svg>',
     student: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#f0cf8f"/><circle cx="32" cy="27" r="10" fill="#c96a4d"/>' +
@@ -1030,12 +1049,13 @@ var MiniChess = (function () {
   function later(fn, ms) { return window.setTimeout(fn, ms); }
 
   /* ================== ПРОГРЕС (localStorage) ================== */
-  // Зберігаються лише зірочки рівнів, «усі рівні відкрито» і вимкнений звук.
+  // Зберігаються зірочки рівнів, медалі за Лисичку, «усі рівні відкрито» і вимкнений звук.
+  // Старі збереження (без поля medals) читаються як є: зірочки лишаються, медалей ще немає.
 
   function blankProgress() {
-    var stars = [];
-    for (var i = 0; i < LEVEL_COUNT; i++) stars.push(0);
-    return { stars: stars, all: false, mute: false };
+    var stars = [], medals = [];
+    for (var i = 0; i < LEVEL_COUNT; i++) { stars.push(0); medals.push(false); }
+    return { stars: stars, medals: medals, all: false, mute: false };
   }
 
   function loadProgress() {
@@ -1047,6 +1067,7 @@ var MiniChess = (function () {
         for (var i = 0; i < LEVEL_COUNT; i++) {
           var s = d.stars && d.stars[i];
           p.stars[i] = (typeof s === 'number' && s >= 0 && s <= 3) ? s : 0;
+          p.medals[i] = !!(d.medals && d.medals[i] === true);
         }
         p.all = d.all === true;
         p.mute = d.mute === true;
@@ -1117,8 +1138,6 @@ var MiniChess = (function () {
           this.tone(900, 0.05, 0.12, 'triangle', 0.18, 1400);
         } else if (name === 'select') {
           this.tone(880, 0, 0.06, 'sine', 0.12);
-        } else if (name === 'escape') {
-          this.tone(700, 0, 0.35, 'sine', 0.2, 180);
         } else if (name === 'promo') {
           this.tone(400, 0, 0.45, 'triangle', 0.22, 1300);
           this.tone(1568, 0.45, 0.15, 'sine', 0.15);
@@ -1269,7 +1288,7 @@ var MiniChess = (function () {
     var c = this.cell(sq);
     wrap.style.transform = 'translate(' + (c.col * 100) + '%,' + (c.row * 100) + '%)';
   };
-  // Розставити фігури. fx: instant — без анімації; jumpId — стрибок; escape — {id, to} пішак утікає.
+  // Розставити фігури. fx: instant — без анімації; jumpId — стрибок.
   BoardView.prototype.sync = function (board, fx) {
     fx = fx || {};
     var seen = {}, sq, id;
@@ -1299,31 +1318,23 @@ var MiniChess = (function () {
       var gone = this.pieces[id];
       delete this.pieces[id];
       if (fx.instant) { this.layer.removeChild(gone); continue; }
-      if (fx.escape && String(fx.escape.id) === id) {
-        this.place(gone, fx.escape.to);
-        escapeOff(this, gone);
-      } else {
-        gone.classList.add('captured');
-        removeLater(gone, 350);
-      }
+      gone.classList.add('captured');
+      removeLater(gone, 350);
     }
     if (fx.instant) {
       void this.layer.offsetWidth;
       this.layer.className = 'pieces';
-    }
-    function escapeOff(view, w2) {
-      later(function () {
-        var c = w2.style.transform;
-        w2.classList.add('escaping');
-        w2.style.transform = c + ' translateY(' + (view.flip ? '-' : '') + '110%)';
-        removeLater(w2, 700);
-      }, 320);
     }
     function removeLater(w3, ms) {
       later(function () { if (w3.parentNode) w3.parentNode.removeChild(w3); }, ms);
     }
   };
   BoardView.prototype.pieceEl = function (id) { return this.pieces[id] || null; };
+  // Підсвітити ряд, де пішаки програють для білих (1-й ряд): у рівнях 2–5 пішак, що дійшов
+  // туди, — програш. Клітинки 1-го ряду мають індекси 0..4 незалежно від переворота дошки.
+  BoardView.prototype.finishRow = function (on) {
+    for (var sq = 0; sq < 5; sq++) this.squares[sq].classList.toggle('finish', !!on);
+  };
   // Позначки: sel — вибрана клітинка, moves — ходи, foe — ходи «не для гри», last, check.
   BoardView.prototype.marks = function (m) {
     m = m || {};
@@ -1393,10 +1404,11 @@ var MiniChess = (function () {
       var pic = info.piece === 'all' ? pieceSvg('k', 'w') + pieceSvg('q', 'b') : pieceSvg(info.piece, 'w');
       var stars = '';
       for (var i = 1; i <= 3; i++) stars += starSvg(st >= i);
+      stars += medalSvg(progress.medals[lv - 1]);
       t.innerHTML = '<span class="num">' + lv + '</span><span class="pic">' + pic + '</span>' +
         '<span class="name">' + info.name + '</span><span class="stars">' + stars + '</span>' +
         (open ? '' : '<span class="lock">' + ICONS.lockBig + '</span>');
-      t.setAttribute('aria-label', 'Рівень ' + lv + ': ' + info.name + (open ? ', зірочок: ' + st : ', закрито'));
+      t.setAttribute('aria-label', 'Рівень ' + lv + ': ' + info.name + (open ? ', зірочок: ' + st + (progress.medals[lv - 1] ? ', є медаль за Лисичку' : '') : ', закрито'));
       if (open && !st && !nextMarked) { t.className += ' next'; nextMarked = true; }
       t.addEventListener('click', makeLevelTap(lv, t));
       box.appendChild(t);
@@ -1518,6 +1530,7 @@ var MiniChess = (function () {
     if (!view) view = new BoardView($('board'), onSquare);
     view.flip = G.me === 'b';
     view.layout();
+    view.finishRow(level >= 2 && level <= 5);
     var replay = opts.moves || [];
     for (var i = 0; i < replay.length; i++) {
       var m = MC.findMove(G.state, replay[i][0], replay[i][1]);
@@ -1579,15 +1592,12 @@ var MiniChess = (function () {
 
     Sound.play(last.capture ? 'capture' : 'move');
     view.sync(ns.board, {
-      jumpId: mover.t === 'n' ? mover.id : null,
-      escape: last.escaped ? { id: mover.id, to: m.to } : null
+      jumpId: mover.t === 'n' ? mover.id : null
     });
     refresh();
 
     var wait = 350;
-    if (last.escaped) {
-      gameLater(function () { Sound.play('escape'); }, 320);
-    } else if (m.promo) {
+    if (m.promo) {
       // Пішак дійшов до останнього ряду: сяйво, конфеті, а в рівні 7 — перетворення на ферзя.
       wait = 1200;
       var mine = mover.c === G.me;
@@ -1695,43 +1705,46 @@ var MiniChess = (function () {
   function renderTrays() {
     var s = G.state, foe = MC.other(G.me);
     var top = $('tray-top'), bottom = $('tray-bottom');
-    if (s.rules.promo === 'escape') {
-      var sc = MC.score(s), eaten = [], esc = [], i;
-      for (i = 0; i < sc.eaten; i++) eaten.push('p');
-      for (i = 0; i < sc.escaped; i++) esc.push('p');
-      // Учень (білі) їсть пішаків; пішаки чорних утікають.
-      var eatenHtml = '<span class="lbl">З’їдено: ' + sc.eaten + '</span>' + trayHtml(eaten, 'b');
-      var escHtml = '<span class="lbl">Утекли: ' + sc.escaped + '</span>' + ICONS.run + '<span class="esc">' + trayHtml(esc, 'b') + '</span>';
-      top.innerHTML = G.me === 'w' ? escHtml : eatenHtml;
-      bottom.innerHTML = G.me === 'w' ? eatenHtml : escHtml;
-      return;
-    }
     top.innerHTML = trayHtml(G.taken[foe], G.me);
     bottom.innerHTML = trayHtml(G.taken[G.me], foe);
   }
 
   /* ---------- Результат ---------- */
 
+  // Підписи зірочок для екрана результату: за що кожна.
+  function starLabels(info) {
+    var second = info.byLoss
+      ? (info.loss === 0 ? 'Без втрат' : 'Мало втрат: не більше ' + info.loss)
+      : 'Не довго: не більше ' + info.ok + ' ходів';
+    return [
+      { text: 'Перемога', on: info.win },
+      { text: second, on: info.second },
+      { text: 'Швидко: не більше ' + info.fast + ' ходів', on: info.third }
+    ];
+  }
+
   function showResult() {
     var s = G.state;
     if (!s || !s.over) return;
     var win = s.winner === G.me, draw = !s.winner;
-    var r = REASONS[s.reason] || {}, reason = '';
-    if (s.reason === 'score') {
-      var sc = MC.score(s);
-      reason = 'З’їдено: ' + sc.eaten + ', утекли: ' + sc.escaped + '.';
-    } else {
-      reason = draw ? (r.d || '') : (win ? r.w : r.l) || '';
-    }
+    var pawnLevel = s.level >= 2 && s.level <= 5;
+    var r = (pawnLevel ? PAWN_REASONS[s.reason] : null) || REASONS[s.reason] || {};
+    var reason = draw ? (r.d || '') : (win ? r.w : r.l) || '';
     // Зірочки — лише за перемогу білими (рівні складено для білих), не у вчителя.
     var earnsStars = win && G.me === 'w' && G.role !== 'teacher';
-    var stars = 0;
+    var stars = 0, info = MC.starInfo(s);
     if (earnsStars) {
-      stars = MC.stars(s, G.opponent);
+      stars = info.stars;
       if (stars > progress.stars[G.level - 1]) {
         progress.stars[G.level - 1] = stars;
         saveProgress();
       }
+    }
+    // Медаль — окрема нагорода за перемогу над Лисичкою (лише проти бота), не зірочка.
+    var medal = earnsStars && G.mode === 'bot' && G.opponent === 'fox';
+    if (medal && !progress.medals[G.level - 1]) {
+      progress.medals[G.level - 1] = true;
+      saveProgress();
     }
     var title = draw ? 'Нічия' : win ? 'Перемога!' : 'Спробуй ще раз!';
     if (G.role === 'teacher') title = draw ? 'Нічия' : win ? 'Ви виграли' : 'Учень виграв!';
@@ -1744,6 +1757,23 @@ var MiniChess = (function () {
       for (var i = 1; i <= 3; i++) starBox.innerHTML += starSvg(stars >= i);
     }
     starBox.classList.toggle('hidden', !earnsStars);
+
+    var list = $('star-list'), labels = starLabels(info);
+    list.innerHTML = '';
+    for (var k = 0; k < labels.length; k++) {
+      var li = el('li', labels[k].on ? 'got' : '', starSvg(labels[k].on));
+      var box = el('span');
+      box.appendChild(document.createTextNode(labels[k].text));
+      li.appendChild(box);
+      list.appendChild(li);
+    }
+    var note = el('li', 'note');
+    note.textContent = 'Твоїх ходів: ' + info.moves;
+    list.appendChild(note);
+    list.classList.toggle('hidden', !earnsStars);
+    var medalBox = $('medal-row');
+    medalBox.innerHTML = medal ? medalSvg(true) + '<span>Медаль за перемогу над Лисичкою!</span>' : '';
+    medalBox.classList.toggle('hidden', !medal);
 
     var acts = $('result-actions');
     acts.innerHTML = '';
@@ -2241,7 +2271,7 @@ var MiniChess = (function () {
     $('btn-join').innerHTML = ICONS.people + 'Грати з вчителем';
     $('btn-restart').innerHTML = ICONS.retry + 'Почати знову';
     $('btn-bear').innerHTML = AVATARS.bear + 'Ведмедик<small>легко</small>';
-    $('btn-fox').innerHTML = AVATARS.fox + 'Лисичка<small>хитро</small>';
+    $('btn-fox').innerHTML = AVATARS.fox + 'Лисичка<small>хитро · медаль</small>';
     renderTopButtons();
     renderMap();
 
@@ -2309,7 +2339,7 @@ var MiniChess = (function () {
       renderMap();
     });
     $('btn-reset').addEventListener('click', function () {
-      if (!window.confirm('Скинути всі зірочки на цьому пристрої?')) return;
+      if (!window.confirm('Скинути всі зірочки й медалі на цьому пристрої?')) return;
       var keepMute = progress.mute;
       progress = blankProgress();
       progress.mute = keepMute;

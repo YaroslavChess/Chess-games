@@ -68,9 +68,9 @@ test('стартові позиції всіх 7 рівнів', function () {
   assert.equal(g7[sq('e5')].t, 'k');
   assert.equal(g7[sq('e5')].c, 'b');
   assert.equal(MC.createGame(2).board[sq('c1')].t, 'r');
-  assert.equal(MC.createGame(3).board[sq('b2')].t, 'b');
-  assert.equal(MC.createGame(4).board[sq('d2')].t, 'n');
-  assert.equal(MC.createGame(5).board[sq('c1')].t, 'q');
+  assert.equal(MC.createGame(3).board[sq('a1')].t, 'b');
+  assert.equal(MC.createGame(4).board[sq('d1')].t, 'n');
+  assert.equal(MC.createGame(5).board[sq('a1')].t, 'q');
 });
 
 test('id фігур унікальні', function () {
@@ -210,49 +210,29 @@ test('рівень 1: повна коротка партія до заблоко
 
 /* ---------- Рівні 2–5: фігура проти пішаків ---------- */
 
-test('рівні 2–5: пішак на першому ряду втікає з дошки', function () {
-  var s = game(2, '5/pp1pp/5/p4/2R2', 'b');
+test('рівні 2–5: пішак дійшов до 1-го ряду — програш фігури', function () {
+  var s = game(2, '5/5/5/p4/2R2', 'b');
   s = move(s, 'a2a1');
-  assert.equal(s.board[sq('a1')], null);
-  assert.equal(s.escaped.b, 1);
-  assert.equal(s.last.escaped, true);
-  assert.equal(MC.score(s).escaped, 1);
-  assert.equal(s.over, false);
-});
-
-test('рівень 2: тура з’їла 3 пішаки з 4 — перемога', function () {
-  var s = MC.createGame(2);
-  s.board[sq('a4')] = null;
-  s.board[sq('b4')] = null;
-  s.board[sq('d4')] = null;
-  s.board[sq('c4')] = { c: 'b', t: 'p', id: 50 };
-  s = move(s, 'c1c4');
-  assert.equal(s.over, true);
-  assert.equal(s.winner, 'w');
-  assert.equal(s.reason, 'score');
-  var sc = MC.score(s);
-  assert.equal(sc.eaten, 3);
-  assert.equal(sc.escaped, 0);
-});
-
-test('рівень 2: утекли 3 пішаки — перемога пішаків', function () {
-  var s = MC.createGame(2, false, 'R4/5/5/1p3/5', 'b');
-  s.start = { w: 1, b: 4 };
-  s.escaped = { w: 0, b: 2 };
-  s = move(s, 'b2b1');
   assert.equal(s.over, true);
   assert.equal(s.winner, 'b');
-  assert.equal(s.reason, 'score');
+  assert.equal(s.reason, 'promote');
 });
 
-test('рівень 2: 2 на 2 — нічия', function () {
-  var s = MC.createGame(2, false, 'R4/5/5/1p3/5', 'b');
-  s.start = { w: 1, b: 4 };
-  s.escaped = { w: 0, b: 1 };
-  s = move(s, 'b2b1');
+test('рівні 2–5: з’їв усіх пішаків — перемога', function () {
+  var s = game(2, '5/5/2p2/5/2R2');
+  s = move(s, 'c1c3');
   assert.equal(s.over, true);
-  assert.equal(s.winner, null);
-  assert.equal(s.reason, 'score');
+  assert.equal(s.winner, 'w');
+  assert.equal(s.reason, 'all');
+});
+
+test('рівні 2–5: пішакам нікуди ходити — перемога', function () {
+  // Пішак a2 заблокований конем на a1 і не бере нікого по діагоналі b1.
+  var s = game(4, '5/5/1N3/p4/5');
+  s = move(s, 'b3a1');
+  assert.equal(s.over, true);
+  assert.equal(s.winner, 'w');
+  assert.equal(s.reason, 'nomoves');
 });
 
 test('рівні 2–5: пішак з’їв фігуру — перемога пішаків', function () {
@@ -262,28 +242,6 @@ test('рівні 2–5: пішак з’їв фігуру — перемога �
   assert.equal(s.over, true);
   assert.equal(s.winner, 'b');
   assert.equal(s.reason, 'all');
-});
-
-test('рівень 4: заблоковані пішаки вважаються спійманими', function () {
-  // Стартово 4 пішаки: 1 утік, 2 з'їдено, останній a2 кінь блокує з a1 — чорним нічим ходити.
-  var s = MC.createGame(4, false, '5/5/1N3/p4/5', 'w');
-  s.start = { w: 1, b: 4 };
-  s.escaped = { w: 0, b: 1 };
-  s = move(s, 'b3a1');
-  assert.equal(s.over, true);
-  assert.equal(s.winner, 'w');
-  assert.equal(s.reason, 'score');
-});
-
-test('рівень 5: ферзь проти 5 пішаків — з’їв 3 — перемога', function () {
-  var s = MC.createGame(5, false, '5/ppp2/1Q3/5/5');
-  s.start = { w: 1, b: 5 };
-  s.escaped = { w: 0, b: 0 };
-  // Уже з'їдено 2 (на дошці 3 з 5), ферзь їсть третього.
-  s = move(s, 'b3a4');
-  assert.equal(s.over, true);
-  assert.equal(s.winner, 'w');
-  assert.equal(MC.score(s).eaten, 3);
 });
 
 /* ---------- Рівень 6: король і пішаки ---------- */
@@ -381,26 +339,81 @@ test('після кінця гри ходів немає', function () {
 
 /* ---------- Зірочки ---------- */
 
-test('зірочки', function () {
-  var s = MC.createGame(1);
+// Завершена перемога білих за plies півходів, втративши lostN своїх фігур.
+function won(level, plies, lostN, real) {
+  var s = MC.createGame(level, !!real);
   s.over = true;
   s.winner = 'w';
-  assert.equal(MC.stars(s, 'bear'), 2);
-  assert.equal(MC.stars(s, 'fox'), 3);
-  assert.equal(MC.stars(s, 'teacher'), 3);
-  s.board[sq('a2')] = null;
-  assert.equal(MC.stars(s, 'fox'), 3, 'втрата 1 з 5 — ще чисто');
-  s.board[sq('b2')] = null;
-  assert.equal(MC.stars(s, 'fox'), 2);
-  assert.equal(MC.stars(s, 'bear'), 1);
+  s.plies = plies;
+  s.start = { w: s.start.w + lostN, b: s.start.b };
+  return s;
+}
+
+test('зірочки не залежать від суперника: функція не приймає суперника', function () {
+  assert.equal(MC.stars.length, 1);
+  var s = won(2, 11, 0);
+  assert.equal(MC.stars(s, 'bear'), MC.stars(s, 'fox'));
+  assert.equal(MC.stars(s, 'bear'), MC.stars(s, 'teacher'));
+});
+
+test('зірочки: поразка й нічия — 0', function () {
+  var s = won(2, 5, 0);
   s.winner = 'b';
-  assert.equal(MC.stars(s, 'fox'), 0);
-  var e = MC.createGame(2);
-  e.over = true;
-  e.winner = 'w';
-  assert.equal(MC.stars(e, 'bear'), 2);
-  e.escaped = { w: 0, b: 1 };
-  assert.equal(MC.stars(e, 'bear'), 1, 'у рівнях 2–5 чисто — це жоден пішак не втік');
+  assert.equal(MC.stars(s), 0);
+  s.winner = null;
+  assert.equal(MC.stars(s), 0);
+  assert.equal(MC.stars(MC.createGame(2)), 0, 'гра не закінчена');
+});
+
+test('зірочки рівнів 2–5: перемога, потім ліміти ходів ok і fast', function () {
+  for (var lv = 2; lv <= 5; lv++) {
+    var lim = MC.LEVELS[lv - 1].lim;
+    // Білі ходять першими: n ходів білих = 2n-1 півходів, коли виграють білі.
+    assert.equal(MC.stars(won(lv, 2 * lim.fast - 1, 0)), 3, 'рівень ' + lv + ': fast ходів — 3 зірки');
+    assert.equal(MC.stars(won(lv, 2 * (lim.fast + 1) - 1, 0)), 2, 'рівень ' + lv + ': fast+1 — 2 зірки');
+    assert.equal(MC.stars(won(lv, 2 * lim.ok - 1, 0)), 2, 'рівень ' + lv + ': ok ходів — 2 зірки');
+    assert.equal(MC.stars(won(lv, 2 * (lim.ok + 1) - 1, 0)), 1, 'рівень ' + lv + ': ok+1 — 1 зірка');
+    assert.ok(lim.fast < lim.ok);
+  }
+});
+
+test('зірочки рівнів 2–5: ходів рахується стільки, скільки зробили білі', function () {
+  var s = MC.createGame(2);
+  assert.equal(MC.whiteMoves(s), 0);
+  s = move(s, 'c1c2');
+  assert.equal(MC.whiteMoves(s), 1);
+  s = move(s, 'a4a3');
+  assert.equal(MC.whiteMoves(s), 1);
+  s = move(s, 'c2c3');
+  assert.equal(MC.whiteMoves(s), 2);
+});
+
+test('зірочки рівнів 1, 6, 7: друга — мало втрат, третя — швидко й з другою', function () {
+  [1, 6, 7].forEach(function (lv) {
+    var lim = MC.LEVELS[lv - 1].lim;
+    assert.equal(MC.stars(won(lv, 2 * lim.fast - 1, 0)), 3);
+    assert.equal(MC.stars(won(lv, 2 * lim.fast - 1, lim.loss)), 3);
+    assert.equal(MC.stars(won(lv, 2 * lim.fast - 1, lim.loss + 1)), 1, 'забагато втрат — навіть швидко лише 1');
+    assert.equal(MC.stars(won(lv, 2 * (lim.fast + 3) - 1, 0)), 2, 'повільно, але без втрат');
+    assert.equal(MC.stars(won(lv, 2 * (lim.fast + 3) - 1, lim.loss + 1)), 1);
+  });
+});
+
+test('зірочки рівня 7: справжні правила мають власний ліміт ходів', function () {
+  var lim = MC.LEVELS[6].lim, real = MC.LEVELS[6].limReal;
+  assert.ok(real.fast > lim.fast);
+  assert.equal(MC.stars(won(7, 2 * real.fast - 1, 0, true)), 3);
+  assert.equal(MC.stars(won(7, 2 * (real.fast + 1) - 1, 0, true)), 2);
+});
+
+test('підсумок зірочок: starInfo пояснює, за що яка', function () {
+  var i = MC.starInfo(won(2, 2 * MC.LEVELS[1].lim.fast - 1, 0));
+  assert.equal(i.win && i.second && i.third, true);
+  assert.equal(i.byLoss, false);
+  assert.equal(i.moves, MC.LEVELS[1].lim.fast);
+  var j = MC.starInfo(won(1, 5, 1));
+  assert.equal(j.byLoss, true);
+  assert.equal(j.lost, 1);
 });
 
 /* ---------- Боти ---------- */
@@ -458,7 +471,7 @@ test('Лисичка відповідає менш ніж за 1 с на кож�
 });
 
 test('випадкові партії на всіх рівнях закінчуються коректно', function () {
-  var reasons = ['promote', 'king', 'all', 'nomoves', 'score', 'mate', 'stalemate', 'kings', 'quiet'];
+  var reasons = ['promote', 'king', 'all', 'nomoves', 'mate', 'stalemate', 'kings', 'quiet'];
   for (var lv = 1; lv <= 7; lv++) {
     for (var g = 0; g < 40; g++) {
       var real = lv === 7 && g % 2 === 1, s = MC.createGame(lv, real), rnd = seeded(lv * 1000 + g);
