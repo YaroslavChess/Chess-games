@@ -526,6 +526,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
 <script src="../shared/board-ui.js"></script>
+<script src="../shared/sound.js"></script>
 <script>
 /* LESSON:START */
 // ---------- Розбір уроку: PGN, задачі Lichess, посилання ----------
@@ -1038,6 +1039,14 @@ function itemToChapter(it) {
 
 <script>
 // ---------- Інтерфейс ----------
+// Звуки — у спільному shared/sound.js. Якщо файл не завантажився — гра просто мовчить.
+if (!window.Sound) { window.Sound = { play: function () {}, setMuted: function () {}, isMuted: function () { return true; } }; }
+
+// Звук ходу: взяття або звичайний хід; якщо хід дав шах — ще й «шах».
+function moveSound(captured, check) {
+  Sound.play(captured ? 'capture' : 'move');
+  if (check) { setTimeout(function () { Sound.play('check'); }, 220); }
+}
 // Адреса Google Apps Script (та сама, що в english/unit2, див. english/SETUP.md).
 // Порожньо — результати не надсилаються. Надсилаються лише з ?s=<ім'я> у посиланні.
 var SHEET_URL = '';
@@ -1589,6 +1598,7 @@ function goNode(n, animate) {
   app.selected = null;
   app.legalTo = {};
   app.hint = null;
+  if (n.parent && prev === n.parent && n.from) { moveSound(n.san.indexOf('x') >= 0, n.check); }
   if (animate && n.parent && n.from && !app.animating) {
     if (prev !== n.parent) {
       renderPieces(fenPos(n.parent.fen));
@@ -1737,6 +1747,7 @@ function finishChapter() {
   if (!r) {
     r = { mistakes: app.mistakes, stars: ch.scored ? starsFor(app.mistakes) : 0, scored: ch.scored };
     app.results[app.pos] = r;
+    if (r.stars > 0) { setTimeout(function () { Sound.play('star'); }, 450); }
     if (ch.puzzle) { noteReview(ch, app.mistakes); }
     if (!ch.puzzle && ch.scored) {
       app.feedback = { cls: 'good', stars: r.stars, text: app.mistakes ? 'Розділ пройдено. Помилки теж вчать!' : 'Усі відповіді правильні!' };
@@ -1785,11 +1796,13 @@ function answerQuiz(i) {
   if (st.done || st.wrong[i]) { return; }
   if (q.options[i].ok) {
     st.done = true;
+    Sound.play('right');
     app.feedback = { cls: 'good', text: 'Так! Саме для цього.' };
   } else {
     st.wrong[i] = true;
     st.count++;
     app.mistakes++;
+    Sound.play('wrong');
     if (st.count >= MAX_TRIES) {
       st.done = true;
       app.feedback = { cls: 'bad', text: 'Правильна відповідь — зелена. Запам’ятай її.' };
@@ -1893,6 +1906,7 @@ function rightMove(node, animate) {
   app.tries = 0;
   app.feedback = { cls: 'good', text: words[Math.floor(Math.random() * words.length)] };
   goNode(node, animate);
+  setTimeout(function () { Sound.play('right'); }, 250);
   continuePuzzle();
 }
 
@@ -1905,6 +1919,8 @@ function wrongMove(n, m, after) {
   app.busy = true;
   renderPieces(fenPos(after.fen()));
   squareEl(m.to).className += ' wrong';
+  Sound.play(m.captured ? 'capture' : 'move');
+  setTimeout(function () { Sound.play('wrong'); }, 250);
   if (app.tries >= MAX_TRIES) {
     app.feedback = { cls: 'bad', text: (note ? note + '\n' : '') + 'Правильний хід — ' + exp.san + '. Подивись, чому він сильний.' };
   } else {
@@ -1973,6 +1989,7 @@ function showEnd() {
   dom.endList.innerHTML = rows;
   dom.againBtn.hidden = (app.kind === 'review');
   setHeader(app.lesson.title, '');
+  Sound.play('win');
   confetti();
   sendResult({
     kind: 'lesson',

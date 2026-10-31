@@ -219,7 +219,7 @@
     var style = document.createElement('style');
     style.textContent =
       '#brand-bar{display:flex;align-items:center;justify-content:center;box-sizing:border-box;' +
-      'width:100%;height:44px;margin:0;padding:0 12px;overflow:hidden;' +
+      'position:relative;width:100%;height:44px;margin:0;padding:0 52px;overflow:hidden;' +
       'border-bottom:1px solid var(--hairline,currentColor);' +
       'font:700 13px/1 Manrope,ui-sans-serif,system-ui,sans-serif;}' +
       '#brand-bar a{display:flex;align-items:center;gap:8px;max-width:100%;min-width:0;height:44px;' +
@@ -229,7 +229,11 @@
       '#brand-bar .brand-mono{flex:none;display:flex;align-items:center;justify-content:center;' +
       'width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--on-gold);' +
       'font:800 12px/1 Manrope,ui-sans-serif,system-ui,sans-serif;letter-spacing:0;}' +
-      '#brand-bar .brand-text{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}';
+      '#brand-bar .brand-text{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+      '#brand-bar .sound-btn{position:absolute;top:0;right:4px;width:44px;height:44px;margin:0;padding:0;' +
+      'border:0;background:transparent;cursor:pointer;font-size:22px;line-height:44px;text-align:center;' +
+      'color:var(--text-dim,inherit);}' +
+      '#brand-bar .sound-btn:hover,#brand-bar .sound-btn:focus-visible{color:var(--text,inherit);}';
     document.head.appendChild(style);
 
     var bar = document.createElement('div');
@@ -267,7 +271,31 @@
     link.appendChild(text);
 
     bar.appendChild(link);
+    addSoundButton(bar);
     document.body.insertBefore(bar, document.body.firstChild);
+  }
+
+  // Кнопка звуку 🔊/🔇 — одна на всі ігри. Є лише там, де підключено shared/sound.js
+  // (у каталозі звуків немає — кнопки теж немає). Стан зберігає сам Sound (один ключ у localStorage).
+  function addSoundButton(bar) {
+    if (!window.Sound || typeof window.Sound.isMuted !== 'function') { return; }
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sound-btn';
+    function show() {
+      var muted = window.Sound.isMuted();
+      btn.textContent = muted ? '\uD83D\uDD07' : '\uD83D\uDD0A';
+      btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+      btn.setAttribute('aria-label', muted ? 'Звук вимкнено. Натисніть, щоб увімкнути' : 'Звук увімкнено. Натисніть, щоб вимкнути');
+      btn.title = muted ? 'Увімкнути звук' : 'Вимкнути звук';
+    }
+    btn.onclick = function () {
+      window.Sound.setMuted(!window.Sound.isMuted());
+      show();
+      window.Sound.play('move');   // коротке підтвердження (лише коли звук увімкнено)
+    };
+    show();
+    bar.appendChild(btn);
   }
 
   function startBrandBar() {
