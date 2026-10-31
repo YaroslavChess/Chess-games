@@ -28,6 +28,7 @@
     --blocked-a: #443c30;
     --blocked-b: #37312a;
     --danger: #c96a4d;
+    --blue: #5b8fd8;
     --ink: #120f0b;
     --on-gold: #241a08;
     --gold-deep: #a9782c;
@@ -279,7 +280,7 @@
   .glyph.bad span{ background: var(--danger); color: var(--text); }
   .glyph.int span{ background: var(--gold); color: var(--on-gold); }
 
-  /* стрілки й кола з Lichess: G — зелений, R — червоний, Y — жовтий, B — світлий */
+  /* стрілки й кола з Lichess: G — зелений, R — червоний, Y — жовтий, B — синій */
   .shapes{ position:absolute; top:0; right:0; bottom:0; left:0; width:100%; height:100%; pointer-events:none; z-index:4; }
   .shp{ opacity:.82; }
   .shp line{ stroke-width:.17; stroke-linecap: round; }
@@ -290,8 +291,8 @@
   .shp-R polygon{ fill: var(--danger); }
   .shp-Y line, .shp-Y circle{ stroke: var(--gold); }
   .shp-Y polygon{ fill: var(--gold); }
-  .shp-B line, .shp-B circle{ stroke: var(--text); }
-  .shp-B polygon{ fill: var(--text); }
+  .shp-B line, .shp-B circle{ stroke: var(--blue); }
+  .shp-B polygon{ fill: var(--blue); }
   .shapes{ filter: drop-shadow(0 0 1px rgba(0,0,0,.6)); }
 
   .ranks, .files{ position:absolute; display:flex; color: var(--text-faint); font-family:'JetBrains Mono', monospace; font-size: 11px; font-weight:700; }
@@ -474,6 +475,7 @@
             <div class="ranks" id="ranks"></div>
             <div class="files" id="files"></div>
           </div>
+          <div id="boardTools"></div>
         </div>
         <div class="side">
           <div class="bubble" id="bubble" aria-live="polite">
@@ -515,6 +517,7 @@
 <div class="confetti" id="confetti" aria-hidden="true"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+<script src="../shared/board-ui.js"></script>
 <script>
 /* LESSON:START */
 // ---------- Розбір уроку: PGN, задачі Lichess, посилання ----------
@@ -1049,6 +1052,7 @@ var app = {
 };
 var timers = [];
 var pieceEls = {};
+var boardUI = null;      // перетягування й стрілки (shared/board-ui.js), див. attachBoardUI()
 
 function byId(id) { return document.getElementById(id); }
 var dom = {
@@ -1570,6 +1574,7 @@ function renderMarks() {
 // ----- Показ вузла -----
 function goNode(n, animate) {
   var prev = app.node;
+  if (boardUI && prev !== n) { boardUI.clearShapes(); } // нова позиція — свої стрілки стираємо
   app.node = n;
   app.selected = null;
   app.legalTo = {};
@@ -1814,11 +1819,17 @@ function continuePuzzle() {
   renderControls();
 }
 
+// Чи може учень зараз ходити (задача, його черга, ніхто не відповідає).
+function canPlayerMove() {
+  var n = app.node;
+  if (!app.chapter || !n) { return false; }
+  return app.chapter.puzzle && !app.solved && !app.busy && !quizPending(n) && turnOf(n) === app.chapter.player;
+}
+
 function onBoardClick(e) {
   var t = e.target, sq, chess, piece, n = app.node;
   while (t && t !== dom.board && !(t.getAttribute && t.getAttribute('data-sq'))) { t = t.parentNode; }
-  if (!t || t === dom.board || !app.chapter) { return; }
-  if (!app.chapter.puzzle || app.solved || app.busy || quizPending(n) || turnOf(n) !== app.chapter.player) { return; }
+  if (!t || t === dom.board || !canPlayerMove()) { return; }
   sq = t.getAttribute('data-sq');
   if (app.selected && app.legalTo[sq]) { tryMove(app.selected, sq); return; }
   if (app.selected === sq) { deselect(); return; }
@@ -1850,27 +1861,28 @@ function sameMove(node, m) {
   return node.from === m.from && node.to === m.to && (node.promotion || '') === (m.promotion || '');
 }
 
-function tryMove(from, to) {
+// dropped = true: фігуру перетягнули, вона вже стоїть на місці — без анімації.
+function tryMove(from, to, dropped) {
   var n = app.node, exp = n.children[0], chess = new Chess(n.fen), promo = 'q', m, i, node = null;
   if (exp && exp.from === from && exp.to === to && exp.promotion) { promo = exp.promotion; }
   m = chess.move({ from: from, to: to, promotion: promo });
   deselect();
   if (!m) { return; }
   if (exp && sameMove(exp, m)) {
-    rightMove(exp);
+    rightMove(exp, !dropped);
   } else if (chess.in_checkmate()) {
     for (i = 0; i < n.children.length; i++) { if (sameMove(n.children[i], m)) { node = n.children[i]; } }
-    rightMove(node || addChild(n, chess, m));
+    rightMove(node || addChild(n, chess, m), !dropped);
   } else {
     wrongMove(n, m, chess);
   }
 }
 
-function rightMove(node) {
+function rightMove(node, animate) {
   var words = ['Так!', 'Точно!', 'Правильно!', 'Саме так!'];
   app.tries = 0;
   app.feedback = { cls: 'good', text: words[Math.floor(Math.random() * words.length)] };
-  goNode(node, true);
+  goNode(node, animate);
   continuePuzzle();
 }
 
@@ -2040,14 +2052,15 @@ document.addEventListener('keydown', function (e) {
 (function () {
   var sx = 0, sy = 0, on = false;
   dom.boardCol.addEventListener('touchstart', function (e) {
-    if (e.touches.length !== 1) { on = false; return; }
+    // Олівець або перетягування фігури — це не гортання ходів.
+    if (e.touches.length !== 1 || (boardUI && (boardUI.isPen() || boardUI.isBusy()))) { on = false; return; }
     on = true;
     sx = e.touches[0].clientX;
     sy = e.touches[0].clientY;
   }, { passive: true });
   dom.boardCol.addEventListener('touchend', function (e) {
     var t = e.changedTouches[0], dx, dy;
-    if (!on || !t) { return; }
+    if (!on || !t || (boardUI && boardUI.isPen())) { on = false; return; }
     on = false;
     dx = t.clientX - sx;
     dy = t.clientY - sy;
@@ -2057,6 +2070,51 @@ document.addEventListener('keydown', function (e) {
   }, { passive: true });
 })();
 window.addEventListener('resize', fitPieces);
+
+// ----- Перетягування фігур і стрілки (shared/board-ui.js) -----
+// Якщо файл модуля не завантажився (window.BoardUI немає) — працює тап-тап, як раніше.
+function attachBoardUI() {
+  if (!window.BoardUI) { return; }
+  boardUI = BoardUI.attach(dom.board, {
+    // Яка клітинка під точкою екрана (x, y) — або null, якщо точка поза дошкою.
+    squareFromPoint: function (x, y) {
+      var r = dom.board.getBoundingClientRect(), col, row;
+      if (!r.width || x < r.left || y < r.top || x >= r.right || y >= r.bottom) { return null; }
+      col = Math.floor((x - r.left) / r.width * 8);
+      row = Math.floor((y - r.top) / r.height * 8);
+      return FILES.charAt(app.flip ? 7 - col : col) + (app.flip ? row + 1 : 8 - row);
+    },
+    // Де на екрані клітинка (як getBoundingClientRect).
+    squareRect: function (sq) {
+      var el = squareEl(sq);
+      return el ? el.getBoundingClientRect() : null;
+    },
+    isFlipped: function () { return app.flip; },
+    // Елемент фігури — модуль покаже його копію під пальцем.
+    pieceElement: function (sq) { return pieceEls[sq] || null; },
+    canDrag: function (sq) {
+      var chess, p;
+      if (!canPlayerMove()) { return false; }
+      chess = new Chess(app.node.fen);
+      p = chess.get(sq);
+      return !!p && p.color === app.chapter.player && chess.moves({ square: sq }).length > 0;
+    },
+    legalTargets: function (from) {
+      var ms = new Chess(app.node.fen).moves({ square: from, verbose: true }), out = [], i;
+      for (i = 0; i < ms.length; i++) { out.push(ms[i].to); }
+      return out;
+    },
+    // Почали тягнути — показуємо крапки, куди можна піти (як після тапу).
+    onDragStart: function (sq) {
+      if (app.selected !== sq) { selectSquare(new Chess(app.node.fen), sq); }
+    },
+    onDrop: function (from, to) {
+      if (canPlayerMove()) { tryMove(from, to, true); }
+    },
+    tools: byId('boardTools')
+  });
+}
+attachBoardUI();
 
 // ----- Старт -----
 if (typeof Chess === 'undefined') {
