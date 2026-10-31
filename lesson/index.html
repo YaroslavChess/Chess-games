@@ -541,7 +541,8 @@ var START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 var FILES = 'abcdefgh';
 var GLYPH_NAG = { '!': 1, '?': 2, '!!': 3, '??': 4, '!?': 5, '?!': 6 };
 var NAG_GLYPH = { 1: '!', 2: '?', 3: '!!', 4: '??', 5: '!?', 6: '?!' };
-var FIGURINE = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' };
+// Символи фігур у коментарях студій замінюємо англійськими літерами (як у записі ходів).
+var PIECE_LETTER = { '♔': 'K', '♕': 'Q', '♖': 'R', '♗': 'B', '♘': 'N', '♚': 'K', '♛': 'Q', '♜': 'R', '♝': 'B', '♞': 'N' };
 var REVIEW_DAYS = [1, 3, 7];
 
 // ----- Токени PGN -----
@@ -660,7 +661,7 @@ function parseComment(raw) {
     }
     return ' ';
   });
-  text = text.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/^\s+|\s+$/g, '');
+  text = lettersOf(text).replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/^\s+|\s+$/g, '');
   res.question = parseQuestion(text);
   if (!res.question) { res.text = text; }
   return res;
@@ -957,8 +958,9 @@ function returnPoint(node) {
   return null;
 }
 
-function figurine(san) {
-  return String(san).replace(/[KQRBN]/g, function (ch) { return FIGURINE[ch]; });
+// «♘f3» -> «Nf3»; після символу може стояти знак вибору emoji — його теж прибираємо.
+function lettersOf(text) {
+  return String(text).replace(/[♔♕♖♗♘♚♛♜♝♞][\uFE0E\uFE0F]?/g, function (ch) { return PIECE_LETTER[ch.charAt(0)]; });
 }
 
 function glyphsOf(node) {
@@ -968,7 +970,7 @@ function glyphsOf(node) {
 }
 
 function moveLabel(node) {
-  return node.moveNo + (node.color === 'w' ? '. ' : '... ') + figurine(node.san) + glyphsOf(node);
+  return node.moveNo + (node.color === 'w' ? '. ' : '... ') + node.san + glyphsOf(node);
 }
 
 function starsFor(mistakes) {
@@ -1017,13 +1019,13 @@ function itemToChapter(it) {
   var chess = new Chess(), root, cur, i, m;
   if (!it || typeof it.fen !== 'string' || !it.line || !it.line.length || !chess.load(it.fen)) { return null; }
   root = makeRoot(chess);
-  root.comment = String(it.rc || '');
+  root.comment = lettersOf(it.rc || '');
   cur = root;
   for (i = 0; i < it.line.length; i++) {
     m = chess.move(uciToMove(it.line[i].u));
     if (!m) { break; }
     cur = addChild(cur, chess, m);
-    cur.comment = String(it.line[i].c || '');
+    cur.comment = lettersOf(it.line[i].c || '');
   }
   if (!root.children.length) { return null; }
   return {
@@ -1904,7 +1906,7 @@ function wrongMove(n, m, after) {
   renderPieces(fenPos(after.fen()));
   squareEl(m.to).className += ' wrong';
   if (app.tries >= MAX_TRIES) {
-    app.feedback = { cls: 'bad', text: (note ? note + '\n' : '') + 'Правильний хід — ' + figurine(exp.san) + '. Подивись, чому він сильний.' };
+    app.feedback = { cls: 'bad', text: (note ? note + '\n' : '') + 'Правильний хід — ' + exp.san + '. Подивись, чому він сильний.' };
   } else {
     left = MAX_TRIES - app.tries;
     app.feedback = { cls: 'bad', text: 'Не те, спробуй ще.' + (note ? '\n' + note : '') + '\n(ще ' + left + ' ' + plural(left, 'спроба', 'спроби', 'спроб') + ')' };

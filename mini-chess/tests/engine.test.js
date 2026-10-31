@@ -492,3 +492,138 @@ test('випадкові партії на всіх рівнях закінчу�
     }
   }
 });
+
+/* ---------- Запис ходів (англійська алгебраїчна нотація) ---------- */
+
+// Хід у вигляді 'e2e4' → його запис у позиції s.
+function sanOf(s, uci) {
+  var m = MC.findMove(s, sq(uci.slice(0, 2)), sq(uci.slice(2, 4)));
+  assert.ok(m, 'хід ' + uci + ' має бути дозволений');
+  return MC.san(s, m);
+}
+
+test('нотація: хід пішака, взяття пішаком із файлом, хід фігури й взяття фігурою', function () {
+  var s = game(1);
+  assert.equal(sanOf(s, 'a2a3'), 'a3');
+  assert.equal(sanOf(s, 'c2c3'), 'c3');
+  s = game(1, '5/5/3p1/2P2/5', 'w');
+  assert.equal(sanOf(s, 'c2d3'), 'cxd3');
+  s = game(1, '5/5/5/5/N4', 'w');
+  assert.equal(sanOf(s, 'a1b3'), 'Nb3');
+  assert.equal(sanOf(s, 'a1c2'), 'Nc2');
+  s = game(1, '4p/5/5/5/B4', 'w');
+  assert.equal(sanOf(s, 'a1e5'), 'Bxe5');
+  s = game(1, '5/5/5/5/K4', 'w');
+  assert.equal(sanOf(s, 'a1b2'), 'Kb2');
+  s = game(1, 'q4/5/5/5/4p', 'b');
+  assert.equal(sanOf(s, 'a5a1'), 'Qa1');
+});
+
+test('нотація: чорні ходять так само (пішак вниз)', function () {
+  var s = move(game(1), 'a2a3');
+  assert.equal(sanOf(s, 'b4b3'), 'b3');
+  assert.equal(sanOf(s, 'b4a3'), 'bxa3');
+});
+
+test('нотація: однакові фігури — файл, або ряд, або обидва', function () {
+  // дві тури на a1 та e1 → c1
+  var s = game(1, '4p/5/5/5/R3R', 'w');
+  assert.equal(sanOf(s, 'a1c1'), 'Rac1');
+  assert.equal(sanOf(s, 'e1c1'), 'Rec1');
+  // дві тури на одній вертикалі → ряд
+  s = game(1, 'R3p/5/5/5/R4', 'w');
+  assert.equal(sanOf(s, 'a1a3'), 'R1a3');
+  assert.equal(sanOf(s, 'a5a3'), 'R5a3');
+  // три ферзі: a1, a3, c3 → c1
+  s = game(1, '4p/5/Q1Q2/5/Q4', 'w');
+  assert.equal(sanOf(s, 'a3c1'), 'Qa3c1');
+  assert.equal(sanOf(s, 'a1c1'), 'Q1c1');
+  assert.equal(sanOf(s, 'c3c1'), 'Qcc1');
+  // два коні на b1 та d1 → c3, взяття теж
+  s = game(1, '4p/5/2p2/5/1N1N1', 'w');
+  assert.equal(sanOf(s, 'b1c3'), 'Nbxc3');
+  assert.equal(sanOf(s, 'd1c3'), 'Ndxc3');
+  // фігури різних типів не плутаються
+  s = game(1, '4p/5/5/5/R1B2', 'w');
+  assert.equal(sanOf(s, 'a1b1'), 'Rb1');
+});
+
+test('нотація: шах + і мат # лише у справжніх правилах (рівень 7)', function () {
+  // чорний король a5, білий b3, білий ферзь e1
+  var real = game(7, 'k4/5/1K3/5/4Q', 'w', true);
+  assert.equal(sanOf(real, 'e1e5'), 'Qe5#');
+  assert.equal(sanOf(real, 'e1a1'), 'Qa1+');
+  assert.equal(sanOf(real, 'e1e2'), 'Qe2');
+  // та сама позиція в режимі «для малят» — без + і #
+  var baby = game(7, 'k4/5/1K3/5/4Q', 'w', false);
+  assert.equal(sanOf(baby, 'e1e5'), 'Qe5');
+  assert.equal(sanOf(baby, 'e1a1'), 'Qa1');
+  // рівень 6 (король, але без шаху як правила)
+  var l6 = game(6, 'k4/5/5/5/4R', 'w');
+  assert.equal(sanOf(l6, 'e1e5'), 'Re5');
+  // хід, після якого пат, не має ні +, ні #
+  var pat = game(7, 'k4/5/2K2/5/1Q3', 'w', true);
+  assert.equal(sanOf(pat, 'b1b3'), 'Qb3');
+  assert.equal(MC.applyMove(pat, MC.findMove(pat, sq('b1'), sq('b3'))).reason, 'stalemate');
+});
+
+test('нотація: =Q лише там, де пішак стає ферзем; де пішак виграє на останньому ряду — просто хід', function () {
+  // рівень 7: стає ферзем
+  var s = game(7, 'k4/3P1/5/5/5', 'w', true);
+  assert.equal(sanOf(s, 'd4d5'), 'd5=Q+');
+  s = game(7, '4r/3P1/5/K4/5', 'w', false);
+  assert.equal(sanOf(s, 'd4e5'), 'dxe5=Q');
+  assert.equal(sanOf(s, 'd4d5'), 'd5=Q');
+  // чорний пішак
+  s = game(7, '5/5/5/3p1/K4', 'b', false);
+  assert.equal(sanOf(s, 'd2d1'), 'd1=Q');
+  // рівні 1–6: перемога пішака — без =Q
+  s = game(1, '5/3P1/5/5/5', 'w');
+  assert.equal(sanOf(s, 'd4d5'), 'd5');
+  s = game(1, '4r/3P1/5/5/5', 'w');
+  assert.equal(sanOf(s, 'd4e5'), 'dxe5');
+  s = game(6, '5/3P1/5/5/K3k', 'w');
+  assert.equal(sanOf(s, 'd4d5'), 'd5');
+  s = game(1, '5/5/5/3p1/5', 'b');
+  assert.equal(sanOf(s, 'd2d1'), 'd1');
+});
+
+test('нотація: стартова позиція рівня 7 — усі ходи білих і коротка партія', function () {
+  var s = game(7, undefined, undefined, true), all = MC.legalMoves(s), list = [], i;
+  for (i = 0; i < all.length; i++) { list.push(MC.san(s, all[i])); }
+  assert.deepEqual(list.sort(), ['Na3', 'Nc3', 'a3', 'b3', 'c3', 'd3', 'e3']);
+});
+
+// Повна властивість: у кожній позиції запис кожного ходу унікальний, правильно складений,
+// а + і # збігаються зі станом гри після ходу.
+test('нотація: випадкові партії — записи унікальні, + і # збігаються зі станом гри', function () {
+  var SAN_RE = /^(?:[KQRBN][a-e]?[1-5]?x?[a-e][1-5]|[a-e]x[a-e][1-5]|[a-e][1-5])(?:=Q)?[+#]?$/;
+  var checked = 0;
+  for (var lv = 1; lv <= 7; lv++) {
+    for (var g = 0; g < 25; g++) {
+      var real = lv === 7 && g % 2 === 1, s = MC.createGame(lv, real), rnd = seeded(lv * 777 + g);
+      for (var ply = 0; ply < 400 && !s.over; ply++) {
+        var ms = MC.legalMoves(s), seen = {}, i, t;
+        for (i = 0; i < ms.length; i++) {
+          t = MC.san(s, ms[i]);
+          assert.ok(SAN_RE.test(t), 'дивний запис: ' + t);
+          assert.ok(!seen[t], 'однаковий запис двох ходів: ' + t);
+          seen[t] = true;
+          if (s.rules.promo === 'win') { assert.ok(t.indexOf('=') < 0, 'зайве =Q: ' + t); }
+          checked++;
+        }
+        var m = ms[Math.floor(rnd() * ms.length)];
+        var text = MC.san(s, m), ns = MC.applyMove(s, m);
+        if (real) {
+          assert.equal(/#$/.test(text), ns.over && ns.reason === 'mate', 'мат: ' + text);
+          assert.equal(/\+$/.test(text), !ns.over && MC.inCheck(ns.board, ns.turn), 'шах: ' + text);
+        } else {
+          assert.ok(!/[+#]/.test(text), 'у рівні без шаху не має бути + чи #: ' + text);
+        }
+        assert.equal(/x/.test(text), !!m.capture, 'x ↔ взяття: ' + text);
+        s = ns;
+      }
+    }
+  }
+  assert.ok(checked > 1000);
+});

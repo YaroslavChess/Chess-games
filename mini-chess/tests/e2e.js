@@ -360,6 +360,17 @@ async function main() {
   await waitPiece(student, 10, /чорні: пішак/);
   await waitStatus(student, 'Твій хід');
 
+  log('   панель ходів однакова в обох гравців');
+  async function movesText(page) {
+    return page.evaluate(function () {
+      var out = [], items = document.querySelectorAll('#moves-list .mv-num, #moves-list .mv'), i;
+      for (i = 0; i < items.length; i++) { out.push(items[i].textContent); }
+      return out.join(' ');
+    });
+  }
+  assert.equal(await movesText(teacher), '1. Rc3 a3', 'у вчителя: ' + await movesText(teacher));
+  assert.equal(await movesText(student), await movesText(teacher), 'панель ходів у вчителя й учня збігається');
+
   log('   учень не може ходити за вчителя');
   await tapSq(student, 19);
   await tapSq(student, 14);
@@ -375,6 +386,8 @@ async function main() {
   await tapSq(student, 12);
   await tapSq(student, 10);   // тура c3 б’є пішака a3
   await waitPiece(teacher, 10, /білі: тура/);
+  assert.equal(await movesText(teacher), '1. Rc3 a3 2. Rxa3');
+  assert.equal(await movesText(student), '1. Rc3 a3 2. Rxa3', 'після оновлення сторінки запис ходів відновлено');
 
   log('   вчитель закриває вкладку й відкриває посилання знову — він знову вчитель');
   await teacher.close();

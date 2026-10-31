@@ -154,6 +154,25 @@
     gap:12px;
     width: min(520px, 100%);
   }
+  /* пройдений шлях: «1. Nc3 2. Nd5 …» */
+  .path-line{
+    width: 100%;
+    margin: 0;
+    padding: 8px 12px;
+    max-height: 5em;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    font-family:'JetBrains Mono', monospace;
+    font-size: .8rem;
+    line-height: 1.55;
+    color: var(--text-dim);
+    overflow-wrap: anywhere;
+  }
+  .path-line .lbl{ font-family:'Manrope', ui-sans-serif, system-ui, sans-serif; color: var(--text-faint); margin-right: 6px; }
+  .path-line .mv{ white-space: nowrap; margin-right: 6px; }
+  .path-line .mv.last{ color: var(--gold-soft); font-weight: 700; }
   .board-frame{
     position:relative;
     width: 100%;
@@ -511,6 +530,7 @@
         <div class="files" id="files" aria-hidden="true"></div>
       </div>
       <div id="boardTools"></div>
+      <p class="path-line" id="pathLine" aria-label="Пройдений шлях"></p>
 
       <p class="status" id="status" role="status" aria-live="polite"></p>
 
@@ -620,6 +640,25 @@
     return true;
   }
 
+  // Пройдений шлях списком записів ходу: ['Nc3', 'Nd5', ...]. Стартова клітинка в список не входить.
+  function pathOf(g){
+    var order = [];
+    var res = [];
+    for(var i = 0; i < g.visited.length; i++){
+      if(g.visited[i] > 1) order[g.visited[i]] = i;
+    }
+    for(var v = 2; v <= g.count; v++) res.push('N' + squareName(g.n, order[v]));
+    return res;
+  }
+
+  // Старт гри: клітинка, з якої кінь починав (її номер у visited — 1).
+  function startOf(g){
+    for(var i = 0; i < g.visited.length; i++){
+      if(g.visited[i] === 1) return i;
+    }
+    return g.pos;
+  }
+
   function isOver(g){ return freeMoves(g, g.pos).length === 0; }
   function isFull(g){ return g.count === g.n * g.n; }
 
@@ -711,6 +750,7 @@
   var ranksEl = document.getElementById('ranks');
   var filesEl = document.getElementById('files');
   var statusEl = document.getElementById('status');
+  var pathLineEl = document.getElementById('pathLine');
   var hintBtn = document.getElementById('hintBtn');
   var newBtn = document.getElementById('newBtn');
   var statCount = document.getElementById('statCount');
@@ -793,6 +833,17 @@
     }
   }
 
+  function renderPath(){
+    var path = pathOf(g);
+    var html = '<span class="lbl">Шлях з ' + squareName(g.n, startOf(g)) + ':</span>';
+    if(!path.length) html += '—';
+    for(var i = 0; i < path.length; i++){
+      html += '<span class="mv' + (i === path.length - 1 ? ' last' : '') + '">' + (i + 1) + '. ' + path[i] + '</span>';
+    }
+    pathLineEl.innerHTML = html;
+    pathLineEl.scrollTop = pathLineEl.scrollHeight;
+  }
+
   function render(){
     var moves = finished ? [] : freeMoves(g, g.pos);
     var isTarget = {};
@@ -830,6 +881,7 @@
     barFill.style.width = (g.count * 100 / total) + '%';
     hintBtn.textContent = '💡 Підказка (' + hintsLeft + ')';
     hintBtn.disabled = finished || hintsLeft <= 0;
+    renderPath();
     renderSizes();
     renderRecords();
   }
