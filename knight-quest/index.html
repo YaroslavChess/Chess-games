@@ -24,6 +24,7 @@
     --gold: #d8a94c;
     --gold-soft: #f0cf8f;
     --green: #2ecc71;
+    --blue: #5b8fd8;
     --green-soft: #a8e0bb;
     --blocked-a: #443c30;
     --blocked-b: #37312a;
@@ -150,6 +151,9 @@
     align-items:center;
     gap:10px;
   }
+  #boardTools{
+    width: min(520px, 88vw);
+  }
   .board-frame{
     position:relative;
     width: min(520px, 88vw);
@@ -241,9 +245,7 @@
     width:12.5%; height:12.5%;
     display:flex; align-items:center; justify-content:center;
     overflow: visible;
-    pointer-events:auto;
-    cursor: grab;
-    touch-action: none;
+    pointer-events:none;
     z-index:5;
     transition: left .34s cubic-bezier(.31,1.4,.56,1), top .34s cubic-bezier(.31,1.4,.56,1);
   }
@@ -540,6 +542,7 @@
         <div class="files" id="files"></div>
       </div>
     </div>
+    <div id="boardTools"></div>
 
     <div class="panel">
       <div class="card">
@@ -574,6 +577,7 @@
   <footer class="hint">Клікни підсвічене поле, щоб зробити хід конем за правилами шахів. Крапка на полі — доступний хід із поточної позиції.</footer>
 </div>
 
+<script src="../shared/board-ui.js"></script>
 <script>
 (function(){
   "use strict";
@@ -587,6 +591,17 @@
   function coordToIdx(f,r){ return r*8+f; }
   function idxToCoord(i){ return [i%8, Math.floor(i/8)]; }
   function idAlg(f,r){ return FILES[f]+(r+1); }
+  function squareToIdx(square){
+    if(!square || square.length !== 2) return null;
+    var file = FILES.indexOf(square.charAt(0));
+    var rank = parseInt(square.charAt(1), 10);
+    if(file < 0 || rank < 1 || rank > 8) return null;
+    return coordToIdx(file, rank - 1);
+  }
+  function idxToSquare(idx){
+    var c = idxToCoord(idx);
+    return idAlg(c[0], c[1]);
+  }
 
   function mulberry32(seed){
     return function(){
@@ -700,6 +715,7 @@
   // ---- DOM refs ----
   var boardEl = document.getElementById('board');
   var knightToken = document.getElementById('knightToken');
+  var boardToolsEl = document.getElementById('boardTools');
   var overlay = document.getElementById('overlay');
   var levelsNav = document.getElementById('levels');
   var filesEl = document.getElementById('files');
@@ -875,6 +891,7 @@
     saveProgress(progress);
 
     positionKnight(state.knightIdx, false);
+    if(boardUI){ boardUI.clearShapes(); }
     statMoves.textContent = '0';
     renderBoard();
     updateLevelNav();
@@ -898,6 +915,7 @@
 
     state.knightIdx = idx;
     state.moves += 1;
+    if(boardUI){ boardUI.clearShapes(); }
     positionKnight(idx, animateHop);
     statMoves.textContent = state.moves;
     renderBoard();
@@ -908,75 +926,57 @@
     return true;
   }
 
-  // ---- drag support ----
-  var boardWrap = document.getElementById('boardWrap');
-  var dragPointerId = null;
-  var dragHoverIdx = null;
-
-  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
-
-  function cellIndexFromPoint(clientX, clientY){
-    var rect = boardWrap.getBoundingClientRect();
-    if(clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null;
-    var relX = (clientX - rect.left) / rect.width;
-    var relY = (clientY - rect.top) / rect.height;
-    var col = clamp(Math.floor(relX * 8), 0, 7);
-    var rowFromTop = clamp(Math.floor(relY * 8), 0, 7);
-    return coordToIdx(col, 7 - rowFromTop);
+  // ---- shared board UI (drag + arrows) ----
+  var boardUI = null;
+  function canPlayerMove(){
+    return !!state.puzzle && !state.completed;
   }
-
-  function dragTokenTo(clientX, clientY){
-    var rect = boardWrap.getBoundingClientRect();
-    var relX = (clientX - rect.left) / rect.width * 100;
-    var relY = (clientY - rect.top) / rect.height * 100;
-    knightToken.style.left = clamp(relX - 6.25, 0, 87.5) + '%';
-    knightToken.style.top = clamp(relY - 6.25, 0, 87.5) + '%';
+  function attachBoardUI(){
+    if(!window.BoardUI || boardUI) return;
+    boardUI = BoardUI.attach(boardEl, {
+      squareFromPoint: function(x, y){
+        var rect = boardEl.getBoundingClientRect();
+        var col, rowFromTop;
+        if(!rect.width || x < rect.left || y < rect.top || x >= rect.right || y >= rect.bottom) return null;
+        col = Math.floor((x - rect.left) / rect.width * 8);
+        rowFromTop = Math.floor((y - rect.top) / rect.height * 8);
+        return FILES[col] + (8 - rowFromTop);
+      },
+      squareRect: function(square){
+        var idx = squareToIdx(square);
+        var el = (idx == null) ? null : cells[idx];
+        return el ? el.getBoundingClientRect() : null;
+      },
+      isFlipped: function(){ return false; },
+      pieceElement: function(square){
+        var idx = squareToIdx(square);
+        if(idx === state.knightIdx){ return knightToken; }
+        return null;
+      },
+      canDrag: function(square){
+        var idx = squareToIdx(square);
+        if(!canPlayerMove()) return false;
+        if(idx !== state.knightIdx) return false;
+        return legalMovesFrom(state.knightIdx, state.puzzle.blocked).length > 0;
+      },
+      legalTargets: function(from){
+        var out = [];
+        var legal, i;
+        if(!state.puzzle) return out;
+        if(squareToIdx(from) !== state.knightIdx) return out;
+        legal = legalMovesFrom(state.knightIdx, state.puzzle.blocked);
+        for(i = 0; i < legal.length; i++){ out.push(idxToSquare(legal[i])); }
+        return out;
+      },
+      onDrop: function(from, to){
+        var idx = squareToIdx(to);
+        if(!canPlayerMove() || squareToIdx(from) !== state.knightIdx || idx == null) return;
+        attemptMove(idx, false);
+      },
+      tools: boardToolsEl
+    });
   }
-
-  function setDragHover(idx){
-    if(idx === dragHoverIdx) return;
-    if(dragHoverIdx != null && cells[dragHoverIdx]) cells[dragHoverIdx].classList.remove('drag-over');
-    dragHoverIdx = idx;
-    if(dragHoverIdx != null && cells[dragHoverIdx]) cells[dragHoverIdx].classList.add('drag-over');
-  }
-
-  knightToken.addEventListener('pointerdown', function(e){
-    if(state.completed) return;
-    e.preventDefault();
-    dragPointerId = e.pointerId;
-    try{ knightToken.setPointerCapture(e.pointerId); }catch(err){}
-    knightToken.classList.add('dragging');
-    dragTokenTo(e.clientX, e.clientY);
-  });
-
-  knightToken.addEventListener('pointermove', function(e){
-    if(dragPointerId === null || e.pointerId !== dragPointerId) return;
-    dragTokenTo(e.clientX, e.clientY);
-    var idx = cellIndexFromPoint(e.clientX, e.clientY);
-    var legal = legalMovesFrom(state.knightIdx, state.puzzle.blocked);
-    setDragHover(idx != null && legal.indexOf(idx) !== -1 ? idx : null);
-  });
-
-  function endDrag(e){
-    if(dragPointerId === null || e.pointerId !== dragPointerId) return;
-    dragPointerId = null;
-    knightToken.classList.remove('dragging');
-    setDragHover(null);
-    var idx = cellIndexFromPoint(e.clientX, e.clientY);
-    if(idx != null){
-      attemptMove(idx, false);
-    } else {
-      positionKnight(state.knightIdx, false);
-    }
-  }
-  knightToken.addEventListener('pointerup', endDrag);
-  knightToken.addEventListener('pointercancel', function(e){
-    if(dragPointerId === null || e.pointerId !== dragPointerId) return;
-    dragPointerId = null;
-    knightToken.classList.remove('dragging');
-    setDragHover(null);
-    positionKnight(state.knightIdx, false);
-  });
+  attachBoardUI();
 
   function finishLevel(){
     state.completed = true;
