@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="-10%" r="120%">
+      <stop offset="0" stop-color="#1c1712"/>
+      <stop offset="0.55" stop-color="#120f0b"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <!-- шахова дошка праворуч, схована в рамці -->
+  <g transform="translate(640 55)">
+    <rect x="-10" y="-10" width="540" height="540" rx="18" fill="#0c0a08"/>
+    <g>
+    <rect x="0" y="0" width="65" height="65" fill="#ead9ba"/>
+    <rect x="65" y="0" width="65" height="65" fill="#86644a"/>
+    <rect x="130" y="0" width="65" height="65" fill="#ead9ba"/>
+    <rect x="195" y="0" width="65" height="65" fill="#86644a"/>
+    <rect x="260" y="0" width="65" height="65" fill="#ead9ba"/>
+    <rect x="325" y="0" width="65" height="65" fill="#86644a"/>
+    <rect x="390" y="0" width="65" height="65" fill="#ead9ba"/>
+    <rect x="455" y="0" width="65" height="65" fill="#86644a"/>
+    <rect x="0" y="65" width="65" height="65" fill="#86644a"/>
+    <rect x="65" y="65" width="65" height="65" fill="#ead9ba"/>
+    <rect x="130" y="65" width="65" height="65" fill="#86644a"/>
+    <rect x="195" y="65" width="65" height="65" fill="#ead9ba"/>
+    <rect x="260" y="65" width="65" height="65" fill="#86644a"/>
+    <rect x="325" y="65" width="65" height="65" fill="#ead9ba"/>
+    <rect x="390" y="65" width="65" height="65" fill="#86644a"/>
+    <rect x="455" y="65" width="65" height="65" fill="#ead9ba"/>
+    <rect x="0" y="130" width="65" height="65" fill="#ead9ba"/>
+    <rect x="65" y="130" width="65" height="65" fill="#86644a"/>
+    <rect x="130" y="130" width="65" height="65" fill="#ead9ba"/>
+    <rect x="195" y="130" width="65" height="65" fill="#86644a"/>
+    <rect x="260" y="130" width="65" height="65" fill="#ead9ba"/>
+    <rect x="325" y="130" width="65" height="65" fill="#86644a"/>
+    <rect x="390" y="130" width="65" height="65" fill="#ead9ba"/>
+    <rect x="455" y="130" width="65" height="65" fill="#86644a"/>
+    <rect x="0" y="195" width="65" height="65" fill="#86644a"/>
+    <rect x="65" y="195" width="65" height="65" fill="#ead9ba"/>
+    <rect x="130" y="195" width="65" height="65" fill="#86644a"/>
+    <rect x="195" y="195" width="65" height="65" fill="#ead9ba"/>
+    <rect x="260" y="195" width="65" height="65" fill="#86644a"/>
+    <rect x="325" y="195" width="65" height="65" fill="#ead9ba"/>
+    <rect x="390" y="195" width="65" height="65" fill="#86644a"/>
+    <rect x="455" y="195" width="65" height="65" fill="#ead9ba"/>
+    <rect x="0" y="260" width="65" height="65" fill="#ead9ba"/>
+    <rect x="65" y="260" width="65" height="65" fill="#86644a"/>
+    <rect x="130" y="260" width="65" height="65" fill="#ead9ba"/>
+    <rect x="195" y="260" width="65" height="65" fill="#86644a"/>
+    <rect x="260" y="260" width="65" height="65" fill="#ead9ba"/>
+    <rect x="325" y="260" width="65" height="65" fill="#86644a"/>
+    <rect x="390" y="260" width="65" height="65" fill="#ead9ba"/>
+    <rect x="455" y="260" width="65" height="65" fill="#86644a"/>
+    <rect x="0" y="325" width="65" height="65" fill="#86644a"/>
+    <rect x="65" y="325" width="65" height="65" fill="#ead9ba"/>
+    <rect x="130" y="325" width="65" height="65" fill="#86644a"/>
+    <rect x="195" y="325" width="65" height="65" fill="#ead9ba"/>
+    <rect x="260" y="325" width="65" height="65" fill="#86644a"/>
+    <rect x="325" y="325" width="65" height="65" fill="#ead9ba"/>
+    <rect x="390" y="325" width="65" height="65" fill="#86644a"/>
+    <rect x="455" y="325" width="65" height="65" fill="#ead9ba"/>
+    <rect x="0" y="390" width="65" height="65" fill="#ead9ba"/>
+    <rect x="65" y="390" width="65" height="65" fill="#86644a"/>
+    <rect x="130" y="390" width="65" height="65" fill="#ead9ba"/>
+    <rect x="195" y="390" width="65" height="65" fill="#86644a"/>
+    <rect x="260" y="390" width="65" height="65" fill="#ead9ba"/>
+    <rect x="325" y="390" width="65" height="65" fill="#86644a"/>
+    <rect x="390" y="390" width="65" height="65" fill="#ead9ba"/>
+    <rect x="455" y="390" width="65" height="65" fill="#86644a"/>
+    <rect x="0" y="455" width="65" height="65" fill="#86644a"/>
+    <rect x="65" y="455" width="65" height="65" fill="#ead9ba"/>
+    <rect x="130" y="455" width="65" height="65" fill="#86644a"/>
+    <rect x="195" y="455" width="65" height="65" fill="#ead9ba"/>
+    <rect x="260" y="455" width="65" height="65" fill="#86644a"/>
+    <rect x="325" y="455" width="65" height="65" fill="#ead9ba"/>
+    <rect x="390" y="455" width="65" height="65" fill="#86644a"/>
+    <rect x="455" y="455" width="65" height="65" fill="#ead9ba"/>
+    </g>
+  </g>
+  <!-- фігура -->
+  <g transform="translate(760 150) scale(5.6)">
+    <path fill="#f0cf8f" stroke="#120f0b" stroke-width="1.2" stroke-linejoin="round" d="M20 46c0-9 5-13 8-19-4 0-7 2-10 5l-4-3c2-5 7-11 13-14l1-6 5 4c10 1 17 10 17 22v11z"/>
+    <circle cx="35" cy="22" r="2" fill="#120f0b"/>
+    <rect x="17" y="46" width="30" height="5" rx="2" fill="#d8a94c" stroke="#120f0b" stroke-width="1.2"/>
+  </g>
+  <!-- текст -->
+  <rect x="70" y="170" width="90" height="8" rx="4" fill="#d8a94c"/>
+  <text x="70" y="290" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="104" fill="#f1e9d8">Yaroslav</text>
+  <text x="70" y="395" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="104" fill="#d8a94c">Chess</text>
+  <text x="70" y="480" font-family="Manrope, Arial, sans-serif" font-weight="700" font-size="42" fill="#b7a98e">Шахові ігри для учнів</text>
+  <text x="70" y="560" font-family="Manrope, Arial, sans-serif" font-weight="600" font-size="28" fill="#7d7361">yaroslavchess.com</text>
+</svg>

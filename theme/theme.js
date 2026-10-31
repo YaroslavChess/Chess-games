@@ -196,6 +196,90 @@
     }
   }
 
+  /* ---------- Смужка бренду вгорі (в усіх іграх і темах, навіть у default) ---------- */
+
+  var BRAND_TEXT = 'Yaroslav Chess · шахова школа';
+  var BRAND_LOGO = 'logo.png';   // лежить у shared/; якщо файлу немає — монограма «YC»
+
+  // Адреса папки theme/ береться з адреси цього скрипта (потрібна для логотипа).
+  function themeFolder() {
+    var script = document.currentScript;
+    if (!script) {
+      var all = document.getElementsByTagName('script');
+      script = all[all.length - 1];
+    }
+    return String(script.src).replace(/theme\.js(\?.*)?(#.*)?$/, '');
+  }
+  var THEME_FOLDER = themeFolder();   // викликається під час завантаження скрипта
+
+  // Смужка — звичайний блок на початку сторінки (не fixed): прокручується разом зі сторінкою
+  // і нічого не перекриває. Висота до 44 px. Кольори — зі змінних :root гри.
+  function buildBrandBar() {
+    if (document.getElementById('brand-bar')) { return; }
+    var style = document.createElement('style');
+    style.textContent =
+      '#brand-bar{display:flex;align-items:center;justify-content:center;box-sizing:border-box;' +
+      'width:100%;height:44px;margin:0;padding:0 12px;overflow:hidden;' +
+      'border-bottom:1px solid var(--hairline,currentColor);' +
+      'font:700 13px/1 Manrope,ui-sans-serif,system-ui,sans-serif;}' +
+      '#brand-bar a{display:flex;align-items:center;gap:8px;max-width:100%;min-width:0;height:44px;' +
+      'color:var(--text-dim,inherit);text-decoration:none;}' +
+      '#brand-bar a:hover,#brand-bar a:focus-visible{color:var(--text,inherit);}' +
+      '#brand-bar .brand-mark{flex:none;width:28px;height:28px;border-radius:50%;object-fit:cover;}' +
+      '#brand-bar .brand-mono{flex:none;display:flex;align-items:center;justify-content:center;' +
+      'width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--on-gold);' +
+      'font:800 12px/1 Manrope,ui-sans-serif,system-ui,sans-serif;letter-spacing:0;}' +
+      '#brand-bar .brand-text{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}';
+    document.head.appendChild(style);
+
+    var bar = document.createElement('div');
+    bar.id = 'brand-bar';
+    var link = document.createElement('a');
+    link.href = SIGN_URL;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.setAttribute('aria-label', BRAND_TEXT);
+
+    function addMonogram() {
+      var mono = document.createElement('span');
+      mono.className = 'brand-mono';
+      mono.setAttribute('aria-hidden', 'true');
+      mono.textContent = 'YC';
+      link.insertBefore(mono, link.firstChild);
+    }
+
+    var img = document.createElement('img');
+    img.className = 'brand-mark';
+    img.alt = '';
+    img.width = 28;
+    img.height = 28;
+    img.onerror = function () {
+      img.onerror = null;
+      if (img.parentNode) { img.parentNode.removeChild(img); }
+      addMonogram();
+    };
+    img.src = THEME_FOLDER + '../shared/' + BRAND_LOGO;
+    link.appendChild(img);
+
+    var text = document.createElement('span');
+    text.className = 'brand-text';
+    text.textContent = BRAND_TEXT;
+    link.appendChild(text);
+
+    bar.appendChild(link);
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+
+  function startBrandBar() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        try { buildBrandBar(); } catch (e) { /* без смужки гра теж працює */ }
+      });
+    } else {
+      buildBrandBar();
+    }
+  }
+
   /* ---------- Запуск ---------- */
 
   function start() {
@@ -242,5 +326,6 @@
   }
 
   try { startSignature(); } catch (e) { /* без підпису гра теж працює */ }
+  try { startBrandBar(); } catch (e) { /* без смужки гра теж працює */ }
   try { start(); } catch (e) { /* якщо щось пішло не так — гра працює як раніше */ }
 })();
