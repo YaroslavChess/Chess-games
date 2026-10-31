@@ -12,6 +12,8 @@
   `<script src="../theme/theme.js"></script>` (у `<head>`, після `<style>`) і бере кольори **лише зі змінних
   `:root`**: жодних `#...` і `rgba(...)` у CSS, крім чорних тіней `rgba(0,0,0,..)`. Якщо файл теми не
   завантажився, гра має працювати як раніше. Як додати тему — `theme/README.md`.
+  **Другий виняток:** гра з шаховою дошкою може підключити спільний модуль перетягування й стрілок
+  `<script src="../shared/board-ui.js"></script>` — див. розділ «Перетягування і стрілки».
 - Без збірки, без npm, без пакетів. Бібліотеки — лише з CDN (cdnjs / jsdelivr / unpkg)
   **з фіксованою версією** (не `latest`, не `@1`).
 - Каталог — `index.html` у корені. Він уже знає всі ігри (масив `GAMES` на початку скрипту) і
@@ -68,6 +70,218 @@
 - «Ще раз» скидає партію в тій самій кімнаті, без нового посилання.
 - Після оновлення сторінки гравець повертається в партію (id кімнати з URL, колір і позицію
   відновлювати з `localStorage` у `try/catch` та/або з історії каналу Ably).
+
+## Перетягування і стрілки
+
+Спільний модуль `shared/board-ui.js` додає на будь-яку шахову дошку (div-клітинки чи SVG):
+
+- **перетягування фігур** мишею і пальцем: фігура їде за курсором/пальцем, клітинка під нею
+  підсвічується; відпустив на легальній клітинці — хід, на нелегальній — фігура плавно повертається.
+  Під час перетягування сторінка не скролиться. Тап-тап працює як раніше (його й далі робить гра);
+- **стрілки й кружечки, як на Lichess.** Комп'ютер: права кнопка — протягнути = стрілка, клік =
+  кружечок; зелений за замовчуванням, Shift — червоний, Alt — синій, Shift+Alt — жовтий; та сама
+  стрілка тим самим кольором ще раз — прибрати; лівий клік по дошці стирає все. Телефон: під дошкою
+  кнопки «✏ Олівець» і «Стерти»; коли олівець увімкнено, протяг пальцем — стрілка, тап — кружечок,
+  а фігури не ходять. Стрілки ніяк не впливають на гру.
+
+Модуль не знає правил шахів і не знає, як гра малює дошку: усе питає в гри через функції.
+**Сам модуль для однієї гри не правити.** Якщо без правки ніяк — після неї перевірити `lesson/`.
+Робочий приклад — функція `attachBoardUI()` у `lesson/index.html`.
+
+### Як підключити до гри — крок за кроком
+
+1. **Підключи файл.** У кінці `<body>`, **перед** головним `<script>` гри (і після chess.js, якщо він є):
+
+   ```
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+   <script src="../shared/board-ui.js"></script>
+   <script>
+   ... код гри ...
+   </script>
+   ```
+
+2. **Додай колір `--blue`** у `:root` гри (для синіх стрілок; інші кольори вже є у стандартному
+   `:root` з `knight-quest`):
+
+   ```
+   --blue: #5b8fd8;
+   ```
+
+   Модуль бере лише змінні `:root`: `--green`, `--danger`, `--blue`, `--gold`, `--gold-soft`, `--text`,
+   `--hairline`, `--panel-2`, `--on-gold`, `--radius-sm`. Без `--blue` сині стрілки будуть світлими (`--text`).
+
+3. **Перевір будову дошки.** Потрібен один елемент дошки (далі — `boardElement`), на який приходять
+   натискання, і батьківський елемент розміром з дошку:
+
+   - `boardElement` — елемент з клітинками (у `lesson/` це `<div class="board" id="board">` з кнопками-клітинками);
+   - усі шари **над** ним (фігури, підписи, свої стрілки гри) мають `pointer-events: none`;
+   - батько `boardElement` — контейнер розміром рівно з дошку (у `lesson/` — `.board-wrap`). Модуль кладе
+     туди свій прозорий SVG-шар зі стрілками (`position: absolute`, `z-index: 4`) і, якщо треба, ставить
+     батькові `position: relative`. Шари гри з `z-index` більше 4 будуть над стрілками;
+   - модуль **не** додає нічого всередину `boardElement` — гра може й далі перебудовувати клітинки
+     (`innerHTML = ''`) і перебирати `boardElement.children`.
+
+4. **Додай місце для кнопок** «Олівець» і «Стерти» — під дошкою, поза рамкою з координатами:
+
+   ```
+   <div class="board-frame"> ... дошка ... </div>
+   <div id="boardTools"></div>
+   ```
+
+   Без опції `tools` модуль сам вставить кнопки одразу після батька дошки. `tools: false` — без кнопок.
+
+5. **Винеси перевірку «чи може гравець зараз ходити»** в окрему функцію й використовуй її і в тапі, і в
+   перетягуванні. Приклад з `lesson/`:
+
+   ```
+   function canPlayerMove() {
+     var n = app.node;
+     if (!app.chapter || !n) { return false; }
+     return app.chapter.puzzle && !app.solved && !app.busy && !quizPending(n) && turnOf(n) === app.chapter.player;
+   }
+   ```
+
+6. **Функцію ходу зроби з прапорцем `dropped`.** Перетягнута фігура вже стоїть на новій клітинці,
+   тому після перетягування хід показують **без анімації** (інакше фігура стрибне назад і поїде знову).
+   У `lesson/`: `tryMove(from, to, dropped)` → `rightMove(node, !dropped)` → `goNode(node, animate)`.
+
+7. **Додай змінну й функцію підключення** (поруч з обробниками подій, перед стартом гри):
+
+   ```
+   var boardUI = null;      // перетягування й стрілки (shared/board-ui.js)
+
+   // Якщо файл модуля не завантажився (window.BoardUI немає) — працює тап-тап, як раніше.
+   function attachBoardUI() {
+     if (!window.BoardUI) { return; }
+     boardUI = BoardUI.attach(dom.board, {
+       // Яка клітинка під точкою екрана (x, y) — або null, якщо точка поза дошкою.
+       squareFromPoint: function (x, y) {
+         var r = dom.board.getBoundingClientRect(), col, row;
+         if (!r.width || x < r.left || y < r.top || x >= r.right || y >= r.bottom) { return null; }
+         col = Math.floor((x - r.left) / r.width * 8);
+         row = Math.floor((y - r.top) / r.height * 8);
+         return FILES.charAt(app.flip ? 7 - col : col) + (app.flip ? row + 1 : 8 - row);
+       },
+       // Де на екрані клітинка (як getBoundingClientRect).
+       squareRect: function (sq) {
+         var el = squareEl(sq);
+         return el ? el.getBoundingClientRect() : null;
+       },
+       isFlipped: function () { return app.flip; },
+       // Елемент фігури — модуль покаже його копію під пальцем.
+       pieceElement: function (sq) { return pieceEls[sq] || null; },
+       canDrag: function (sq) {
+         var chess, p;
+         if (!canPlayerMove()) { return false; }
+         chess = new Chess(app.node.fen);
+         p = chess.get(sq);
+         return !!p && p.color === app.chapter.player && chess.moves({ square: sq }).length > 0;
+       },
+       legalTargets: function (from) {
+         var ms = new Chess(app.node.fen).moves({ square: from, verbose: true }), out = [], i;
+         for (i = 0; i < ms.length; i++) { out.push(ms[i].to); }
+         return out;
+       },
+       // Почали тягнути — показуємо крапки, куди можна піти (як після тапу).
+       onDragStart: function (sq) {
+         if (app.selected !== sq) { selectSquare(new Chess(app.node.fen), sq); }
+       },
+       onDrop: function (from, to) {
+         if (canPlayerMove()) { tryMove(from, to, true); }
+       },
+       tools: byId('boardTools')
+     });
+   }
+   attachBoardUI();
+   ```
+
+   Заміни `dom.board`, `app.flip`, `squareEl`, `pieceEls`, `app.node.fen`, `selectSquare`, `tryMove` на
+   те, що є у твоїй грі. Для нестандартних правил (не chess.js) `canDrag` і `legalTargets` беруть ходи з
+   власної логіки гри.
+
+8. **Стирай свої стрілки, коли змінилася позиція** (новий хід, інший розділ, «Ще раз»):
+
+   ```
+   if (boardUI) { boardUI.clearShapes(); }
+   ```
+
+   У `lesson/` це на початку `goNode()`: `if (boardUI && prev !== n) { boardUI.clearShapes(); }`.
+   Якщо дошку перевернули або змінили розмір **без** перебудови клітинок — `boardUI.redraw()`.
+
+9. **Свої жести на дошці** (свайп ходів, тягання для скролу) пропускай, коли працює модуль:
+
+   ```
+   if (boardUI && (boardUI.isPen() || boardUI.isBusy())) { return; }
+   ```
+
+   У `lesson/` так зроблено у `touchstart` і `touchend` свайпу.
+
+10. **Перевір** (див. «Перед PR» і «Як перевіряти перетягування й стрілки» нижче).
+
+### Опції `BoardUI.attach(boardElement, opts)`
+
+Клітинки — завжди рядки `'a1'`..`'h8'` з боку білих. Переворот враховують лише `squareFromPoint` і `squareRect`.
+
+| Опція | Обов'язкова | Що отримує → що повертає |
+|---|---|---|
+| `squareFromPoint(x, y)` | так | координати екрана (`clientX`, `clientY`) → `'e4'` або `null` поза дошкою |
+| `squareRect(square)` | так | `'e4'` → прямокутник клітинки на екрані: `{ left, top, width, height }` (найпростіше — `getBoundingClientRect()`) |
+| `isFlipped()` | ні | → `true`, якщо дошка перевернута (модуль перемальовує стрілки, коли це змінилося) |
+| `canDrag(square)` | так | → `true`, якщо цю фігуру **зараз** можна тягнути (своя фігура, черга гравця, гра не зайнята) |
+| `legalTargets(from)` | так | → масив клітинок, куди фігура може піти: `['e3', 'e4']` |
+| `onDrop(from, to)` | так | викликається лише коли `to` є в `legalTargets(from)`; гра робить хід сама (перетворення пішака теж вирішує гра) |
+| `pieceElement(square)` | бажано | → DOM-елемент фігури на клітинці (div, img, `<svg>` або `<g>`/`<use>` усередині SVG). Без нього фігура не їде за курсором, лише підсвічується клітинка |
+| `onDragStart(from)` | ні | почали тягнути — наприклад, показати крапки ходів, як після тапу |
+| `tools` | ні | елемент для кнопок «Олівець» і «Стерти»; `false` — без кнопок |
+
+Що повертає `BoardUI.attach`:
+
+| Метод | Що робить |
+|---|---|
+| `clearShapes()` | стерти всі намальовані стрілки й кружечки |
+| `getShapes()` | `[{ from, to, color }]`, у кружечка `from === to`; `color`: `green`, `red`, `blue`, `yellow` |
+| `redraw()` | перемалювати шар (після перевороту чи зміни розміру без перебудови) |
+| `setPen(true/false)`, `isPen()` | увімкнути/вимкнути олівець, дізнатися, чи увімкнено |
+| `isBusy()` | `true`, поки фігуру тягнуть або малюють стрілку |
+| `cancel()` | перервати перетягування (наприклад, гра саме перемальовує дошку) |
+| `destroy()` | прибрати модуль з дошки (шар, кнопки, обробники) |
+
+### Як це працює (щоб не зламати)
+
+- Тап по фігурі модуль не перехоплює: якщо палець/миша не зсунулися більше ніж на 4–8 px, далі
+  звичайний `click` гри. Після перетягування модуль «з'їдає» клік від того самого жесту, а в режимі
+  олівця — усі кліки по дошці (крім клавіатури).
+- Копія фігури під курсором (`.bui-ghost`) лежить у `<body>` з `position: fixed`, тож рамка з
+  `overflow: hidden` її не обрізає. Справжня фігура на старій клітинці стає напівпрозорою.
+- Сторінка не скролиться, бо модуль скасовує `touchmove`, поки фігуру тягнуть або увімкнено олівець.
+  `touch-action` на дошці міняти не треба (у `lesson/` на рамці лишається `pan-y`).
+- Права кнопка миші на дошці не відкриває контекстне меню.
+- Лівий клік **мишею** по дошці стирає стрілки; тап пальцем — ні (для цього кнопка «Стерти»).
+
+### Як перевіряти перетягування й стрілки
+
+Тести в Playwright (скрипт не комітити), на ширині 375 px і 1280 px:
+
+1. Мишею: перетягнути свою фігуру на легальну клітинку — хід зарахований; на нелегальну — фігура
+   повернулась, помилки немає; під час перетягування є `.bui-ghost` і `.bui-layer .bui-hover`.
+2. Дотиком: те саме, і `window.scrollY` під час вертикального перетягування не змінюється.
+   Протяг пальцем у Playwright — лише через CDP (у контексті `hasTouch: true, isMobile: true`):
+
+   ```
+   var cdp = await context.newCDPSession(page);
+   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x1, y: y1 }] });
+   await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x2, y: y2 }] }); // кілька кроків
+   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+   ```
+
+3. Права кнопка: `page.mouse.down({ button: 'right' })`, рух, `page.mouse.up({ button: 'right' })` —
+   у `.bui-layer` з'явилась `.bui-arrow.bui-green`; з `page.keyboard.down('Shift')` — `.bui-red`;
+   та сама стрілка ще раз — зникла; лівий клік — `boardUI.getShapes().length === 0`.
+4. Олівець: натиснути `.bui-pen`, протягнути пальцем — стрілка, тап — кружечок, фігура не ходить;
+   «Стерти» (`.bui-clear`) — усе зникло.
+5. Тап-тап працює як раніше; без модуля (заблокувати `shared/board-ui.js` через `page.route`) гра теж працює.
+6. Консоль без помилок; без горизонтального скролу; також з `?theme=halloween` і `?theme=winter`.
+   Порада: у дні свят тема вмикається сама — для перевірки кольорів додавай `?theme=default`.
 
 ## Перед PR
 
