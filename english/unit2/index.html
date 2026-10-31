@@ -125,6 +125,29 @@
     .choice-pill.right { background: rgba(34, 197, 94, 0.25); border-color: var(--success); color: #86efac; }
     .choice-pill.wrong { background: rgba(239, 68, 68, 0.25); border-color: var(--danger); color: #fca5a5; }
 
+    .comp-topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .stage-badge {
+      font-size: 13px; font-weight: 700; color: var(--accent);
+      background: rgba(0,0,0,0.25); border: 1px solid var(--border); padding: 6px 12px; border-radius: 8px;
+    }
+    .rule-btn {
+      background: transparent; color: var(--accent); border: 1px solid var(--accent);
+      padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    .rule-btn:hover { background: rgba(56, 189, 248, 0.15); }
+    .rule-card { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 22px; max-width: 600px; margin: 0 auto; }
+    .rule-card h2 { font-size: 20px; margin-bottom: 10px; }
+    .rule-intro { color: var(--text-muted); font-size: 14px; margin-bottom: 10px; }
+    .rule-list { padding-left: 22px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.4; }
+    .rule-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 100;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .rule-overlay .rule-card { width: 100%; }
+    .rule-note { margin-top: 10px; font-size: 14px; color: #fca5a5; line-height: 1.4; }
+    .rule-why { font-weight: 400; }
+    .comp-builder [hidden] { display: none; }
+
     .feedback-banner {
       min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
       border-radius: 8px; padding: 10px 16px; font-size: 14px; font-weight: 600;
@@ -589,13 +612,15 @@ function initSession(practiceOnlyMissed) {
 
   if (practiceOnlyMissed) {
     activeQueue = shuffle(missedLog.map(m => m.rawItem));
+    compStage = null;
   } else {
     const scope = document.getElementById('setFilter').value;
     if (currentMode === 'vocab') {
       const pool = scope === 'ALL' ? FULL_DATABASE : FULL_DATABASE.filter(i => i.cat === scope);
       activeQueue = shuffle(pool);
     } else if (currentMode === 'comparisons') {
-      activeQueue = shuffle(COMPARISON_TRAPS);
+      compStage = 0;
+      activeQueue = shuffle(compStageItems(compStage));
     } else if (currentMode === 'grammar') {
       activeQueue = shuffle([...ADVERB_DATA, ...PRONOUN_DATA]);
     } else {
@@ -605,7 +630,8 @@ function initSession(practiceOnlyMissed) {
   retryQueue = [];
   missedLog = [];
   refreshStats();
-  runNextCard();
+  if (currentMode === 'comparisons') renderCompRuleScreen();
+  else runNextCard();
 }
 
 function runNextCard() {
@@ -614,6 +640,10 @@ function runNextCard() {
       activeQueue = shuffle(retryQueue);
       retryQueue = [];
     } else {
+      if (currentMode === 'comparisons' && compStage !== null && compStage < COMP_STAGES.length - 1) {
+        renderCompStageDone();
+        return;
+      }
       renderCompletionScreen();
       return;
     }
@@ -845,35 +875,200 @@ function handleVocabOutcome(isCorrect, typed, given) {
 /* ==========================================================================
    MODE 2: COMPARISON TRAPS
    ========================================================================== */
+const COMP_RULES = [
+  { key: 'special', label: 'good/bad – Sonderformen', short: 'Sonderform' },
+  { key: 'more', label: '3+ Silben – more / the most', short: 'more/most' },
+  { key: 'y', label: '-y → -ier / -iest', short: '-ier' },
+  { key: 'e', label: '-e → -r / -st', short: '-r/-st' },
+  { key: 'double', label: 'Buchstaben verdoppeln + -er / -est', short: 'verdoppeln' },
+  { key: 'er', label: '+ -er / -est', short: '+er' }
+];
+
+/* Which rule applies to each word + one-line explanation (German) */
+const COMP_WORD_RULES = {
+  tall: ['er', 'tall – kurzes Wort, zwei Konsonanten am Ende (ll) → einfach -er: taller'],
+  long: ['er', 'long – kurzes Wort, zwei Konsonanten am Ende (ng) → einfach -er: longer'],
+  cold: ['er', 'cold – kurzes Wort, zwei Konsonanten am Ende (ld) → einfach -er: colder'],
+  cool: ['er', 'cool – zwei Vokale (oo) vor dem l → nicht verdoppeln: cooler'],
+  small: ['er', 'small – kurzes Wort, zwei Konsonanten am Ende (ll) → einfach -er: smaller'],
+  big: ['double', 'big – kurzes Wort, Vokal + Konsonant am Ende → g verdoppeln: bigger'],
+  hot: ['double', 'hot – kurzes Wort, Vokal + Konsonant am Ende → t verdoppeln: hotter'],
+  large: ['e', 'large – Endung -e → nur -r / -st: larger'],
+  happy: ['y', 'happy – Endung -y → y wird zu i: happier'],
+  funny: ['y', 'funny – Endung -y → y wird zu i: funnier'],
+  crazy: ['y', 'crazy – Endung -y → y wird zu i: crazier'],
+  dirty: ['y', 'dirty – Endung -y → y wird zu i: dirtier'],
+  easy: ['y', 'easy – Endung -y → y wird zu i: easier'],
+  cheeky: ['y', 'cheeky – Endung -y → y wird zu i: cheekier'],
+  good: ['special', 'good – Sonderform: better, the best'],
+  bad: ['special', 'bad – Sonderform: worse, the worst'],
+  beautiful: ['more', 'beau-ti-ful – 3 Silben → more / the most: more beautiful'],
+  interesting: ['more', 'in-te-res-ting – 4 Silben → more / the most: more interesting'],
+  dangerous: ['more', 'dan-ge-rous – 3 Silben → more / the most: more dangerous'],
+  exciting: ['more', 'ex-ci-ting – 3 Silben → more / the most: more exciting'],
+  expensive: ['more', 'ex-pen-sive – 3 Silben → more / the most: more expensive'],
+  colourful: ['more', 'co-lour-ful – 3 Silben → more / the most: more colourful'],
+  comfortable: ['more', 'com-for-ta-ble – 4 Silben → more / the most: more comfortable'],
+  attractive: ['more', 'at-trac-tive – 3 Silben → more / the most: more attractive']
+};
+
+const COMP_ALGORITHM = [
+  'good / bad → better, the best / worse, the worst',
+  '3 Silben oder mehr → more / the most',
+  'Endung -y → y wird zu i: happier, the happiest',
+  'Endung -e → nur -r / -st: larger, the largest',
+  'kurzes Wort, Vokal + Konsonant am Ende → Buchstaben verdoppeln: bigger, the hottest',
+  'alles andere → -er / -est'
+];
+
+/* Stages: null = all words mixed */
+const COMP_STAGES = [
+  ['tall', 'long', 'cold', 'cool', 'small', 'big', 'hot', 'large'],
+  ['happy', 'funny', 'crazy', 'dirty', 'easy', 'cheeky', 'good', 'bad'],
+  ['beautiful', 'interesting', 'dangerous', 'exciting', 'expensive', 'colourful', 'comfortable', 'attractive'],
+  null
+];
+
+let compStage = 0;            // index in COMP_STAGES; null = "missed words" practice
+let compRuleChoice = null;
 let compAnswerState = { comp: null, sup: null };
+
+function compStageItems(i) {
+  const names = COMP_STAGES[i];
+  return names ? COMPARISON_TRAPS.filter(it => names.includes(it.base)) : [...COMPARISON_TRAPS];
+}
+
+function compWordRule() {
+  return COMP_WORD_RULES[currentItem.base] || ['er', ''];
+}
+
+function compRule(key) {
+  return COMP_RULES.find(r => r.key === key) || { key: key, label: key, short: key };
+}
+
+function compAlgorithmHTML() {
+  return `
+    <p class="rule-intro">Der Reihe nach prüfen – beim ersten „Ja“ stoppen:</p>
+    <ol class="rule-list">${COMP_ALGORITHM.map(s => `<li>${esc(s)}</li>`).join('')}</ol>`;
+}
+
+function compTopBar() {
+  const label = compStage === null ? 'Missed words' : `Stage ${compStage + 1} of ${COMP_STAGES.length}`;
+  return `
+    <div class="comp-topbar">
+      <span class="stage-badge">${label}</span>
+      <button class="rule-btn" onclick="openCompRule()">Rule</button>
+    </div>`;
+}
+
+function renderCompRuleScreen() {
+  document.getElementById('appWorkspace').innerHTML = `
+    <div>
+      ${compTopBar()}
+      <div class="rule-card">
+        <h2>Rule</h2>
+        ${compAlgorithmHTML()}
+        <button class="action-btn" id="compStartBtn" onclick="runNextCard()">Start</button>
+      </div>
+    </div>`;
+  document.getElementById('compStartBtn').focus();
+}
+
+function openCompRule() {
+  closeCompRule();
+  const ov = document.createElement('div');
+  ov.id = 'compRuleOverlay';
+  ov.className = 'rule-overlay';
+  ov.innerHTML = `
+    <div class="rule-card" role="dialog" aria-modal="true">
+      <h2>Rule</h2>
+      ${compAlgorithmHTML()}
+      <button class="action-btn" id="compRuleClose" onclick="closeCompRule()">Close</button>
+    </div>`;
+  ov.addEventListener('click', e => { if (e.target === ov) closeCompRule(); });
+  ov.addEventListener('keydown', e => { if (e.key === 'Escape') closeCompRule(); });
+  document.body.appendChild(ov);
+  document.getElementById('compRuleClose').focus();
+}
+
+function closeCompRule() {
+  const ov = document.getElementById('compRuleOverlay');
+  if (ov) ov.remove();
+}
+
+function renderCompStageDone() {
+  const next = compStage + 2;
+  const isLast = next === COMP_STAGES.length;
+  document.getElementById('appWorkspace').innerHTML = `
+    <div>
+      ${compTopBar()}
+      <div class="rule-card" style="text-align: center;">
+        <h2>Stage ${compStage + 1} complete!</h2>
+        <p class="rule-intro">Next: Stage ${next} of ${COMP_STAGES.length}${isLast ? ' – all words, mixed' : ''}</p>
+        <button class="action-btn" id="compNextStageBtn" onclick="startNextCompStage()">Next stage ➔</button>
+      </div>
+    </div>`;
+  document.getElementById('compNextStageBtn').focus();
+}
+
+function startNextCompStage() {
+  compStage++;
+  activeQueue = shuffle(compStageItems(compStage));
+  retryQueue = [];
+  refreshStats();
+  runNextCard();
+}
 
 function renderComparisonCard() {
   compAnswerState = { comp: null, sup: null };
+  compRuleChoice = null;
   const compOptions = shuffle([currentItem.comp, ...currentItem.compTraps]);
   const supOptions = shuffle([currentItem.sup, ...currentItem.supTraps]);
   const pill = (type, opt) => `<button class="choice-pill" data-val="${esc(opt)}" onclick="selectCompForm('${type}', this)">${esc(opt)}</button>`;
+  const rulePill = r => `<button class="choice-pill" data-val="${esc(r.key)}" onclick="selectCompRule(this)">${esc(r.label)}</button>`;
 
   document.getElementById('appWorkspace').innerHTML = `
     <div>
+      ${compTopBar()}
       <div class="prompt-box">
         <div class="prompt-label">Adjective Comparison</div>
         <div class="prompt-content">${esc(currentItem.base)} ${speakBtn(currentItem.base)}</div>
       </div>
       <div class="comp-builder">
         <div class="comp-step">
-          <div class="comp-step-title">1. Comparative</div>
+          <div class="comp-step-title">1. Rule</div>
+          <div class="comp-choices" id="ruleChoices">${COMP_RULES.map(rulePill).join('')}</div>
+          <div class="rule-note" id="ruleNote" hidden></div>
+        </div>
+        <div class="comp-step" id="compFormStep" hidden>
+          <div class="comp-step-title">2. Comparative</div>
           <div class="comp-choices" id="compChoices">${compOptions.map(o => pill('comp', o)).join('')}</div>
         </div>
-        <div class="comp-step">
-          <div class="comp-step-title">2. Superlative</div>
+        <div class="comp-step" id="supFormStep" hidden>
+          <div class="comp-step-title">3. Superlative</div>
           <div class="comp-choices" id="supChoices">${supOptions.map(o => pill('sup', o)).join('')}</div>
         </div>
       </div>
     </div>
     <div class="feedback-banner" id="compBanner">
-      <span>Select both forms, then click Check</span>
+      <span id="compHint">Choose the rule first</span>
       <button class="action-btn" id="verifyCompBtn" onclick="verifyComparisons()" disabled>Check</button>
     </div>`;
+}
+
+function selectCompRule(btn) {
+  if (compRuleChoice) return;
+  compRuleChoice = btn.dataset.val;
+  const [rightKey, why] = compWordRule();
+  markPills('ruleChoices', rightKey, compRuleChoice);
+  if (compRuleChoice !== rightKey) {
+    const note = document.getElementById('ruleNote');
+    note.innerHTML = `Richtig: <strong>${esc(compRule(rightKey).label)}</strong><br><span class="rule-why">${esc(why)}</span>`;
+    note.hidden = false;
+  }
+  document.getElementById('compFormStep').hidden = false;
+  document.getElementById('supFormStep').hidden = false;
+  document.getElementById('compHint').innerText = 'Select both forms, then click Check';
 }
 
 function selectCompForm(type, btn) {
@@ -881,7 +1076,7 @@ function selectCompForm(type, btn) {
   const container = document.getElementById(type === 'comp' ? 'compChoices' : 'supChoices');
   container.querySelectorAll('.choice-pill').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  if (compAnswerState.comp && compAnswerState.sup) {
+  if (compRuleChoice && compAnswerState.comp && compAnswerState.sup) {
     const v = document.getElementById('verifyCompBtn');
     v.disabled = false;
     v.focus();
@@ -898,21 +1093,28 @@ function markPills(containerId, correct, chosen) {
 }
 
 function verifyComparisons() {
+  if (!compRuleChoice || !compAnswerState.comp || !compAnswerState.sup) return;
+  const [rightKey, why] = compWordRule();
+  const okRule = compRuleChoice === rightKey;
   const okComp = compAnswerState.comp === currentItem.comp;
   const okSup = compAnswerState.sup === currentItem.sup;
   markPills('compChoices', currentItem.comp, compAnswerState.comp);
   markPills('supChoices', currentItem.sup, compAnswerState.sup);
   speakUK(`${currentItem.base}, ${currentItem.comp}, ${currentItem.sup}`);
-  trackAnswer(currentItem.base, `${compAnswerState.comp} / ${compAnswerState.sup}`, `${currentItem.comp} / ${currentItem.sup}`, okComp && okSup);
+  trackAnswer(currentItem.base, `Regel: ${compRule(compRuleChoice).short} | ${compAnswerState.comp} / ${compAnswerState.sup}`, `${currentItem.comp} / ${currentItem.sup}`, okRule && okComp && okSup);
 
-  if (okComp && okSup) {
+  if (okRule && okComp && okSup) {
     record(true);
-    showResult('compBanner', true, 'Both correct!');
+    showResult('compBanner', true, 'All correct!');
   } else {
     logMistake(currentItem.base, `${currentItem.comp} | ${currentItem.sup}`, currentItem);
     retryQueue.push(currentItem);
     record(false);
-    showResult('compBanner', false, `Correct: <strong>${esc(currentItem.comp)}</strong> / <strong>${esc(currentItem.sup)}</strong>`);
+    if (okComp && okSup) {
+      showResult('compBanner', false, 'Forms correct, but the rule was wrong.');
+    } else {
+      showResult('compBanner', false, `Correct: <strong>${esc(currentItem.comp)}</strong> / <strong>${esc(currentItem.sup)}</strong><br><span class="rule-why">${esc(why)}</span>`);
+    }
   }
 }
 
