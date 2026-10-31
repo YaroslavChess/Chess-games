@@ -24,6 +24,7 @@
     --gold: #d8a94c;
     --gold-soft: #f0cf8f;
     --green: #2ecc71;
+    --blue: #5b8fd8;
     --green-soft: #a8e0bb;
     --blocked-a: #443c30;
     --blocked-b: #37312a;
@@ -501,6 +502,7 @@
         <div class="ranks" id="ranks" aria-hidden="true"></div>
         <div class="files" id="files" aria-hidden="true"></div>
       </div>
+      <div id="boardTools"></div>
 
       <p class="status" id="status" role="status" aria-live="polite"></p>
 
@@ -544,6 +546,7 @@
   </div>
 </div>
 
+<script src="../shared/board-ui.js"></script>
 <script>
 (function(){
   "use strict";
@@ -852,6 +855,7 @@
     // Кинув гру посередині — пройдений шлях теж рахується в рекорд.
     if(g && !finished && g.n === size && g.count > 1) recordResult(g);
     overlayEl.classList.remove('show');
+    if(boardUI) boardUI.clearShapes();
     finished = false;
     hintsLeft = HINTS_PER_GAME;
     hintIdx = -1;
@@ -903,7 +907,8 @@
     }, full ? 500 : 800);
   }
 
-  function onSquare(i){
+  // dropped = true, якщо коня перетягнули: він уже стоїть на новій клітинці, тож без анімації.
+  function onSquare(i, dropped){
     if(finished){
       setStatus('Гру закінчено. Натисни «Нова гра».');
       return;
@@ -919,8 +924,9 @@
     }
     var prev = g.pos;
     doMove(g, i);
+    if(boardUI) boardUI.clearShapes();
     hintIdx = -1;
-    placeToken(true);
+    placeToken(!dropped);
     render();
     cells[prev].classList.add('pop');
     if(isOver(g)){
@@ -973,6 +979,54 @@
   });
   window.addEventListener('resize', fit);
 
+  // ----- перетягування коня й стрілки (shared/board-ui.js) -----
+  // Якщо файл модуля не завантажився (BoardUI немає) — працює тап, як раніше.
+  var boardUI = null;
+
+  // 'c3' -> номер клітинки (rank * size + file)
+  function idxFromName(name){
+    return (parseInt(name.substring(1), 10) - 1) * size + FILES.indexOf(name.charAt(0));
+  }
+
+  // Чи можна зараз тягнути коня: гра триває і є вільні ходи.
+  function canMoveKnight(){
+    return !!g && !finished && freeMoves(g, g.pos).length > 0;
+  }
+
+  function attachBoardUI(){
+    if(!window.BoardUI) return;
+    boardUI = BoardUI.attach(boardEl, {
+      // Яка клітинка під точкою екрана (x, y) — або null, якщо точка поза дошкою.
+      squareFromPoint: function(x, y){
+        var r = boardEl.getBoundingClientRect();
+        if(!r.width || x < r.left || y < r.top || x >= r.right || y >= r.bottom) return null;
+        var col = Math.floor((x - r.left) / r.width * size);
+        var row = Math.floor((y - r.top) / r.height * size);
+        return FILES[col] + (size - row);
+      },
+      // Де на екрані клітинка.
+      squareRect: function(sq){
+        var el = cells[idxFromName(sq)];
+        return el ? el.getBoundingClientRect() : null;
+      },
+      pieceElement: function(){ return tokenEl; },
+      // Тягнути можна тільки коня.
+      canDrag: function(sq){
+        return canMoveKnight() && idxFromName(sq) === g.pos;
+      },
+      legalTargets: function(){
+        var res = [], m = canMoveKnight() ? freeMoves(g, g.pos) : [];
+        for(var k = 0; k < m.length; k++) res.push(squareName(size, m[k]));
+        return res;
+      },
+      onDrop: function(from, to){
+        if(canMoveKnight()) onSquare(idxFromName(to), true);
+      },
+      tools: document.getElementById('boardTools')
+    });
+  }
+
+  attachBoardUI();
   buildBoard();
   startNewGame();
 })();
