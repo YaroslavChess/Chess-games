@@ -26,6 +26,7 @@
     --green: #2ecc71;
     --green-soft: #a8e0bb;
     --danger: #c96a4d;
+    --blue: #5b8fd8;
     --blocked-a: #443c30;
     --blocked-b: #37312a;
     --ink: #120f0b;
@@ -344,6 +345,11 @@
     pointer-events:none;
   }
 
+  /* дошка й палітра в одному контейнері: shared/board-ui.js перетягує фігури між ними */
+  .drag-zone{ display:flex; flex-direction:column; gap:10px; }
+  /* кнопки «Олівець» і «Стерти» (shared/board-ui.js); без модуля місце порожнє */
+  #boardTools:empty{ display:none; }
+
   /* палітра фігур */
   .palette-box{ display:flex; justify-content:center; }
   #palette{
@@ -512,6 +518,7 @@
         <div class="timer-track"><div class="timer-bar" id="timerBar"></div></div>
         <div class="timer-text" id="timerText">10 с</div>
       </div>
+      <div class="drag-zone" id="dragZone">
       <div class="board-frame">
         <div class="board-wrap">
           <svg id="board" viewBox="0 0 8 8" role="img" aria-label="Шахова дошка"></svg>
@@ -537,6 +544,8 @@
       <div class="palette-box" id="paletteBox" hidden>
         <svg id="palette" viewBox="0 0 6 2" role="group" aria-label="Фігури для розстановки"></svg>
       </div>
+      </div>
+      <div id="boardTools"></div>
       <p class="status" id="status"></p>
 
       <div class="row" id="rowReady">
@@ -572,6 +581,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+<script src="../shared/board-ui.js"></script>
 <script>
 'use strict';
 
@@ -893,6 +903,10 @@ var state = {
 
 var store = { level: 1, records: {} };
 
+var boardUI = null;     // перетягування й стрілки (shared/board-ui.js), див. attachBoardUI()
+var pieceEls = {};      // клітинка дошки -> елемент фігури (щоб фігура їхала за пальцем)
+var paletteEls = [];    // клітинки палітри (зліва направо, спершу білі, потім чорні) -> елемент фігури
+
 function byId(id) { return document.getElementById(id); }
 
 // ---- localStorage (кожен доступ у try/catch) ----
@@ -992,6 +1006,7 @@ function beginPosition() {
   state.last = null;
   state.view = 'mine';
   state.phase = 'ready';
+  clearArrows();
   renderAll();
   keepBoardInView();
 }
@@ -1005,6 +1020,7 @@ function onShow() {
   var secs = LEVELS[state.level - 1].seconds;
   if (state.phase !== 'ready') { return; }
   state.phase = 'show';
+  clearArrows();
   startTimer(secs);
   renderAll();
   keepBoardInView();
@@ -1014,6 +1030,7 @@ function hideBoard() {
   if (state.phase !== 'show') { return; }
   stopTimer();
   state.phase = 'recall';
+  clearArrows();
   renderAll();
 }
 
@@ -1026,6 +1043,7 @@ function onDone() {
   if (res.accuracy === 100) { state.perfect = state.perfect + 1; }
   state.view = 'mine';
   state.phase = 'result';
+  clearArrows();
   renderAll();
   byId('btnNext').scrollIntoView({ block: 'nearest' });
 }
@@ -1149,6 +1167,7 @@ function drawPiece(svg, p, x, y, cls) {
   });
   t.textContent = GLYPH[p.type] + '︎';   // FE0E: не робити з пішака емодзі
   svg.appendChild(t);
+  return t;
 }
 
 function drawBadge(svg, name, kind, text) {
@@ -1163,7 +1182,7 @@ function drawPieces(svg, map) {
   var sq, p;
   for (sq in map) {
     p = toXY(sq);
-    drawPiece(svg, map[sq], p.x, p.y, '');
+    pieceEls[sq] = drawPiece(svg, map[sq], p.x, p.y, '');
   }
 }
 
@@ -1202,6 +1221,7 @@ function renderBoard() {
   var x, y, name, dark, t;
 
   clearSvg(svg);
+  pieceEls = {};
   svg.setAttribute('class', state.phase === 'recall' ? '' : 'locked');
 
   for (y = 0; y < 8; y = y + 1) {
@@ -1236,6 +1256,7 @@ function renderPalette() {
   var svg = byId('palette');
   var row, col, color, type, dark, sel;
   clearSvg(svg);
+  paletteEls = [];
   for (row = 0; row < 2; row = row + 1) {
     for (col = 0; col < 6; col = col + 1) {
       color = (row === 0) ? 'w' : 'b';
@@ -1246,7 +1267,7 @@ function renderPalette() {
       if (sel) {
         svg.appendChild(svgEl('rect', { x: col + 0.04, y: row + 0.04, width: 0.92, height: 0.92, rx: 0.08, 'class': 'hl sel' }));
       }
-      drawPiece(svg, { type: type, color: color }, col, row, '');
+      paletteEls.push(drawPiece(svg, { type: type, color: color }, col, row, ''));
     }
   }
 }
@@ -1301,6 +1322,7 @@ function onClear() {
 function onView() {
   if (state.phase !== 'result') { return; }
   state.view = (state.view === 'mine') ? 'orig' : 'mine';
+  clearArrows();
   renderAll();
 }
 
@@ -1423,6 +1445,156 @@ function renderAll() {
   renderFeedback();
 }
 
+// ---- перетягування й стрілки (shared/board-ui.js) ----
+// Дошка й палітра лежать в одному контейнері #dragZone, тож один модуль бачить обидві.
+// Фігуру можна: узяти з палітри й кинути на дошку, перекласти з клітинки на клітинку
+// (на зайняту — стара фігура зникає) або відпустити за межами дошки — тоді вона прибирається.
+// Клітинки дошки — 'a1'..'h8' (з боку білих, дошка не перевертається).
+// Клітинки палітри модуль теж просить назвою: 'pal-wk' = біла (w) фігура k, 'pal-bn' = чорний (b) кінь тощо.
+// 'off' — «за межами дошки»; цю назву squareFromPoint віддає лише коли тягнуть фігуру з дошки.
+
+var OFF = 'off';
+var gesture = '';   // що почали: 'board' (фігура на дошці), 'palette' (фігура в палітрі) або '' (нічого тягнути)
+var ALL_SQUARES = [];
+
+function buildAllSquares() {
+  var f, r;
+  ALL_SQUARES = [];
+  for (f = 0; f < 8; f = f + 1) {
+    for (r = 1; r <= 8; r = r + 1) { ALL_SQUARES.push(FILES.charAt(f) + r); }
+  }
+}
+
+function isPaletteCell(name) {
+  return name.indexOf('pal-') === 0;
+}
+
+// піксель екрана -> клітинка дошки або null
+function boardSquareAt(x, y) {
+  var r = byId('board').getBoundingClientRect();
+  var col, row;
+  if (!r.width || x < r.left || y < r.top || x >= r.right || y >= r.bottom) { return null; }
+  col = Math.floor((x - r.left) / r.width * 8);
+  row = Math.floor((y - r.top) / r.height * 8);
+  return fromXY(col, row);
+}
+
+// піксель екрана -> назва клітинки палітри або null (коли палітру сховано, вона має нульовий розмір)
+function paletteCellAt(x, y) {
+  var r = byId('palette').getBoundingClientRect();
+  var col, row;
+  if (!r.width || x < r.left || y < r.top || x >= r.right || y >= r.bottom) { return null; }
+  col = Math.floor((x - r.left) / r.width * 6);
+  row = Math.floor((y - r.top) / r.height * 2);
+  return 'pal-' + (row === 0 ? 'w' : 'b') + PALETTE_ORDER[col];
+}
+
+function squareFromPoint(x, y) {
+  var sq = boardSquareAt(x, y);
+  if (sq) { return sq; }
+  if (gesture === 'palette') { return paletteCellAt(x, y); }
+  if (gesture === 'board') { return OFF; }
+  return null;
+}
+
+// клітинка (дошки чи палітри) -> прямокутник на екрані; для 'off' — null
+function squareRect(name) {
+  var r, p, w, h;
+  if (isPaletteCell(name)) {
+    r = byId('palette').getBoundingClientRect();
+    w = r.width / 6;
+    h = r.height / 2;
+    return { left: r.left + PALETTE_ORDER.indexOf(name.charAt(5)) * w, top: r.top + (name.charAt(4) === 'w' ? 0 : h), width: w, height: h };
+  }
+  if (!/^[a-h][1-8]$/.test(name)) { return null; }
+  r = byId('board').getBoundingClientRect();
+  p = toXY(name);
+  w = r.width / 8;
+  h = r.height / 8;
+  return { left: r.left + p.x * w, top: r.top + p.y * h, width: w, height: h };
+}
+
+function pieceElementAt(name) {
+  var col;
+  if (isPaletteCell(name)) {
+    col = PALETTE_ORDER.indexOf(name.charAt(5));
+    return paletteEls[(name.charAt(4) === 'w' ? 0 : 6) + col] || null;
+  }
+  return pieceEls[name] || null;
+}
+
+// Тягнути можна лише тоді, коли гравець розставляє фігури; у палітрі тягнеться будь-яка фігура
+function canDragFrom(name) {
+  if (state.phase !== 'recall') { return false; }
+  return isPaletteCell(name) || !!state.placed[name];
+}
+
+// Куди можна кинути: на будь-яку клітинку; фігуру з дошки ще й «за межі» (прибрати)
+function dropTargets(from) {
+  var out = ALL_SQUARES.slice();
+  if (!isPaletteCell(from)) { out.push(OFF); }
+  return out;
+}
+
+function onPieceDrop(from, to) {
+  var piece;
+  if (state.phase !== 'recall' || isPaletteCell(to)) { return; }
+  if (isPaletteCell(from)) {
+    if (to === OFF) { return; }
+    state.placed[to] = { type: from.charAt(5), color: from.charAt(4) };
+  } else {
+    piece = state.placed[from];
+    if (!piece) { return; }
+    delete state.placed[from];
+    if (to !== OFF) { state.placed[to] = piece; }
+  }
+  renderAll();
+}
+
+// Що саме почав гравець — запам'ятовуємо до модуля (цей обробник додано раніше за його).
+function onZoneDown(e) {
+  var x = e.clientX;
+  var y = e.clientY;
+  if (e.isPrimary === false) { return; }
+  gesture = '';
+  if (e.button !== 0 || state.phase !== 'recall' || (boardUI && boardUI.isPen())) { return; }
+  if (boardSquareAt(x, y)) { gesture = 'board'; }
+  else if (paletteCellAt(x, y)) { gesture = 'palette'; }
+}
+
+function onZoneUp(e) {
+  if (e.isPrimary === false) { return; }
+  gesture = '';
+}
+
+// Якщо файл модуля не завантажився (window.BoardUI немає) — працює тап-тап, як раніше.
+function attachBoardUI() {
+  var zone = byId('dragZone');
+  if (!window.BoardUI) { return; }
+  buildAllSquares();
+  zone.addEventListener('pointerdown', onZoneDown);
+  boardUI = BoardUI.attach(zone, {
+    squareFromPoint: squareFromPoint,
+    squareRect: squareRect,
+    pieceElement: pieceElementAt,
+    canDrag: canDragFrom,
+    legalTargets: dropTargets,
+    onDrop: onPieceDrop,
+    tools: byId('boardTools')
+  });
+  // додано після модуля, тож спрацьовує після нього
+  document.addEventListener('pointerup', onZoneUp);
+  document.addEventListener('pointercancel', onZoneUp);
+}
+
+// позиція чи етап змінилися — свої стрілки гравця стираємо
+function clearArrows() {
+  if (boardUI) {
+    boardUI.cancel();
+    boardUI.clearShapes();
+  }
+}
+
 // ---- запуск ----
 
 function init() {
@@ -1447,6 +1619,7 @@ function init() {
   byId('btnDone').addEventListener('click', onDone);
   byId('btnView').addEventListener('click', onView);
   byId('btnNext').addEventListener('click', onNext);
+  attachBoardUI();
 }
 
 init();
