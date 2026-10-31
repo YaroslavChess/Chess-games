@@ -28,6 +28,7 @@
     --blocked-a: #443c30;
     --blocked-b: #37312a;
     --danger: #c96a4d;
+    --blue: #5b8fd8;
     --ink: #120f0b;
     --on-gold: #241a08;
     --gold-deep: #a9782c;
@@ -257,6 +258,10 @@
   }
   .files{ left:30px; right:22px; bottom:9px; justify-content:space-around; }
   .ranks{ top:22px; bottom:30px; left:10px; flex-direction:column; justify-content:space-around; }
+
+  /* кнопки «Олівець» і «Стерти» (shared/board-ui.js) — під дошкою, завширшки з рамку; без модуля місце порожнє */
+  .board-tools{ width: min(520px, 88vw); }
+  .board-tools:empty{ display:none; }
 
   /* повідомлення під дошкою */
   .status{
@@ -525,6 +530,7 @@
         <div class="ranks" id="ranks"></div>
         <div class="files" id="files"></div>
       </div>
+      <div class="board-tools" id="boardTools"></div>
       <div class="status" id="status" role="status" aria-live="polite"></div>
     </div>
 
@@ -572,6 +578,7 @@
   <footer class="hint">Тап по порожній клітинці — поставити фігуру, тап по фігурі — прибрати. Червоні клітинки — фігури, що б'ють одна одну. Прогрес зберігається в цьому браузері.</footer>
 </div>
 
+<script src="../shared/board-ui.js"></script>
 <script>
 (function(){
   "use strict";
@@ -865,6 +872,7 @@
   var statusEl = document.getElementById('status');
   var overlayEl = document.getElementById('overlay');
   var sqEls = [];
+  var boardUI = null;   // перетягування й стрілки (shared/board-ui.js), див. attachBoardUI()
 
   function foundList(){ return store.found[mode.id]; }
 
@@ -985,6 +993,21 @@
     else defaultStatus();
   }
 
+  // Перетягнули фігуру з клітинки a на порожню клітинку b — те саме, що тап по a (прибрати) і тап по b (поставити)
+  function moveSquare(a, b){
+    var at = placed.indexOf(a);
+    if(at < 0 || placed.indexOf(b) >= 0) return;
+    hintSq = null;
+    placed.splice(at, 1);
+    placed.push(b);
+    hideOverlay();
+    render();
+    saveBoard();
+    var conf = findConflicts(mode, placed);
+    if(conf.pairs === 0 && placed.length === mode.count) onSolved();
+    else defaultStatus();
+  }
+
   var PRAISE = [
     'Ти шукав далі — і знайшов!',
     'Ти перевірив усі лінії — конфліктів немає!',
@@ -1024,6 +1047,7 @@
   }
 
   function clearBoard(){
+    if(boardUI) boardUI.clearShapes();
     placed = [];
     hintSq = null;
     hintsUsed = 0;
@@ -1082,6 +1106,7 @@
   }
 
   function loadKey(key, number){
+    if(boardUI) boardUI.clearShapes();
     placed = fromKey(key);
     hintSq = null;
     hintsUsed = 0;
@@ -1125,6 +1150,7 @@
   }
 
   function startMode(m){
+    if(boardUI) boardUI.clearShapes();   // інша дошка — старі стрілки не підходять
     mode = m;
     store.mode = m.id;
     placed = store.boards[m.id].slice();
@@ -1265,6 +1291,50 @@
 
   window.addEventListener('resize', fitBoard);
 
+  // ---- перетягування й стрілки ----
+  // Клітинки для модуля — 'a1'..'h8' (на дошках 4×4 і 5×5 — лише ті, що є). Дошка не перевертається.
+  function idxOfName(sq){
+    var c = FILES.indexOf(sq.charAt(0)), r = parseInt(sq.charAt(1), 10) - 1;
+    if(c < 0 || c >= mode.n || !(r >= 0 && r < mode.n)) return -1;
+    return r * mode.n + c;
+  }
+
+  // Якщо файл модуля не завантажився (window.BoardUI немає) — працює тап, як раніше.
+  function attachBoardUI(){
+    if(!window.BoardUI) return;
+    boardUI = BoardUI.attach(boardEl, {
+      // яка клітинка під точкою екрана — або null, якщо точка поза дошкою
+      squareFromPoint: function(x, y){
+        var r = boardEl.getBoundingClientRect(), n = mode.n, col, row;
+        if(!r.width || x < r.left || y < r.top || x >= r.right || y >= r.bottom) return null;
+        col = Math.floor((x - r.left) / r.width * n);
+        row = Math.floor((y - r.top) / r.height * n);
+        return FILES[col] + (n - row);
+      },
+      squareRect: function(sq){
+        var i = idxOfName(sq);
+        return (i >= 0 && sqEls[i]) ? sqEls[i].getBoundingClientRect() : null;
+      },
+      // тягнути можна лише поставлену фігуру
+      canDrag: function(sq){ return placed.indexOf(idxOfName(sq)) >= 0; },
+      // кинути можна на будь-яку порожню клітинку
+      legalTargets: function(from){
+        var out = [], i;
+        for(i = 0; i < mode.n * mode.n; i++){
+          if(placed.indexOf(i) < 0) out.push(sqName(mode, i));
+        }
+        return out;
+      },
+      pieceElement: function(sq){
+        var i = idxOfName(sq);
+        return (i >= 0 && sqEls[i]) ? sqEls[i].firstChild : null;
+      },
+      onDrop: function(from, to){ moveSquare(idxOfName(from), idxOfName(to)); },
+      tools: document.getElementById('boardTools')
+    });
+  }
+
+  attachBoardUI();
   startMode(mode);
 })();
 </script>
