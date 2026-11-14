@@ -60,7 +60,7 @@
     select:focus { border-color: var(--accent); outline: none; }
     select:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    .nav-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .nav-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
     .tab-btn {
       background: var(--surface); color: var(--text-muted); border: 1px solid var(--border);
       padding: 12px 6px; border-radius: 8px; font-weight: 600; font-size: 13px;
@@ -147,6 +147,14 @@
     .rule-note { margin-top: 10px; font-size: 14px; color: #fca5a5; line-height: 1.4; }
     .rule-why { font-weight: 400; }
     .comp-builder [hidden] { display: none; }
+    .rule-note.ok { color: #86efac; }
+    label.comp-step-title { display: block; }
+    .comp-step .typing-input { max-width: none; }
+    .from-last {
+      display: inline-block; margin-bottom: 8px; padding: 3px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--warning); border: 1px solid var(--warning); background: rgba(245, 158, 11, 0.12);
+    }
 
     .feedback-banner {
       min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -192,8 +200,8 @@
     </div>
   </header>
 
-  <div class="controls-bar">
-    <div class="control-group">
+  <div class="controls-bar" id="controlsBar">
+    <div class="control-group" id="grpScope">
       <label for="setFilter">Scope:</label>
       <select id="setFilter" onchange="initSession()">
         <option value="ALL">Complete Unit 2 (all vocabulary sets)</option>
@@ -207,7 +215,7 @@
       </select>
     </div>
 
-    <div class="control-group">
+    <div class="control-group" id="grpDir">
       <label for="dirSelect">Direction:</label>
       <select id="dirSelect" onchange="initSession()">
         <option value="DE_EN">DE ➔ EN</option>
@@ -215,7 +223,7 @@
       </select>
     </div>
 
-    <div class="control-group">
+    <div class="control-group" id="grpInput">
       <label for="inputModeSelect">Input Method:</label>
       <select id="inputModeSelect" onchange="initSession()">
         <option value="choice">4 Options (Recognition)</option>
@@ -226,9 +234,10 @@
 
   <nav class="nav-tabs">
     <button class="tab-btn active" onclick="switchMode('vocab')">1. Core Vocab</button>
-    <button class="tab-btn" onclick="switchMode('comparisons')">2. Comparison Traps</button>
-    <button class="tab-btn" onclick="switchMode('grammar')">3. Adverbs &amp; Mine/Yours</button>
-    <button class="tab-btn" onclick="switchMode('collocations')">4. Collocations</button>
+    <button class="tab-btn" onclick="switchMode('comparisons')">2. Comparison</button>
+    <button class="tab-btn" onclick="switchMode('adverbs')">3. Adverbs</button>
+    <button class="tab-btn" onclick="switchMode('pronouns')">4. Mine/Yours</button>
+    <button class="tab-btn" onclick="switchMode('collocations')">5. Collocations</button>
   </nav>
 
   <main class="workspace" id="appWorkspace"></main>
@@ -245,6 +254,12 @@ const STUDENT = (function () {
     return n || 'student';
   } catch (e) { return 'student'; }
 })();
+
+/* Student mode = the link has ?s=Name. Without it everything works as before. */
+const URL_PARAMS = (function () {
+  try { return new URLSearchParams(location.search); } catch (e) { return null; }
+})();
+const IS_STUDENT = !!(URL_PARAMS && (URL_PARAMS.get('s') || '').trim());
 
 /* ==========================================================================
    UNIT 2 VOCABULARY (Sets 1-8, 11-14, 19-26)
@@ -453,60 +468,87 @@ const FULL_DATABASE = [
    GRAMMAR DATA (Sets 9-10, 15, 16-18)
    ========================================================================== */
 const COMPARISON_TRAPS = [
-  { base: "tall", comp: "taller", compTraps: ["more tall", "tallier"], sup: "the tallest", supTraps: ["the most tall", "the talliest"] },
-  { base: "long", comp: "longer", compTraps: ["more long", "longger"], sup: "the longest", supTraps: ["the most long", "the longgest"] },
-  { base: "cold", comp: "colder", compTraps: ["more cold", "coldier"], sup: "the coldest", supTraps: ["the most cold", "the coldiest"] },
-  { base: "cool", comp: "cooler", compTraps: ["more cool", "cooller"], sup: "the coolest", supTraps: ["the most cool", "the coolst"] },
-  { base: "small", comp: "smaller", compTraps: ["more small", "smaler"], sup: "the smallest", supTraps: ["the most small", "the smalest"] },
-  { base: "big", comp: "bigger", compTraps: ["biger", "more big"], sup: "the biggest", supTraps: ["the bigest", "the most big"] },
-  { base: "hot", comp: "hotter", compTraps: ["hoter", "more hot"], sup: "the hottest", supTraps: ["the hotest", "the most hot"] },
-  { base: "large", comp: "larger", compTraps: ["more large", "largeer"], sup: "the largest", supTraps: ["the most large", "the largeest"] },
+  { base: "tall", comp: "taller", sup: "the tallest" },
+  { base: "long", comp: "longer", sup: "the longest" },
+  { base: "cold", comp: "colder", sup: "the coldest" },
+  { base: "cool", comp: "cooler", sup: "the coolest" },
+  { base: "small", comp: "smaller", sup: "the smallest" },
+  { base: "short", comp: "shorter", sup: "the shortest" },
+  { base: "old", comp: "older", sup: "the oldest" },
+  { base: "young", comp: "younger", sup: "the youngest" },
+  { base: "cheap", comp: "cheaper", sup: "the cheapest" },
 
-  { base: "happy", comp: "happier", compTraps: ["happyer", "more happy"], sup: "the happiest", supTraps: ["the happyest", "the most happy"] },
-  { base: "funny", comp: "funnier", compTraps: ["funnyer", "more funny"], sup: "the funniest", supTraps: ["the funnyest", "the most funny"] },
-  { base: "crazy", comp: "crazier", compTraps: ["crazyer", "more crazy"], sup: "the craziest", supTraps: ["the crazyest", "the most crazy"] },
-  { base: "dirty", comp: "dirtier", compTraps: ["dirtyer", "more dirty"], sup: "the dirtiest", supTraps: ["the dirtyest", "the most dirty"] },
-  { base: "easy", comp: "easier", compTraps: ["easyer", "more easy"], sup: "the easiest", supTraps: ["the easyest", "the most easy"] },
-  { base: "cheeky", comp: "cheekier", compTraps: ["cheekyer", "more cheeky"], sup: "the cheekiest", supTraps: ["the cheekyest", "the most cheeky"] },
+  { base: "big", comp: "bigger", sup: "the biggest" },
+  { base: "hot", comp: "hotter", sup: "the hottest" },
+  { base: "sad", comp: "sadder", sup: "the saddest" },
+  { base: "thin", comp: "thinner", sup: "the thinnest" },
+  { base: "wet", comp: "wetter", sup: "the wettest" },
+  { base: "large", comp: "larger", sup: "the largest" },
+  { base: "nice", comp: "nicer", sup: "the nicest" },
+  { base: "late", comp: "later", sup: "the latest" },
+  { base: "safe", comp: "safer", sup: "the safest" },
 
-  { base: "good", comp: "better", compTraps: ["gooder", "more good"], sup: "the best", supTraps: ["the goodest", "the most good"] },
-  { base: "bad", comp: "worse", compTraps: ["badder", "worser"], sup: "the worst", supTraps: ["the baddest", "the most bad"] },
+  { base: "happy", comp: "happier", sup: "the happiest" },
+  { base: "funny", comp: "funnier", sup: "the funniest" },
+  { base: "crazy", comp: "crazier", sup: "the craziest" },
+  { base: "dirty", comp: "dirtier", sup: "the dirtiest" },
+  { base: "easy", comp: "easier", sup: "the easiest" },
+  { base: "cheeky", comp: "cheekier", sup: "the cheekiest" },
 
-  { base: "beautiful", comp: "more beautiful", compTraps: ["beautifuller", "most beautiful"], sup: "the most beautiful", supTraps: ["the beautifullest", "the more beautiful"] },
-  { base: "interesting", comp: "more interesting", compTraps: ["interestinger", "most interesting"], sup: "the most interesting", supTraps: ["the interestingest", "the more interesting"] },
-  { base: "dangerous", comp: "more dangerous", compTraps: ["dangerouser", "more danger"], sup: "the most dangerous", supTraps: ["the dangerousest", "the most danger"] },
-  { base: "exciting", comp: "more exciting", compTraps: ["excitinger", "most exciting"], sup: "the most exciting", supTraps: ["the excitingest", "the more exciting"] },
-  { base: "expensive", comp: "more expensive", compTraps: ["expensiver", "most expensive"], sup: "the most expensive", supTraps: ["the expensivest", "the more expensive"] },
-  { base: "colourful", comp: "more colourful", compTraps: ["colourfuller", "more colour"], sup: "the most colourful", supTraps: ["the colourfullest", "the more colourful"] },
-  { base: "comfortable", comp: "more comfortable", compTraps: ["comfortabler", "more comfort"], sup: "the most comfortable", supTraps: ["the comfortablest", "the most comfort"] },
-  { base: "attractive", comp: "more attractive", compTraps: ["attractiver", "most attractive"], sup: "the most attractive", supTraps: ["the attractivest", "the more attractive"] }
+  { base: "good", comp: "better", sup: "the best" },
+  { base: "bad", comp: "worse", sup: "the worst" },
+
+  { base: "beautiful", comp: "more beautiful", sup: "the most beautiful" },
+  { base: "interesting", comp: "more interesting", sup: "the most interesting" },
+  { base: "dangerous", comp: "more dangerous", sup: "the most dangerous" },
+  { base: "exciting", comp: "more exciting", sup: "the most exciting" },
+  { base: "expensive", comp: "more expensive", sup: "the most expensive" },
+  { base: "colourful", comp: "more colourful", sup: "the most colourful" },
+  { base: "comfortable", comp: "more comfortable", sup: "the most comfortable" },
+  { base: "attractive", comp: "more attractive", sup: "the most attractive" }
 ];
+
+/* One-line explanations (German), shown after a mistake */
+const ADV_RULES = {
+  ly: '+ -ly: slow → slowly',
+  ily: '-y wird zu -ily: easy → easily, happy → happily',
+  le: '-le wird zu -ly: terrible → terribly',
+  ful: '-ful + -ly = -fully (zwei l)',
+  good: 'good → well (Sonderform)',
+  same: 'fast, hard: Adverb = Adjektiv, kein -ly'
+};
 
 const ADVERB_DATA = [
-  { adj: "slow", adv: "slowly", traps: ["slow", "slowley"] },
-  { adj: "clear", adv: "clearly", traps: ["clear", "clearely"] },
-  { adj: "loud", adv: "loudly", traps: ["loud", "loudely"] },
-  { adj: "calm", adv: "calmly", traps: ["calm", "calmely"] },
-  { adj: "careful", adv: "carefully", traps: ["carefuly", "careful"] },
-  { adj: "easy", adv: "easily", traps: ["easyly", "easely"] },
-  { adj: "terrible", adv: "terribly", traps: ["terriblely", "terribli"] },
-  { adj: "happy", adv: "happily", traps: ["happyly", "happely"] },
-  { adj: "good", adv: "well", traps: ["goodly", "good"] },
-  { adj: "fast", adv: "fast", traps: ["fastly", "faster"] },
-  { adj: "hard", adv: "hard", traps: ["hardly", "harder"] },
-  { adj: "sad", adv: "sadly", traps: ["sad", "sadely"] },
-  { adj: "nervous", adv: "nervously", traps: ["nervous", "nervousely"] },
-  { adj: "quiet", adv: "quietly", traps: ["quiet", "quietely"] },
-  { adj: "excited", adv: "excitedly", traps: ["excited", "excitely"] }
+  { adj: "slow", adv: "slowly", rule: ADV_RULES.ly },
+  { adj: "clear", adv: "clearly", rule: ADV_RULES.ly },
+  { adj: "loud", adv: "loudly", rule: ADV_RULES.ly },
+  { adj: "calm", adv: "calmly", rule: ADV_RULES.ly },
+  { adj: "careful", adv: "carefully", rule: ADV_RULES.ful },
+  { adj: "easy", adv: "easily", rule: ADV_RULES.ily },
+  { adj: "terrible", adv: "terribly", rule: ADV_RULES.le },
+  { adj: "happy", adv: "happily", rule: ADV_RULES.ily },
+  { adj: "good", adv: "well", rule: ADV_RULES.good },
+  { adj: "fast", adv: "fast", rule: ADV_RULES.same },
+  { adj: "hard", adv: "hard", rule: ADV_RULES.same },
+  { adj: "sad", adv: "sadly", rule: ADV_RULES.ly },
+  { adj: "nervous", adv: "nervously", rule: ADV_RULES.ly },
+  { adj: "quiet", adv: "quietly", rule: ADV_RULES.ly },
+  { adj: "excited", adv: "excitedly", rule: ADV_RULES.ly }
 ];
 
+const PRON_RULES = {
+  apostrophe: 'Kein Apostroph: yours, hers, ours, theirs',
+  mine: 'mine - ohne s',
+  his: 'his bleibt his'
+};
+
 const PRONOUN_DATA = [
-  { phrase: "my bag", target: "mine", de: "meine Tasche ➔ meine", traps: ["my", "mines"] },
-  { phrase: "your bag", target: "yours", de: "deine Tasche ➔ deine", traps: ["your", "your's"] },
-  { phrase: "his bag", target: "his", de: "seine Tasche ➔ seine", traps: ["hises", "him"] },
-  { phrase: "her bag", target: "hers", de: "ihre Tasche ➔ ihre", traps: ["her", "her's"] },
-  { phrase: "our bag", target: "ours", de: "unsere Tasche ➔ unsere", traps: ["our", "our's"] },
-  { phrase: "their bag", target: "theirs", de: "ihre Tasche ➔ ihre (Plural)", traps: ["their", "their's"] }
+  { phrase: "my bag", target: "mine", de: "meine Tasche ➔ meine", rule: PRON_RULES.mine },
+  { phrase: "your bag", target: "yours", de: "deine Tasche ➔ deine", rule: PRON_RULES.apostrophe },
+  { phrase: "his bag", target: "his", de: "seine Tasche ➔ seine", rule: PRON_RULES.his },
+  { phrase: "her bag", target: "hers", de: "ihre Tasche ➔ ihre", rule: PRON_RULES.apostrophe },
+  { phrase: "our bag", target: "ours", de: "unsere Tasche ➔ unsere", rule: PRON_RULES.apostrophe },
+  { phrase: "their bag", target: "theirs", de: "ihre Tasche ➔ ihre (Plural)", rule: PRON_RULES.apostrophe }
 ];
 
 /* ==========================================================================
@@ -540,6 +582,16 @@ let retryQueue = [];
 let currentItem = null;
 let currentAnswer = '';
 let missedLog = [];
+
+/* Error logic (Core Vocab type-in, Comparison, Adverbs, Mine/Yours) */
+let retryKeys = new Set();      // words waiting for their one extra try in this round
+let currentIsRetry = false;     // the current card is that extra try
+let sessionBanned = new Set();  // wrong twice: saved for next time, not shown again in this session
+let fromLastKeys = new Set();   // saved words from an earlier session ("From last time")
+let roundFirstOk = 0;           // correct at the first try in this round
+let roundSize = 0;
+const VOCAB_ROUND = 12;
+const VOCAB_ROUND_SAVED = 6;
 
 function esc(s) {
   return String(s)
@@ -592,9 +644,126 @@ function showResult(bannerId, ok, html) {
   document.getElementById('nextBtn').focus();
 }
 
+/* After a mistake: Next stays disabled until the correct answer is typed */
+function showRetype(bannerId, html) {
+  const banner = document.getElementById(bannerId);
+  banner.className = 'feedback-banner error';
+  banner.innerHTML = `<span>${html}</span> <button class="action-btn" id="nextBtn" onclick="runNextCard()" disabled>Next ➔</button>`;
+}
+
+/* ==========================================================================
+   LOCAL STORAGE (per student + mode; never breaks the trainer)
+   ========================================================================== */
+const LS_PREFIX = 'u2:' + STUDENT + ':';
+
+function lsGet(name, fallback) {
+  try {
+    const v = localStorage.getItem(LS_PREFIX + name);
+    return v === null ? fallback : JSON.parse(v);
+  } catch (e) { return fallback; }
+}
+
+function lsSet(name, value) {
+  try { localStorage.setItem(LS_PREFIX + name, JSON.stringify(value)); } catch (e) {}
+}
+
+function lsList(name) {
+  const a = lsGet(name, []);
+  return Array.isArray(a) ? a.filter(x => typeof x === 'string') : [];
+}
+
+function lsListAdd(name, value) {
+  const a = lsList(name);
+  if (!a.includes(value)) { a.push(value); lsSet(name, a); }
+}
+
+function lsListRemove(name, value) {
+  const a = lsList(name);
+  const i = a.indexOf(value);
+  if (i >= 0) { a.splice(i, 1); lsSet(name, a); }
+}
+
+function modeData(mode) {
+  if (mode === 'vocab') return FULL_DATABASE;
+  if (mode === 'comparisons') return COMPARISON_TRAPS;
+  if (mode === 'adverbs') return ADVERB_DATA;
+  if (mode === 'pronouns') return PRONOUN_DATA;
+  return COLLOCATIONS_DATA;
+}
+
+function itemKey(item) {
+  return item.en || item.base || item.adj || item.phrase || item.stem;
+}
+
+/* Saved mistakes of a mode, without words already wrong twice in this session */
+function savedItems(mode) {
+  const data = modeData(mode);
+  return lsList(mode + ':mistakes')
+    .filter(k => !sessionBanned.has(k))
+    .map(k => data.find(i => itemKey(i) === k))
+    .filter(Boolean);
+}
+
+function scopePool() {
+  const scope = document.getElementById('setFilter').value;
+  return scope === 'ALL' ? FULL_DATABASE : FULL_DATABASE.filter(i => i.cat === scope);
+}
+
+function isStrictMode() {
+  if (currentMode === 'vocab') return document.getElementById('inputModeSelect').value === 'type';
+  return currentMode === 'comparisons' || currentMode === 'adverbs' || currentMode === 'pronouns';
+}
+
+function vocabRoundMode() {
+  return IS_STUDENT && currentMode === 'vocab' && document.getElementById('inputModeSelect').value === 'type';
+}
+
+function fromLastBadge() {
+  return currentItem && !currentIsRetry && fromLastKeys.has(itemKey(currentItem))
+    ? '<div class="from-last">From last time</div>' : '';
+}
+
+/* Shared outcome of the first answer (not the re-typing after a mistake) */
+function strictOutcome(ok, mKey, mAnswer) {
+  const key = itemKey(currentItem);
+  record(ok);
+  if (ok) {
+    if (!currentIsRetry) {
+      roundFirstOk++;
+      lsListRemove(currentMode + ':mistakes', key);
+      if (vocabRoundMode()) lsListAdd('vocab:learned', key);
+    }
+    return;
+  }
+  logMistake(mKey, mAnswer, currentItem);
+  if (currentIsRetry) {
+    lsListAdd(currentMode + ':mistakes', key);
+    sessionBanned.add(key);
+  } else {
+    retryQueue.push(currentItem);
+    retryKeys.add(key);
+  }
+}
+
+function applyStudentMode() {
+  if (!IS_STUDENT) return;
+  const hide = id => { document.getElementById(id).style.display = 'none'; };
+  document.getElementById('inputModeSelect').value = URL_PARAMS.get('input') === 'choice' ? 'choice' : 'type';
+  document.getElementById('dirSelect').value = 'DE_EN';
+  hide('grpDir');
+  hide('grpInput');
+  const set = URL_PARAMS.get('set');
+  const sel = document.getElementById('setFilter');
+  if (set && [...sel.options].some(o => o.value === set)) {
+    sel.value = set;
+    hide('grpScope');
+    hide('controlsBar');
+  }
+}
+
 function switchMode(mode) {
   currentMode = mode;
-  const order = ['vocab', 'comparisons', 'grammar', 'collocations'];
+  const order = ['vocab', 'comparisons', 'adverbs', 'pronouns', 'collocations'];
   document.querySelectorAll('.nav-tabs .tab-btn').forEach((b, idx) => {
     b.classList.toggle('active', order[idx] === mode);
   });
@@ -609,28 +778,30 @@ function initSession(practiceOnlyMissed) {
   practiceOnlyMissed = practiceOnlyMissed === true;
   trackSessionStart(practiceOnlyMissed);
   stats = { correct: 0, total: 0, streak: 0 };
+  retryQueue = [];
+  retryKeys = new Set();
+  sessionBanned = new Set();
+  fromLastKeys = new Set();
+  roundFirstOk = 0;
 
   if (practiceOnlyMissed) {
     activeQueue = shuffle(missedLog.map(m => m.rawItem));
-    compStage = null;
+  } else if (currentMode === 'comparisons' || vocabRoundMode()) {
+    activeQueue = [];   // rounds are built by startCompRound / startVocabRound
+  } else if (currentMode === 'collocations') {
+    activeQueue = shuffle(COLLOCATIONS_DATA);
   } else {
-    const scope = document.getElementById('setFilter').value;
-    if (currentMode === 'vocab') {
-      const pool = scope === 'ALL' ? FULL_DATABASE : FULL_DATABASE.filter(i => i.cat === scope);
-      activeQueue = shuffle(pool);
-    } else if (currentMode === 'comparisons') {
-      compStage = 0;
-      activeQueue = shuffle(compStageItems(compStage));
-    } else if (currentMode === 'grammar') {
-      activeQueue = shuffle([...ADVERB_DATA, ...PRONOUN_DATA]);
-    } else {
-      activeQueue = shuffle(COLLOCATIONS_DATA);
-    }
+    const pool = currentMode === 'vocab' ? scopePool() : modeData(currentMode);
+    const saved = isStrictMode() ? savedItems(currentMode) : [];
+    fromLastKeys = new Set(saved.map(itemKey));
+    activeQueue = [...shuffle(saved), ...shuffle(pool.filter(i => !fromLastKeys.has(itemKey(i))))];
   }
-  retryQueue = [];
   missedLog = [];
+  roundSize = activeQueue.length;
   refreshStats();
-  if (currentMode === 'comparisons') renderCompRuleScreen();
+  if (practiceOnlyMissed) runNextCard();
+  else if (currentMode === 'comparisons') { loadCompProgress(); renderCompRuleScreen(); }
+  else if (vocabRoundMode()) startVocabRound(false);
   else runNextCard();
 }
 
@@ -640,20 +811,21 @@ function runNextCard() {
       activeQueue = shuffle(retryQueue);
       retryQueue = [];
     } else {
-      if (currentMode === 'comparisons' && compStage !== null && compStage < COMP_STAGES.length - 1) {
-        renderCompStageDone();
-        return;
-      }
+      if (currentMode === 'comparisons') { renderCompRoundDone(); return; }
+      if (vocabRoundMode()) { renderVocabRoundDone(); return; }
       renderCompletionScreen();
       return;
     }
   }
   currentItem = activeQueue.shift();
+  const key = itemKey(currentItem);
+  currentIsRetry = retryKeys.has(key);
+  if (currentIsRetry) retryKeys.delete(key);
   refreshStats();
 
   if (currentMode === 'vocab') renderVocabCard();
   else if (currentMode === 'comparisons') renderComparisonCard();
-  else if (currentMode === 'grammar') renderGrammarCard();
+  else if (currentMode === 'adverbs' || currentMode === 'pronouns') renderGrammarCard();
   else renderCollocationCard();
 }
 
@@ -668,9 +840,10 @@ function logMistake(key, answer, raw) {
    ========================================================================== */
 const TAB_NAMES = {
   vocab: '1. Core Vocab',
-  comparisons: '2. Comparison Traps',
-  grammar: '3. Adverbs & Mine/Yours',
-  collocations: '4. Collocations'
+  comparisons: '2. Comparison',
+  adverbs: '3. Adverbs',
+  pronouns: '4. Mine/Yours',
+  collocations: '5. Collocations'
 };
 let session = null;
 
@@ -792,11 +965,7 @@ function renderVocabCard() {
 
   let interactionHTML = '';
   if (inputMode === 'type') {
-    interactionHTML = `
-      <div class="typing-box">
-        <input type="text" class="typing-input" id="typeInput" placeholder="Type answer..." autocomplete="off" autocapitalize="off" spellcheck="false">
-        <button class="action-btn" id="submitBtn" onclick="checkVocabTyped()">Submit</button>
-      </div>`;
+    interactionHTML = typingBoxHTML();
   } else {
     const sameCat = FULL_DATABASE.filter(x => x.en !== currentItem.en && x.cat === currentItem.cat);
     const otherCat = FULL_DATABASE.filter(x => x.en !== currentItem.en && x.cat !== currentItem.cat);
@@ -811,6 +980,7 @@ function renderVocabCard() {
   ws.innerHTML = `
     <div>
       <div class="prompt-box">
+        ${fromLastBadge()}
         <div class="prompt-label">Translate (${dir === 'DE_EN' ? 'DE ➔ EN' : 'EN ➔ DE'})</div>
         <div class="prompt-content">
           ${esc(promptText)}
@@ -823,17 +993,158 @@ function renderVocabCard() {
       <span>${inputMode === 'type' ? 'Type the translation and press Enter' : 'Choose the correct match'}</span>
     </div>`;
 
-  if (inputMode === 'type') {
-    const inp = document.getElementById('typeInput');
-    inp.focus();
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!inp.disabled) checkVocabTyped();
-      }
-    });
+  if (inputMode === 'type') bindTypeInput();
+}
+
+/* ==========================================================================
+   SHARED TYPE-IN FLOW (Core Vocab type-in, Adverbs, Mine/Yours)
+   ========================================================================== */
+let retypeActive = false;
+
+function typingBoxHTML() {
+  return `
+      <div class="typing-box">
+        <input type="text" class="typing-input" id="typeInput" placeholder="Type answer..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <button class="action-btn" id="submitBtn" onclick="submitTyped()">Submit</button>
+      </div>`;
+}
+
+function bindTypeInput() {
+  retypeActive = false;
+  const inp = document.getElementById('typeInput');
+  inp.focus();
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!inp.disabled) submitTyped();
+    }
+  });
+  inp.addEventListener('input', () => { if (retypeActive) updateRetype(); });
+}
+
+/* What to check, send and explain for the current card */
+function typedInfo() {
+  if (currentMode === 'vocab') {
+    const deEn = document.getElementById('dirSelect').value === 'DE_EN';
+    return {
+      question: deEn ? currentItem.de : currentItem.en,
+      speak: currentItem.en,
+      rule: '',
+      mKey: currentItem.en,
+      mAnswer: currentItem.de,
+      match: t => isTypedCorrect(t, currentAnswer)
+    };
   }
+  const question = currentMode === 'adverbs' ? currentItem.adj : currentItem.phrase;
+  return {
+    question: question,
+    speak: currentAnswer,
+    rule: currentItem.rule || '',
+    mKey: question,
+    mAnswer: currentAnswer,
+    match: t => normalize(t) === normalize(currentAnswer)
+  };
+}
+
+function submitTyped() {
+  const inp = document.getElementById('typeInput');
+  const info = typedInfo();
+  if (retypeActive) {
+    if (info.match(inp.value)) runNextCard();
+    else inp.focus();
+    return;
+  }
+  const typed = inp.value.trim();
+  if (!typed) { inp.focus(); return; }
+  const ok = info.match(typed);
+  speakUK(info.speak);
+  trackAnswer(info.question, typed, currentAnswer, ok);
+  strictOutcome(ok, info.mKey, info.mAnswer);
+
+  const submit = document.getElementById('submitBtn');
+  if (ok) {
+    inp.disabled = true;
+    submit.disabled = true;
+    inp.classList.add('correct');
+    const note = currentMode === 'vocab' && normalize(typed) !== normalize(currentAnswer) ? ` Full form: <strong>${esc(currentAnswer)}</strong>` : '';
+    showResult('fbBanner', true, 'Correct!' + note);
+  } else {
+    retypeActive = true;
+    inp.value = '';
+    inp.classList.add('incorrect');
+    inp.placeholder = 'Type the correct answer...';
+    submit.style.display = 'none';
+    const rule = info.rule ? `<br><span class="rule-why">${esc(info.rule)}</span>` : '';
+    showRetype('fbBanner', `Correct: <strong>${esc(currentAnswer)}</strong>${rule}`);
+    inp.focus();
+  }
+}
+
+/* Re-typing after a mistake: not sent to the sheet, not counted */
+function updateRetype() {
+  const inp = document.getElementById('typeInput');
+  const ok = typedInfo().match(inp.value);
+  inp.classList.toggle('correct', ok);
+  inp.classList.toggle('incorrect', !ok);
+  const next = document.getElementById('nextBtn');
+  if (next) next.disabled = !ok;
+}
+
+/* ==========================================================================
+   CORE VOCAB ROUNDS (student mode, type-in)
+   ========================================================================== */
+function vocabWordsLeft() {
+  const learned = new Set(lsList('vocab:learned'));
+  return scopePool().filter(i => !learned.has(i.en)).length;
+}
+
+function startVocabRound(practice) {
+  trackSessionStart(false);
+  stats = { correct: 0, total: 0, streak: 0 };
+  missedLog = [];
+  retryQueue = [];
+  retryKeys = new Set();
+  roundFirstOk = 0;
+
+  const saved = savedItems('vocab').slice(0, VOCAB_ROUND_SAVED);
+  fromLastKeys = new Set(saved.map(itemKey));
+  const learned = new Set(lsList('vocab:learned'));
+  const free = scopePool().filter(i => !fromLastKeys.has(i.en));
+  let pool = free.filter(i => !sessionBanned.has(i.en) && (practice || !learned.has(i.en)));
+  if (practice && pool.length === 0) pool = free;
+  activeQueue = [...shuffle(saved), ...shuffle(pool).slice(0, VOCAB_ROUND - saved.length)];
+  roundSize = activeQueue.length;
+  refreshStats();
+  if (roundSize === 0) { renderVocabEmpty(); return; }
+  runNextCard();
+}
+
+function renderVocabRoundDone() {
+  trackSessionEnd('completed', false);
+  const left = vocabWordsLeft();
+  document.getElementById('appWorkspace').innerHTML = `
+    <div style="text-align: center; margin: auto; max-width: 640px; width: 100%;">
+      <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">Round done: ${roundFirstOk}/${roundSize}. Words left: ${left}</h2>
+      ${left === 0 ? '<p style="color: var(--success); font-weight: 600; margin: 16px 0;">All words learned!</p>' : ''}
+      <div style="margin-top: 20px;">
+        <button class="action-btn" id="roundBtn" onclick="startVocabRound(${left === 0})">${left === 0 ? 'Practise again' : 'Next round'}</button>
+      </div>
+    </div>`;
+  document.getElementById('roundBtn').focus();
+}
+
+function renderVocabEmpty() {
+  const left = vocabWordsLeft();
+  document.getElementById('appWorkspace').innerHTML = `
+    <div style="text-align: center; margin: auto; max-width: 640px; width: 100%;">
+      <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">${left === 0 ? 'All words learned!' : 'Your remaining words come back next time.'}</h2>
+      <p style="color: var(--text-muted); font-size: 14px;">Words left: ${left}</p>
+      <div style="margin-top: 20px;">
+        <button class="action-btn" id="roundBtn" onclick="startVocabRound(true)">Practise again</button>
+      </div>
+    </div>`;
+  document.getElementById('roundBtn').focus();
 }
 
 function checkVocabChoice(btn) {
@@ -845,16 +1156,6 @@ function checkVocabChoice(btn) {
   });
   btn.classList.add(isCorrect ? 'correct' : 'incorrect');
   handleVocabOutcome(isCorrect, '', btn.dataset.val);
-}
-
-function checkVocabTyped() {
-  const inp = document.getElementById('typeInput');
-  if (!inp.value.trim()) { inp.focus(); return; }
-  const isCorrect = isTypedCorrect(inp.value, currentAnswer);
-  inp.disabled = true;
-  document.getElementById('submitBtn').disabled = true;
-  inp.classList.add(isCorrect ? 'correct' : 'incorrect');
-  handleVocabOutcome(isCorrect, inp.value.trim(), inp.value.trim());
 }
 
 function handleVocabOutcome(isCorrect, typed, given) {
@@ -873,17 +1174,8 @@ function handleVocabOutcome(isCorrect, typed, given) {
 }
 
 /* ==========================================================================
-   MODE 2: COMPARISON TRAPS
+   MODE 2: COMPARISON
    ========================================================================== */
-const COMP_RULES = [
-  { key: 'special', label: 'good/bad – Sonderformen', short: 'Sonderform' },
-  { key: 'more', label: '3+ Silben – more / the most', short: 'more/most' },
-  { key: 'y', label: '-y → -ier / -iest', short: '-ier' },
-  { key: 'e', label: '-e → -r / -st', short: '-r/-st' },
-  { key: 'double', label: 'Buchstaben verdoppeln + -er / -est', short: 'verdoppeln' },
-  { key: 'er', label: '+ -er / -est', short: '+er' }
-];
-
 /* Which rule applies to each word + one-line explanation (German) */
 const COMP_WORD_RULES = {
   tall: ['er', 'tall – kurzes Wort, zwei Konsonanten am Ende (ll) → einfach -er: taller'],
@@ -891,9 +1183,19 @@ const COMP_WORD_RULES = {
   cold: ['er', 'cold – kurzes Wort, zwei Konsonanten am Ende (ld) → einfach -er: colder'],
   cool: ['er', 'cool – zwei Vokale (oo) vor dem l → nicht verdoppeln: cooler'],
   small: ['er', 'small – kurzes Wort, zwei Konsonanten am Ende (ll) → einfach -er: smaller'],
+  short: ['er', 'short – kurzes Wort, zwei Konsonanten am Ende (rt) → einfach -er: shorter'],
+  old: ['er', 'old – kurzes Wort, zwei Konsonanten am Ende (ld) → einfach -er: older'],
+  young: ['er', 'young – kurzes Wort, zwei Konsonanten am Ende (ng) → einfach -er: younger'],
+  cheap: ['er', 'cheap – zwei Vokale (ea) vor dem p → nicht verdoppeln: cheaper'],
   big: ['double', 'big – kurzes Wort, Vokal + Konsonant am Ende → g verdoppeln: bigger'],
   hot: ['double', 'hot – kurzes Wort, Vokal + Konsonant am Ende → t verdoppeln: hotter'],
+  sad: ['double', 'sad – kurzes Wort, Vokal + Konsonant am Ende → d verdoppeln: sadder'],
+  thin: ['double', 'thin – kurzes Wort, Vokal + Konsonant am Ende → n verdoppeln: thinner'],
+  wet: ['double', 'wet – kurzes Wort, Vokal + Konsonant am Ende → t verdoppeln: wetter'],
   large: ['e', 'large – Endung -e → nur -r / -st: larger'],
+  nice: ['e', 'nice – Endung -e → nur -r / -st: nicer'],
+  late: ['e', 'late – Endung -e → nur -r / -st: later'],
+  safe: ['e', 'safe – Endung -e → nur -r / -st: safer'],
   happy: ['y', 'happy – Endung -y → y wird zu i: happier'],
   funny: ['y', 'funny – Endung -y → y wird zu i: funnier'],
   crazy: ['y', 'crazy – Endung -y → y wird zu i: crazier'],
@@ -922,28 +1224,69 @@ const COMP_ALGORITHM = [
 ];
 
 /* Stages: null = all words mixed */
+const COMP_STAGE_1 = ['tall', 'long', 'cold', 'cool', 'small', 'short', 'old', 'young', 'cheap'];
+const COMP_STAGE_2 = ['big', 'hot', 'sad', 'thin', 'wet', 'large', 'nice', 'late', 'safe'];
 const COMP_STAGES = [
-  ['tall', 'long', 'cold', 'cool', 'small', 'big', 'hot', 'large'],
+  COMP_STAGE_1,
+  COMP_STAGE_2,
+  COMP_STAGE_1.concat(COMP_STAGE_2),
   ['happy', 'funny', 'crazy', 'dirty', 'easy', 'cheeky', 'good', 'bad'],
   ['beautiful', 'interesting', 'dangerous', 'exciting', 'expensive', 'colourful', 'comfortable', 'attractive'],
   null
 ];
 
-let compStage = 0;            // index in COMP_STAGES; null = "missed words" practice
-let compRuleChoice = null;
-let compAnswerState = { comp: null, sup: null };
+const COMP_ROUND = 8;         // words per round
+const COMP_PASS = 6;          // correct at the first try to pass the stage
+const COMP_ROUND_SAVED = 3;   // max. "From last time" words per round
+const COMP_MAX_FAILS = 3;     // after this many failed rounds in a row "Next stage" is offered
+
+let compStage = 0;            // index in COMP_STAGES (saved in localStorage)
+let compFails = 0;            // failed rounds in a row at this stage (saved in localStorage)
+let compRetype = false;
 
 function compStageItems(i) {
   const names = COMP_STAGES[i];
   return names ? COMPARISON_TRAPS.filter(it => names.includes(it.base)) : [...COMPARISON_TRAPS];
 }
 
-function compWordRule() {
-  return COMP_WORD_RULES[currentItem.base] || ['er', ''];
+function compWordRule(item) {
+  return COMP_WORD_RULES[(item || currentItem).base] || ['er', ''];
 }
 
-function compRule(key) {
-  return COMP_RULES.find(r => r.key === key) || { key: key, label: key, short: key };
+function loadCompProgress() {
+  const s = lsGet('comparisons:stage', 0);
+  const f = lsGet('comparisons:fails', 0);
+  compStage = Number.isInteger(s) && s >= 0 && s < COMP_STAGES.length ? s : 0;
+  compFails = Number.isInteger(f) && f >= 0 ? f : 0;
+}
+
+function saveCompProgress() {
+  lsSet('comparisons:stage', compStage);
+  lsSet('comparisons:fails', compFails);
+}
+
+/* Correct forms with the changed letters in bold: bi<strong>gg</strong>er, happ<strong>ier</strong> */
+function compFormsHTML(item) {
+  const b = esc(item.base);
+  const s = x => `<strong>${esc(x)}</strong>`;
+  const rule = compWordRule(item)[0];
+  let forms;
+  if (rule === 'er') forms = [b + s('er'), 'the ' + b + s('est')];
+  else if (rule === 'double') {
+    const stem = esc(item.base.slice(0, -1));
+    const dd = item.base.slice(-1).repeat(2);
+    forms = [stem + s(dd) + 'er', 'the ' + stem + s(dd) + 'est'];
+  } else if (rule === 'e') forms = [b + s('r'), 'the ' + b + s('st')];
+  else if (rule === 'y') {
+    const stem = esc(item.base.slice(0, -1));
+    forms = [stem + s('ier'), 'the ' + stem + s('iest')];
+  } else if (rule === 'more') forms = [s('more') + ' ' + b, 'the ' + s('most') + ' ' + b];
+  else forms = [s(item.comp), 'the ' + s(item.sup.replace(/^the /, ''))];
+  const plain = h => h.replace(/<\/?strong>/g, '');
+  if (plain(forms[0]) !== esc(item.comp) || plain(forms[1]) !== esc(item.sup)) {
+    forms = [esc(item.comp), esc(item.sup)];
+  }
+  return forms;
 }
 
 function compAlgorithmHTML() {
@@ -953,7 +1296,7 @@ function compAlgorithmHTML() {
 }
 
 function compTopBar() {
-  const label = compStage === null ? 'Missed words' : `Stage ${compStage + 1} of ${COMP_STAGES.length}`;
+  const label = `Stage ${compStage + 1} of ${COMP_STAGES.length}`;
   return `
     <div class="comp-topbar">
       <span class="stage-badge">${label}</span>
@@ -968,7 +1311,10 @@ function renderCompRuleScreen() {
       <div class="rule-card">
         <h2>Rule</h2>
         ${compAlgorithmHTML()}
-        <button class="action-btn" id="compStartBtn" onclick="runNextCard()">Start</button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <button class="action-btn" id="compStartBtn" onclick="startCompRound()">Start</button>
+          <button class="rule-btn" onclick="restartCompStages()">Start from stage 1</button>
+        </div>
       </div>
     </div>`;
   document.getElementById('compStartBtn').focus();
@@ -996,176 +1342,226 @@ function closeCompRule() {
   if (ov) ov.remove();
 }
 
-function renderCompStageDone() {
-  const next = compStage + 2;
-  const isLast = next === COMP_STAGES.length;
-  document.getElementById('appWorkspace').innerHTML = `
-    <div>
-      ${compTopBar()}
-      <div class="rule-card" style="text-align: center;">
-        <h2>Stage ${compStage + 1} complete!</h2>
-        <p class="rule-intro">Next: Stage ${next} of ${COMP_STAGES.length}${isLast ? ' – all words, mixed' : ''}</p>
-        <button class="action-btn" id="compNextStageBtn" onclick="startNextCompStage()">Next stage ➔</button>
-      </div>
-    </div>`;
-  document.getElementById('compNextStageBtn').focus();
-}
-
-function startNextCompStage() {
-  compStage++;
-  activeQueue = shuffle(compStageItems(compStage));
+function startCompRound() {
+  closeCompRule();
+  trackSessionStart(false);
+  stats = { correct: 0, total: 0, streak: 0 };
+  missedLog = [];
   retryQueue = [];
+  retryKeys = new Set();
+  roundFirstOk = 0;
+
+  const saved = savedItems('comparisons').slice(0, COMP_ROUND_SAVED);
+  fromLastKeys = new Set(saved.map(itemKey));
+  const free = compStageItems(compStage).filter(i => !fromLastKeys.has(i.base));
+  let pool = free.filter(i => !sessionBanned.has(i.base));
+  if (pool.length === 0) pool = free;
+  activeQueue = [...shuffle(saved), ...shuffle(pool).slice(0, COMP_ROUND - saved.length)];
+  roundSize = activeQueue.length;
   refreshStats();
   runNextCard();
 }
 
+function restartCompStages() {
+  compStage = 0;
+  compFails = 0;
+  saveCompProgress();
+  startCompRound();
+}
+
+function skipCompStage() {
+  if (compStage < COMP_STAGES.length - 1) compStage++;
+  compFails = 0;
+  saveCompProgress();
+  startCompRound();
+}
+
+/* Pass mark counts only first tries; the repeat at the end of the round does not count */
+function renderCompRoundDone() {
+  trackSessionEnd('completed', false);
+  const need = roundSize >= COMP_ROUND ? COMP_PASS : Math.ceil(roundSize * COMP_PASS / COMP_ROUND);
+  const passed = roundFirstOk >= need;
+  const stageNum = compStage + 1;
+  const isLast = compStage === COMP_STAGES.length - 1;
+  const topBar = compTopBar();
+
+  if (passed) {
+    compFails = 0;
+    if (!isLast) compStage++;
+  } else {
+    compFails++;
+  }
+  saveCompProgress();
+
+  const btn = (id, onclick, text, extraStyle) =>
+    `<button class="action-btn" id="${id}" onclick="${onclick}"${extraStyle ? ` style="${extraStyle}"` : ''}>${text}</button>`;
+  let title, info = '', buttons;
+  if (passed && isLast) {
+    title = 'All stages done!';
+    buttons = btn('compRoundBtn', 'startCompRound()', 'Play again');
+  } else if (passed) {
+    title = `Stage ${stageNum} passed!`;
+    info = `<p class="rule-intro">Next: Stage ${compStage + 1} of ${COMP_STAGES.length}${compStage === COMP_STAGES.length - 1 ? ' – all words, mixed' : ''}</p>`;
+    buttons = btn('compRoundBtn', 'startCompRound()', 'Next stage ➔');
+  } else {
+    title = `Stage ${stageNum}: not passed yet`;
+    buttons = btn('compRoundBtn', 'startCompRound()', 'Repeat stage');
+    if (compFails >= COMP_MAX_FAILS && !isLast) {
+      buttons += btn('compSkipBtn', 'skipCompStage()', 'Next stage ➔', 'background: var(--warning);');
+    }
+  }
+
+  document.getElementById('appWorkspace').innerHTML = `
+    <div>
+      ${topBar}
+      <div class="rule-card" style="text-align: center;">
+        <h2>${title}</h2>
+        <p class="rule-intro">Score: <strong>${roundFirstOk}/${roundSize}</strong> at the first try (needed: ${need})</p>
+        ${info}
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">${buttons}</div>
+      </div>
+    </div>`;
+  document.getElementById('compRoundBtn').focus();
+}
+
+function compSupNorm(s) {
+  return normalize(s).replace(/^the /, '');
+}
+
+/* Case and extra spaces are ignored; "the" in the superlative is optional */
+function compFieldOk(which, value) {
+  return which === 'comp'
+    ? normalize(value) === normalize(currentItem.comp)
+    : compSupNorm(value) === compSupNorm(currentItem.sup);
+}
+
+function compRetypeDone() {
+  return compFieldOk('comp', document.getElementById('compInput').value) &&
+         compFieldOk('sup', document.getElementById('supInput').value);
+}
+
 function renderComparisonCard() {
-  compAnswerState = { comp: null, sup: null };
-  compRuleChoice = null;
-  const compOptions = shuffle([currentItem.comp, ...currentItem.compTraps]);
-  const supOptions = shuffle([currentItem.sup, ...currentItem.supTraps]);
-  const pill = (type, opt) => `<button class="choice-pill" data-val="${esc(opt)}" onclick="selectCompForm('${type}', this)">${esc(opt)}</button>`;
-  const rulePill = r => `<button class="choice-pill" data-val="${esc(r.key)}" onclick="selectCompRule(this)">${esc(r.label)}</button>`;
+  compRetype = false;
+  const field = (id, label) => `
+        <div class="comp-step">
+          <label class="comp-step-title" for="${id}">${label}</label>
+          <input type="text" class="typing-input" id="${id}" placeholder="${label}..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        </div>`;
 
   document.getElementById('appWorkspace').innerHTML = `
     <div>
       ${compTopBar()}
       <div class="prompt-box">
+        ${fromLastBadge()}
         <div class="prompt-label">Adjective Comparison</div>
         <div class="prompt-content">${esc(currentItem.base)} ${speakBtn(currentItem.base)}</div>
       </div>
       <div class="comp-builder">
-        <div class="comp-step">
-          <div class="comp-step-title">1. Rule</div>
-          <div class="comp-choices" id="ruleChoices">${COMP_RULES.map(rulePill).join('')}</div>
-          <div class="rule-note" id="ruleNote" hidden></div>
-        </div>
-        <div class="comp-step" id="compFormStep" hidden>
-          <div class="comp-step-title">2. Comparative</div>
-          <div class="comp-choices" id="compChoices">${compOptions.map(o => pill('comp', o)).join('')}</div>
-        </div>
-        <div class="comp-step" id="supFormStep" hidden>
-          <div class="comp-step-title">3. Superlative</div>
-          <div class="comp-choices" id="supChoices">${supOptions.map(o => pill('sup', o)).join('')}</div>
-        </div>
+        ${field('compInput', 'Comparative')}
+        ${field('supInput', 'Superlative')}
+        <div class="rule-note" id="compNote" hidden></div>
       </div>
     </div>
     <div class="feedback-banner" id="compBanner">
-      <span id="compHint">Choose the rule first</span>
-      <button class="action-btn" id="verifyCompBtn" onclick="verifyComparisons()" disabled>Check</button>
+      <span>Type both forms. Enter = next field, then check</span>
+      <button class="action-btn" id="verifyCompBtn" onclick="verifyComparisons()">Check</button>
     </div>`;
-}
 
-function selectCompRule(btn) {
-  if (compRuleChoice) return;
-  compRuleChoice = btn.dataset.val;
-  const [rightKey, why] = compWordRule();
-  markPills('ruleChoices', rightKey, compRuleChoice);
-  if (compRuleChoice !== rightKey) {
-    const note = document.getElementById('ruleNote');
-    note.innerHTML = `Richtig: <strong>${esc(compRule(rightKey).label)}</strong><br><span class="rule-why">${esc(why)}</span>`;
-    note.hidden = false;
-  }
-  document.getElementById('compFormStep').hidden = false;
-  document.getElementById('supFormStep').hidden = false;
-  document.getElementById('compHint').innerText = 'Select both forms, then click Check';
-}
-
-function selectCompForm(type, btn) {
-  compAnswerState[type] = btn.dataset.val;
-  const container = document.getElementById(type === 'comp' ? 'compChoices' : 'supChoices');
-  container.querySelectorAll('.choice-pill').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  if (compRuleChoice && compAnswerState.comp && compAnswerState.sup) {
-    const v = document.getElementById('verifyCompBtn');
-    v.disabled = false;
-    v.focus();
-  }
-}
-
-function markPills(containerId, correct, chosen) {
-  document.getElementById(containerId).querySelectorAll('.choice-pill').forEach(b => {
-    b.disabled = true;
-    b.classList.remove('selected');
-    if (b.dataset.val === correct) b.classList.add('right');
-    else if (b.dataset.val === chosen) b.classList.add('wrong');
+  const ci = document.getElementById('compInput');
+  const si = document.getElementById('supInput');
+  ci.focus();
+  ci.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (ci.disabled) return;
+    if (compRetype && compRetypeDone()) runNextCard();
+    else si.focus();
   });
+  si.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (si.disabled) return;
+    if (!compRetype) { verifyComparisons(); return; }
+    if (compRetypeDone()) runNextCard();
+    else if (!compFieldOk('comp', ci.value)) ci.focus();
+  });
+  [ci, si].forEach(el => el.addEventListener('input', () => { if (compRetype) updateCompRetype(); }));
 }
 
 function verifyComparisons() {
-  if (!compRuleChoice || !compAnswerState.comp || !compAnswerState.sup) return;
-  const [rightKey, why] = compWordRule();
-  const okRule = compRuleChoice === rightKey;
-  const okComp = compAnswerState.comp === currentItem.comp;
-  const okSup = compAnswerState.sup === currentItem.sup;
-  markPills('compChoices', currentItem.comp, compAnswerState.comp);
-  markPills('supChoices', currentItem.sup, compAnswerState.sup);
-  speakUK(`${currentItem.base}, ${currentItem.comp}, ${currentItem.sup}`);
-  trackAnswer(currentItem.base, `Regel: ${compRule(compRuleChoice).short} | ${compAnswerState.comp} / ${compAnswerState.sup}`, `${currentItem.comp} / ${currentItem.sup}`, okRule && okComp && okSup);
+  if (compRetype) return;
+  const ci = document.getElementById('compInput');
+  const si = document.getElementById('supInput');
+  const comp = ci.value.trim();
+  const sup = si.value.trim();
+  if (!comp) { ci.focus(); return; }
+  if (!sup) { si.focus(); return; }
 
-  if (okRule && okComp && okSup) {
-    record(true);
+  const ok = compFieldOk('comp', comp) && compFieldOk('sup', sup);
+  const why = compWordRule(currentItem)[1];
+  const forms = compFormsHTML(currentItem);
+  speakUK(`${currentItem.base}, ${currentItem.comp}, ${currentItem.sup}`);
+  trackAnswer(currentItem.base, `${comp} / ${sup}`, `${currentItem.comp} / ${currentItem.sup}`, ok);
+  strictOutcome(ok, currentItem.base, `${currentItem.comp} | ${currentItem.sup}`);
+
+  const note = document.getElementById('compNote');
+  note.innerHTML = `${forms[0]} / ${forms[1]}${why ? `<br><span class="rule-why">${esc(why)}</span>` : ''}`;
+  note.className = 'rule-note' + (ok ? ' ok' : '');
+  note.hidden = false;
+
+  if (ok) {
+    [ci, si].forEach(el => { el.disabled = true; el.classList.add('correct'); });
     showResult('compBanner', true, 'All correct!');
   } else {
-    logMistake(currentItem.base, `${currentItem.comp} | ${currentItem.sup}`, currentItem);
-    retryQueue.push(currentItem);
-    record(false);
-    if (okComp && okSup) {
-      showResult('compBanner', false, 'Forms correct, but the rule was wrong.');
-    } else {
-      showResult('compBanner', false, `Correct: <strong>${esc(currentItem.comp)}</strong> / <strong>${esc(currentItem.sup)}</strong><br><span class="rule-why">${esc(why)}</span>`);
-    }
+    compRetype = true;
+    [ci, si].forEach(el => { el.value = ''; el.classList.add('incorrect'); });
+    showRetype('compBanner', 'Not quite. Type both correct forms to continue.');
+    ci.focus();
   }
 }
 
+/* Re-typing after a mistake: not sent to the sheet, not counted */
+function updateCompRetype() {
+  const ci = document.getElementById('compInput');
+  const si = document.getElementById('supInput');
+  const okC = compFieldOk('comp', ci.value);
+  const okS = compFieldOk('sup', si.value);
+  ci.classList.toggle('correct', okC);
+  ci.classList.toggle('incorrect', !okC);
+  si.classList.toggle('correct', okS);
+  si.classList.toggle('incorrect', !okS);
+  const next = document.getElementById('nextBtn');
+  if (next) next.disabled = !(okC && okS);
+}
+
 /* ==========================================================================
-   MODE 3: ADVERBS & MINE/YOURS
+   MODES 3-4: ADVERBS, MINE/YOURS (type-in, see SHARED TYPE-IN FLOW)
    ========================================================================== */
 function renderGrammarCard() {
-  const isAdverb = !!currentItem.adj;
+  const isAdverb = currentMode === 'adverbs';
   const label = isAdverb ? 'Adjective ➔ Adverb' : 'Possessive Pronoun';
   const title = isAdverb ? currentItem.adj : currentItem.phrase;
   const sub = isAdverb ? 'How does an action happen?' : currentItem.de;
   currentAnswer = isAdverb ? currentItem.adv : currentItem.target;
-  const options = shuffle(unique([currentAnswer, ...currentItem.traps]));
 
   document.getElementById('appWorkspace').innerHTML = `
     <div>
       <div class="prompt-box">
+        ${fromLastBadge()}
         <div class="prompt-label">${label}</div>
         <div class="prompt-content">${esc(title)} ${speakBtn(title)}</div>
         <p style="color: var(--text-muted); font-size: 14px; margin-top: 6px;">${esc(sub)}</p>
       </div>
-      <div class="grid-options" id="gramGrid">
-        ${options.map(opt => `<button class="opt-btn" data-val="${esc(opt)}" onclick="checkGrammarChoice(this)">${esc(opt)}</button>`).join('')}
-      </div>
+      ${typingBoxHTML()}
     </div>
-    <div class="feedback-banner" id="gramBanner"><span>Choose the correct form</span></div>`;
-}
-
-function checkGrammarChoice(btn) {
-  const isCorrect = btn.dataset.val === currentAnswer;
-  document.getElementById('gramGrid').querySelectorAll('.opt-btn').forEach(b => {
-    b.disabled = true;
-    if (!isCorrect && b.dataset.val === currentAnswer) b.classList.add('correct');
-  });
-  btn.classList.add(isCorrect ? 'correct' : 'incorrect');
-  speakUK(currentAnswer);
-  trackAnswer(currentItem.adj || currentItem.phrase, btn.dataset.val, currentAnswer, isCorrect);
-
-  if (isCorrect) {
-    record(true);
-    showResult('gramBanner', true, 'Correct!');
-  } else {
-    logMistake(currentItem.adj || currentItem.phrase, currentAnswer, currentItem);
-    retryQueue.push(currentItem);
-    record(false);
-    showResult('gramBanner', false, `Correct: <strong>${esc(currentAnswer)}</strong>`);
-  }
+    <div class="feedback-banner" id="fbBanner"><span>Type the answer and press Enter</span></div>`;
+  bindTypeInput();
 }
 
 /* ==========================================================================
-   MODE 4: SENTENCE COMPLETION
+   MODE 5: SENTENCE COMPLETION (Collocations)
    ========================================================================== */
 function renderCollocationCard() {
   currentAnswer = currentItem.target;
@@ -1247,6 +1643,7 @@ function renderCompletionScreen() {
   document.getElementById('restartBtn').focus();
 }
 
+applyStudentMode();
 initSession();
 </script>
 </body>
